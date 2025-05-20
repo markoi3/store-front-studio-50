@@ -93,6 +93,7 @@
   }
   body {
     @apply bg-background text-foreground font-sans;
+    font-family: 'Inter', sans-serif;
   }
   .font-numeric {
     font-family: 'JetBrains Mono', monospace;

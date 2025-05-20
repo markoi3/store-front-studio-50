@@ -19,18 +19,17 @@ export const AdminSidebar = () => {
   const { pathname } = useLocation();
   const { logout, user } = useAuth();
   
-  // Assume the store slug is derived from the user's store name or a specific field
-  // For now, we'll use a placeholder
-  const storeSlug = user?.storeSlug || "my-store";
+  // Generisanje slug-a iz imena prodavnice ili korisničkog imena
+  const storeSlug = user?.store?.slug || user?.username || "moja-prodavnica";
   
   const navItems = [
-    { path: "/dashboard", label: "Dashboard", icon: <LayoutDashboard className="h-5 w-5" /> },
-    { path: "/products", label: "Products", icon: <Package className="h-5 w-5" /> },
-    { path: "/orders", label: "Orders", icon: <ShoppingCart className="h-5 w-5" /> },
-    { path: "/design", label: "Design", icon: <Palette className="h-5 w-5" /> },
-    { path: "/analytics", label: "Analytics", icon: <BarChart className="h-5 w-5" /> },
-    { path: "/settings", label: "Settings", icon: <Settings className="h-5 w-5" /> },
-    { path: "/profile", label: "Profile", icon: <User className="h-5 w-5" /> },
+    { path: "/dashboard", label: "Početna", icon: <LayoutDashboard className="h-5 w-5" /> },
+    { path: "/products", label: "Proizvodi", icon: <Package className="h-5 w-5" /> },
+    { path: "/orders", label: "Porudžbine", icon: <ShoppingCart className="h-5 w-5" /> },
+    { path: "/design", label: "Dizajn", icon: <Palette className="h-5 w-5" /> },
+    { path: "/analytics", label: "Analitika", icon: <BarChart className="h-5 w-5" /> },
+    { path: "/settings", label: "Podešavanja", icon: <Settings className="h-5 w-5" /> },
+    { path: "/profile", label: "Profil", icon: <User className="h-5 w-5" /> },
   ];
 
   return (
@@ -38,7 +37,7 @@ export const AdminSidebar = () => {
       <div className="flex flex-col h-full">
         <div className="flex items-center space-x-2 pb-6 mb-6 border-b border-border/30">
           <Link to="/dashboard" className="font-bold text-xl">
-            E-Shop Admin
+            Axia Admin
           </Link>
         </div>
         
@@ -49,7 +48,7 @@ export const AdminSidebar = () => {
         >
           <div className="flex items-center">
             <Globe className="h-4 w-4 mr-2" />
-            <span className="text-sm font-medium">View Storefront</span>
+            <span className="text-sm font-medium">Pregledaj prodavnicu</span>
           </div>
           <ExternalLink className="h-3.5 w-3.5" />
         </Link>
@@ -77,7 +76,7 @@ export const AdminSidebar = () => {
           className="flex items-center space-x-3 px-4 py-2.5 mt-6 border-t border-border/30 pt-6 rounded-lg text-sm text-destructive hover:bg-destructive/10 transition-colors w-full text-left"
         >
           <LogOut className="h-5 w-5" />
-          <span>Logout</span>
+          <span>Odjava</span>
         </button>
       </div>
     </aside>

@@ -10,21 +10,21 @@ const Storefront = () => {
   const [loading, setLoading] = useState(true);
   
   useEffect(() => {
-    // In a real app, you would fetch store data from your API
-    // For now, we'll use mock data
+    // U pravoj aplikaciji, ovde bi dobavili podatke o prodavnici sa API-ja
+    // Za sada, koristimo mock podatke
     setTimeout(() => {
       setStore({
         id: storeId,
-        name: "Demo Store",
-        description: "This is a demo store",
+        name: "Demo Prodavnica",
+        description: "Ovo je demo prodavnica",
         elements: [
           {
             id: '1',
             type: 'hero',
             settings: {
-              title: 'Welcome to Demo Store',
-              subtitle: 'Discover our amazing products',
-              buttonText: 'Shop Now',
+              title: 'Dobrodošli u Demo Prodavnicu',
+              subtitle: 'Otkrijte naše neverovatne proizvode',
+              buttonText: 'Kupuj odmah',
               buttonLink: '/shop',
               backgroundImage: 'https://images.unsplash.com/photo-1588345921523-c2dcdb7f1dcd?w=800&auto=format&fit=crop'
             }
@@ -33,7 +33,7 @@ const Storefront = () => {
             id: '2',
             type: 'products',
             settings: {
-              title: 'Featured Products',
+              title: 'Istaknuti proizvodi',
               count: 4,
               layout: 'grid'
             }
@@ -42,7 +42,7 @@ const Storefront = () => {
             id: '3',
             type: 'text',
             settings: {
-              content: 'We offer high quality products with great customer service.',
+              content: 'Nudimo visokokvalitetne proizvode sa odličnom korisničkom podrškom.',
               alignment: 'center'
             }
           }
@@ -73,10 +73,10 @@ const Storefront = () => {
         <div className="container mx-auto px-4 py-12">
           <div className="flex justify-center items-center min-h-[60vh]">
             <div className="text-center">
-              <h1 className="text-2xl font-bold mb-2">Store Not Found</h1>
-              <p className="text-muted-foreground mb-6">The store you're looking for doesn't exist or is no longer available.</p>
+              <h1 className="text-2xl font-bold mb-2">Prodavnica nije pronađena</h1>
+              <p className="text-muted-foreground mb-6">Prodavnica koju tražite ne postoji ili više nije dostupna.</p>
               <Button asChild>
-                <a href="/">Return Home</a>
+                <a href="/">Povratak na početnu</a>
               </Button>
             </div>
           </div>
@@ -120,9 +120,9 @@ const Storefront = () => {
               {[1, 2, 3, 4].map((product) => (
                 <div key={product} className="product-card">
                   <div className="aspect-square bg-accent mb-3 rounded-md"></div>
-                  <h3 className="font-medium">Product {product}</h3>
-                  <p className="text-muted-foreground mb-3">$99.00</p>
-                  <Button className="w-full">Add to Cart</Button>
+                  <h3 className="font-medium">Proizvod {product}</h3>
+                  <p className="text-muted-foreground mb-3 font-numeric">9.900 RSD</p>
+                  <Button className="w-full">Dodaj u korpu</Button>
                 </div>
               ))}
             </div>

@@ -10,6 +10,7 @@ export type Product = {
   image: string;
   slug: string;
   category: string;
+  storeId?: string; // Dodajemo storeId za asocijaciju sa prodavnicom
 };
 
 type ProductCardProps = {
@@ -25,13 +26,19 @@ export const ProductCard = ({ product }: ProductCardProps) => {
       name: product.name,
       price: product.price,
       quantity: 1,
-      image: product.image
+      image: product.image,
+      storeId: product.storeId // Dodajemo storeId u korpu
     });
   };
   
+  // Konstruišemo link na osnovu storeId-a ako postoji
+  const productLink = product.storeId 
+    ? `/store/${product.storeId}/product/${product.slug}` 
+    : `/product/${product.slug}`;
+  
   return (
     <div className="product-card flex flex-col">
-      <Link to={`/product/${product.slug}`} className="group">
+      <Link to={productLink} className="group">
         <div className="aspect-square mb-3 bg-accent overflow-hidden rounded-md">
           <img
             src={product.image}
@@ -40,11 +47,11 @@ export const ProductCard = ({ product }: ProductCardProps) => {
           />
         </div>
         <h3 className="font-medium line-clamp-1">{product.name}</h3>
-        <p className="text-muted-foreground">${product.price.toFixed(2)}</p>
+        <p className="text-muted-foreground font-numeric">{product.price.toLocaleString('sr-RS')} RSD</p>
       </Link>
       <div className="mt-auto pt-4">
         <Button onClick={handleAddToCart} className="w-full">
-          Add to Cart
+          Dodaj u korpu
         </Button>
       </div>
     </div>
