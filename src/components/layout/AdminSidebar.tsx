@@ -10,22 +10,43 @@ import {
   User, 
   LogOut,
   ExternalLink, 
-  Globe
+  Globe,
+  Calculator,
+  Link as LinkIcon,
+  FileText
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
+
+// Definišemo interface za User da bismo dodali polja koja nedostaju
+interface StoreInfo {
+  slug?: string;
+  name?: string;
+}
+
+interface ExtendedUser {
+  store?: StoreInfo;
+  username?: string;
+  [key: string]: any;
+}
 
 export const AdminSidebar = () => {
   const { pathname } = useLocation();
   const { logout, user } = useAuth();
   
+  // Cast user-a u ExtendedUser tip
+  const extendedUser = user as unknown as ExtendedUser;
+  
   // Generisanje slug-a iz imena prodavnice ili korisničkog imena
-  const storeSlug = user?.store?.slug || user?.username || "moja-prodavnica";
+  const storeSlug = extendedUser?.store?.slug || extendedUser?.username || "moja-prodavnica";
   
   const navItems = [
     { path: "/dashboard", label: "Početna", icon: <LayoutDashboard className="h-5 w-5" /> },
     { path: "/products", label: "Proizvodi", icon: <Package className="h-5 w-5" /> },
     { path: "/orders", label: "Porudžbine", icon: <ShoppingCart className="h-5 w-5" /> },
+    { path: "/racunovodstvo", label: "Računodstvo", icon: <Calculator className="h-5 w-5" /> },
+    { path: "/brzi-link", label: "Brzi link", icon: <LinkIcon className="h-5 w-5" /> },
+    { path: "/fakture", label: "Fakture", icon: <FileText className="h-5 w-5" /> },
     { path: "/design", label: "Dizajn", icon: <Palette className="h-5 w-5" /> },
     { path: "/analytics", label: "Analitika", icon: <BarChart className="h-5 w-5" /> },
     { path: "/settings", label: "Podešavanja", icon: <Settings className="h-5 w-5" /> },
@@ -33,7 +54,7 @@ export const AdminSidebar = () => {
   ];
 
   return (
-    <aside className="w-64 h-screen fixed left-0 top-0 bg-white shadow-md border-r border-border/30 p-5 hidden md:flex md:flex-col">
+    <aside className="w-64 h-screen fixed left-0 top-0 bg-[#fff6ed] shadow-md border-r border-border/30 p-5 hidden md:flex md:flex-col">
       <div className="flex flex-col h-full">
         <div className="flex items-center space-x-2 pb-6 mb-6 border-b border-border/30">
           <Link to="/dashboard" className="font-bold text-xl">

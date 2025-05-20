@@ -27,7 +27,8 @@ export const ProductCard = ({ product }: ProductCardProps) => {
       price: product.price,
       quantity: 1,
       image: product.image,
-      storeId: product.storeId // Dodajemo storeId u korpu
+      // Ovde ćemo dodeliti storeId samo ako postoji, a ne kao obavezno polje
+      ...(product.storeId && { storeId: product.storeId })
     });
   };
   
