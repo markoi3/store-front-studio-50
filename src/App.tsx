@@ -8,6 +8,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { CartProvider } from "@/contexts/CartContext";
 
 // Public Pages
+import SaasHome from "./pages/SaasHome";
 import Home from "./pages/Home";
 import Shop from "./pages/Shop";
 import ProductDetail from "./pages/ProductDetail";
@@ -31,6 +32,9 @@ import Design from "./pages/admin/Design";
 import Analytics from "./pages/admin/Analytics";
 import Profile from "./pages/admin/Profile";
 
+// Store Pages
+import Storefront from "./pages/store/Storefront";
+
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -44,8 +48,22 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <Routes>
-              {/* Public Routes */}
-              <Route path="/" element={<Home />} />
+              {/* SaaS Platform Home */}
+              <Route path="/" element={<SaasHome />} />
+              
+              {/* Store Routes */}
+              <Route path="/store/:storeId" element={<Storefront />} />
+              <Route path="/store/:storeId/product/:slug" element={<ProductDetail />} />
+              <Route path="/store/:storeId/cart" element={<Cart />} />
+              <Route path="/store/:storeId/checkout" element={<Checkout />} />
+              <Route path="/store/:storeId/thank-you" element={<ThankYou />} />
+              <Route path="/store/:storeId/about" element={<About />} />
+              <Route path="/store/:storeId/contact" element={<Contact />} />
+              <Route path="/store/:storeId/terms" element={<Terms />} />
+              <Route path="/store/:storeId/privacy" element={<Privacy />} />
+              
+              {/* Demo Store Routes (for testing) */}
+              <Route path="/home" element={<Home />} />
               <Route path="/shop" element={<Shop />} />
               <Route path="/product/:slug" element={<ProductDetail />} />
               <Route path="/cart" element={<Cart />} />

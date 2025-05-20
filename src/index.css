@@ -92,7 +92,10 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground font-mono;
+    @apply bg-background text-foreground font-sans;
+  }
+  .font-numeric {
+    font-family: 'JetBrains Mono', monospace;
   }
 }
 
@@ -119,5 +122,17 @@
   
   .product-card {
     @apply bg-card p-4 rounded-lg shadow-custom hover:shadow-lg transition-shadow;
+  }
+
+  .dashboard-card {
+    @apply bg-white p-6 rounded-xl shadow-md border border-border/40 hover:shadow-lg transition-all;
+  }
+
+  .stat-value {
+    @apply text-2xl font-numeric font-bold;
+  }
+  
+  .stat-label {
+    @apply text-sm text-muted-foreground;
   }
 }
