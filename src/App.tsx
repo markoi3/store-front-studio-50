@@ -31,6 +31,9 @@ import Settings from "./pages/admin/Settings";
 import Design from "./pages/admin/Design";
 import Analytics from "./pages/admin/Analytics";
 import Profile from "./pages/admin/Profile";
+import Racunovodstvo from "./pages/admin/Racunovodstvo";
+import BrziLink from "./pages/admin/BrziLink";
+import Fakture from "./pages/admin/Fakture";
 
 // Store Pages
 import Storefront from "./pages/store/Storefront";
@@ -81,10 +84,14 @@ const App = () => (
               <Route path="/products" element={<Products />} />
               <Route path="/products/new" element={<NewProduct />} />
               <Route path="/orders" element={<Orders />} />
+              <Route path="/orders/:id" element={<Orders />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/design" element={<Design />} />
               <Route path="/analytics" element={<Analytics />} />
               <Route path="/profile" element={<Profile />} />
+              <Route path="/racunovodstvo" element={<Racunovodstvo />} />
+              <Route path="/brzi-link" element={<BrziLink />} />
+              <Route path="/fakture" element={<Fakture />} />
               
               {/* 404 Route */}
               <Route path="*" element={<NotFound />} />
