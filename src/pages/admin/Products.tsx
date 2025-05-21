@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,11 +8,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { Product } from "@/components/shop/ProductCard";
 
 // Sample products data with additional fields
-const allProducts: (Product & {
+const defaultProducts: (Product & {
   stock: number;
   category: string;
   published: boolean;
@@ -100,10 +99,44 @@ const allProducts: (Product & {
   }
 ];
 
+// Function to load stored products from localStorage
+const getStoredProducts = () => {
+  try {
+    const storedProducts = localStorage.getItem("products");
+    return storedProducts ? JSON.parse(storedProducts) : [];
+  } catch (error) {
+    console.error("Error loading stored products:", error);
+    return [];
+  }
+};
+
 const Products = () => {
-  const [products, setProducts] = useState(allProducts);
+  const [products, setProducts] = useState(defaultProducts);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
+  const location = useLocation();
+  
+  // Load products on mount and when coming back to this page
+  useEffect(() => {
+    const loadProducts = () => {
+      const storedProducts = getStoredProducts();
+      
+      // Merge default products with stored products
+      // If a product with the same ID exists in both, use the stored version
+      const storedIds = storedProducts.map(p => p.id);
+      const filteredDefaultProducts = defaultProducts.filter(p => !storedIds.includes(p.id));
+      
+      setProducts([...filteredDefaultProducts, ...storedProducts]);
+    };
+    
+    loadProducts();
+    
+    // Show toast if there's a success message in location state
+    if (location.state?.success) {
+      // Remove the success message after using it to prevent showing it again on page refresh
+      history.replaceState({}, document.title);
+    }
+  }, [location]);
   
   // Filter and search products
   const filteredProducts = products.filter((product) => {
@@ -120,15 +153,29 @@ const Products = () => {
   });
   
   const handleDelete = (id: string) => {
-    setProducts(products.filter((p) => p.id !== id));
+    // Remove from state
+    const updatedProducts = products.filter((p) => p.id !== id);
+    setProducts(updatedProducts);
+    
+    // Update localStorage
+    const storedProducts = getStoredProducts();
+    const updatedStoredProducts = storedProducts.filter(p => p.id !== id);
+    localStorage.setItem("products", JSON.stringify(updatedStoredProducts));
   };
   
   const handleTogglePublish = (id: string) => {
-    setProducts(
-      products.map((p) =>
-        p.id === id ? { ...p, published: !p.published } : p
-      )
+    // Update in state
+    const updatedProducts = products.map((p) =>
+      p.id === id ? { ...p, published: !p.published } : p
     );
+    setProducts(updatedProducts);
+    
+    // Update in localStorage
+    const storedProducts = getStoredProducts();
+    const updatedStoredProducts = storedProducts.map(p => 
+      p.id === id ? { ...p, published: !p.published } : p
+    );
+    localStorage.setItem("products", JSON.stringify(updatedStoredProducts));
   };
   
   return (
@@ -223,7 +270,7 @@ const Products = () => {
                         <div className="flex items-center space-x-3">
                           <div className="w-10 h-10 rounded-md overflow-hidden bg-accent">
                             <img
-                              src={product.image}
+                              src={product.image || "https://via.placeholder.com/100"}
                               alt={product.name}
                               className="w-full h-full object-cover"
                             />

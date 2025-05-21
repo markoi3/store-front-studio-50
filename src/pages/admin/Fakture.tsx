@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+
+import { useState, useEffect, useRef } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,9 +33,15 @@ import {
   AlertCircle,
   FileCheck,
   FileClock,
+  Mail,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 // Initial fake data
 let fakturePodaci = [
@@ -109,6 +116,11 @@ const getStoredItems = () => {
       allItems = [...allItems, ...parsedPredracuni];
     }
     
+    if (storedObracuni) {
+      const storedObracuni = JSON.parse(localStorage.getItem("obracuni") || "[]");
+      allItems = [...allItems, ...storedObracuni];
+    }
+    
     return allItems;
   } catch (error) {
     console.error("Error loading stored items:", error);
@@ -123,6 +135,7 @@ const Fakture = () => {
   const [search, setSearch] = useState<string>("");
   const [activeTab, setActiveTab] = useState<string>("sve");
   const [stavke, setStavke] = useState(fakturePodaci);
+  const [emailAddress, setEmailAddress] = useState("");
   const { toast } = useToast();
   const location = useLocation();
 
@@ -174,7 +187,8 @@ const Fakture = () => {
     // Filter po aktivnom tabu
     const tabMatch = activeTab === "sve" || 
       (activeTab === "fakture" && faktura.tip === "faktura") || 
-      (activeTab === "predračuni" && faktura.tip === "predračun");
+      (activeTab === "predračuni" && faktura.tip === "predračun") ||
+      (activeTab === "obračuni" && faktura.tip === "obračun");
     
     return tipMatch && statusMatch && periodMatch && searchMatch && tabMatch;
   });
@@ -183,6 +197,31 @@ const Fakture = () => {
   const ukupanIznos = filtriraneStavke.reduce((sum, faktura) => sum + faktura.iznos, 0);
   const ukupanPDV = filtriraneStavke.reduce((sum, faktura) => sum + faktura.pdv, 0);
   const ukupnoBezPDV = ukupanIznos - ukupanPDV;
+  
+  const handleDownloadPDF = (id: string) => {
+    // U stvarnoj implementaciji, ovde bi bio kod za generisanje PDF-a
+    toast({
+      title: "PDF preuzet",
+      description: `Dokument ${id} je uspešno preuzet kao PDF`,
+    });
+  };
+  
+  const handleSendEmail = (id: string, email: string) => {
+    if (!email || !email.includes('@')) {
+      toast({
+        title: "Greška",
+        description: "Molimo unesite ispravnu email adresu",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // U stvarnoj implementaciji, ovde bi bio kod za slanje emaila
+    toast({
+      title: "Email poslat",
+      description: `Dokument ${id} je uspešno poslat na ${email}`,
+    });
+  };
 
   return (
     <AdminLayout>
@@ -251,6 +290,7 @@ const Fakture = () => {
               <TabsTrigger value="sve">Sve</TabsTrigger>
               <TabsTrigger value="fakture">Fakture</TabsTrigger>
               <TabsTrigger value="predračuni">Predračuni</TabsTrigger>
+              <TabsTrigger value="obračuni">Obračuni</TabsTrigger>
             </TabsList>
             
             <div className="flex flex-wrap gap-2">
@@ -321,11 +361,14 @@ const Fakture = () => {
                           <div className="flex items-center">
                             {faktura.tip === "faktura" ? (
                               <FileCheck className="h-4 w-4 mr-1 text-blue-500" />
-                            ) : (
+                            ) : faktura.tip === "predračun" ? (
                               <FileClock className="h-4 w-4 mr-1 text-amber-500" />
+                            ) : (
+                              <FileText className="h-4 w-4 mr-1 text-green-500" />
                             )}
                             <span className="capitalize">
-                              {faktura.tip === "faktura" ? "Faktura" : "Predračun"}
+                              {faktura.tip === "faktura" ? "Faktura" : 
+                               faktura.tip === "predračun" ? "Predračun" : "Obračun"}
                             </span>
                           </div>
                         </TableCell>
@@ -348,9 +391,44 @@ const Fakture = () => {
                           </span>
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button variant="ghost" size="sm">
-                            <Download className="h-4 w-4 mr-1" /> PDF
-                          </Button>
+                          <div className="flex justify-end gap-1">
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => handleDownloadPDF(faktura.id)}
+                            >
+                              <Download className="h-4 w-4 mr-1" /> PDF
+                            </Button>
+                            
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button variant="ghost" size="sm">
+                                  <Mail className="h-4 w-4 mr-1" /> Email
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-72" align="end">
+                                <div className="space-y-3">
+                                  <h4 className="font-medium">Pošalji email</h4>
+                                  <p className="text-sm text-muted-foreground">
+                                    Pošaljite {faktura.tip} {faktura.id} kao PDF prilog
+                                  </p>
+                                  <div className="space-y-2">
+                                    <Input
+                                      placeholder="Email adresa"
+                                      value={emailAddress}
+                                      onChange={(e) => setEmailAddress(e.target.value)}
+                                    />
+                                    <Button 
+                                      className="w-full"
+                                      onClick={() => handleSendEmail(faktura.id, emailAddress)}
+                                    >
+                                      <Mail className="h-4 w-4 mr-2" /> Pošalji
+                                    </Button>
+                                  </div>
+                                </div>
+                              </PopoverContent>
+                            </Popover>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))

@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,7 +13,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Link as LinkIcon, Copy, Share2 } from "lucide-react";
+import { Link, LinkIcon, Copy, Share2, ExternalLink } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
   Select,
@@ -23,11 +23,36 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+
+// Load stored links from localStorage or return default empty array
+const getStoredLinks = () => {
+  try {
+    const links = localStorage.getItem("paymentLinks");
+    return links ? JSON.parse(links) : [];
+  } catch (error) {
+    console.error("Error loading payment links:", error);
+    return [];
+  }
+};
+
+// Save links to localStorage
+const saveLinks = (links) => {
+  localStorage.setItem("paymentLinks", JSON.stringify(links));
+};
 
 const BrziLink = () => {
   const { toast } = useToast();
   const [linkId, setLinkId] = useState<string | null>(null);
   const [generatedLink, setGeneratedLink] = useState<string | null>(null);
+  const [savedLinks, setSavedLinks] = useState<any[]>([]);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -36,6 +61,12 @@ const BrziLink = () => {
     paymentMethod: "card",
     expiryDate: "",
   });
+
+  // Load any existing links when component mounts
+  useEffect(() => {
+    const links = getStoredLinks();
+    setSavedLinks(links);
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -47,12 +78,29 @@ const BrziLink = () => {
   };
 
   const generateLink = () => {
-    // U stvarnoj aplikaciji, ovde bi poslali podatke na server
-    // i dobili jedinstveni identifikator za link
+    // Generate a unique ID for the link
     const id = `BL-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
     setLinkId(id);
     
-    // Konstruišemo link za deljenje
+    // Create the link object with all necessary data
+    const newLink = {
+      id: id,
+      name: formData.name,
+      description: formData.description,
+      price: formData.price,
+      type: formData.type,
+      paymentMethod: formData.paymentMethod,
+      expiryDate: formData.expiryDate,
+      createdAt: new Date().toISOString(),
+      status: "active"
+    };
+    
+    // Add to saved links
+    const updatedLinks = [...savedLinks, newLink];
+    setSavedLinks(updatedLinks);
+    saveLinks(updatedLinks);
+    
+    // Construct the full link URL
     const baseUrl = window.location.origin;
     const fullLink = `${baseUrl}/pay/${id}`;
     setGeneratedLink(fullLink);
@@ -301,16 +349,67 @@ const BrziLink = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="text-center py-8 text-muted-foreground">
-                  <LinkIcon className="mx-auto h-12 w-12 opacity-20 mb-3" />
-                  <p>Još uvek nemate kreiranih linkova</p>
-                  <Button
-                    variant="link"
-                    onClick={() => document.querySelector('[value="create"]')?.dispatchEvent(new Event('click'))}
-                  >
-                    Napravite svoj prvi brzi link
-                  </Button>
-                </div>
+                {savedLinks.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <LinkIcon className="mx-auto h-12 w-12 opacity-20 mb-3" />
+                    <p>Još uvek nemate kreiranih linkova</p>
+                    <Button
+                      variant="link"
+                      onClick={() => document.querySelector('[value="create"]')?.dispatchEvent(new Event('click'))}
+                    >
+                      Napravite svoj prvi brzi link
+                    </Button>
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>ID</TableHead>
+                        <TableHead>Naziv</TableHead>
+                        <TableHead>Iznos</TableHead>
+                        <TableHead>Datum kreiranja</TableHead>
+                        <TableHead className="text-right">Akcije</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {savedLinks.map((link) => (
+                        <TableRow key={link.id}>
+                          <TableCell className="font-medium">{link.id}</TableCell>
+                          <TableCell>{link.name}</TableCell>
+                          <TableCell>{link.price} RSD</TableCell>
+                          <TableCell>{new Date(link.createdAt).toLocaleDateString('sr-RS')}</TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end space-x-2">
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => {
+                                  const url = `${window.location.origin}/pay/${link.id}`;
+                                  navigator.clipboard.writeText(url);
+                                  toast({ 
+                                    title: "Kopirano", 
+                                    description: "Link je kopiran u clipboard" 
+                                  });
+                                }}
+                              >
+                                <Copy className="h-4 w-4 mr-1" /> Kopiraj
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => {
+                                  window.open(`${window.location.origin}/pay/${link.id}`, '_blank');
+                                }}
+                              >
+                                <ExternalLink className="h-4 w-4 mr-1" /> Otvori
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
               </CardContent>
             </Card>
           </TabsContent>

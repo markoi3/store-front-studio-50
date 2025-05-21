@@ -3,15 +3,33 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { ShopLayout } from "@/components/layout/ShopLayout";
 import { Button } from "@/components/ui/button";
+import { Product } from "@/components/shop/ProductCard";
+import { Link } from "react-router-dom";
+
+// Function to get stored products
+const getStoredProducts = () => {
+  try {
+    const products = localStorage.getItem("products");
+    return products ? JSON.parse(products) : [];
+  } catch (error) {
+    console.error("Error loading products:", error);
+    return [];
+  }
+};
 
 const Storefront = () => {
   const { storeId } = useParams();
   const [store, setStore] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [storeProducts, setStoreProducts] = useState<Product[]>([]);
   
   useEffect(() => {
-    // U pravoj aplikaciji, ovde bi dobavili podatke o prodavnici sa API-ja
-    // Za sada, koristimo mock podatke
+    // Load stored products that are published
+    const products = getStoredProducts().filter((p: any) => p.published);
+    setStoreProducts(products);
+    
+    // In a real application, we would fetch store data from an API
+    // For now, using mock data
     setTimeout(() => {
       setStore({
         id: storeId,
@@ -85,6 +103,41 @@ const Storefront = () => {
     );
   }
   
+  // Default products if no custom products available
+  const defaultProducts = [
+    {
+      id: "default1",
+      name: "Proizvod 1",
+      price: 9900,
+      image: "https://via.placeholder.com/300",
+      slug: "proizvod-1"
+    },
+    {
+      id: "default2",
+      name: "Proizvod 2",
+      price: 12900,
+      image: "https://via.placeholder.com/300",
+      slug: "proizvod-2"
+    },
+    {
+      id: "default3",
+      name: "Proizvod 3",
+      price: 7900,
+      image: "https://via.placeholder.com/300",
+      slug: "proizvod-3"
+    },
+    {
+      id: "default4",
+      name: "Proizvod 4",
+      price: 15900,
+      image: "https://via.placeholder.com/300",
+      slug: "proizvod-4"
+    }
+  ];
+  
+  // Use stored products if available, otherwise use defaults
+  const displayProducts = storeProducts.length > 0 ? storeProducts : defaultProducts;
+  
   return (
     <ShopLayout>
       <div className="space-y-12">
@@ -117,12 +170,28 @@ const Storefront = () => {
               {store.elements.find((el: any) => el.type === 'products').settings.title}
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {[1, 2, 3, 4].map((product) => (
-                <div key={product} className="product-card">
-                  <div className="aspect-square bg-accent mb-3 rounded-md"></div>
-                  <h3 className="font-medium">Proizvod {product}</h3>
-                  <p className="text-muted-foreground mb-3 font-numeric">9.900 RSD</p>
-                  <Button className="w-full">Dodaj u korpu</Button>
+              {displayProducts.slice(0, 4).map((product: Product) => (
+                <div key={product.id} className="product-card">
+                  <div className="aspect-square bg-accent mb-3 rounded-md overflow-hidden">
+                    {product.image ? (
+                      <img 
+                        src={product.image} 
+                        alt={product.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-muted"></div>
+                    )}
+                  </div>
+                  <h3 className="font-medium">{product.name}</h3>
+                  <p className="text-muted-foreground mb-3 font-numeric">
+                    {typeof product.price === 'number' 
+                      ? product.price.toLocaleString("sr-RS") 
+                      : parseFloat(product.price).toLocaleString("sr-RS")} RSD
+                  </p>
+                  <Link to={`/product/${product.slug || product.id}`}>
+                    <Button className="w-full">Detaljnije</Button>
+                  </Link>
                 </div>
               ))}
             </div>

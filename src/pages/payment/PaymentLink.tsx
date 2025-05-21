@@ -12,28 +12,6 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useToast } from "@/hooks/use-toast";
 import { Check, CreditCard, Share2 } from "lucide-react";
 
-// Simulirani podaci za brzi link
-const mockPaymentLinks = [
-  {
-    id: "BL-A1B2C3",
-    name: "Web dizajn - Home page",
-    description: "Izrada home page-a za web sajt sa modernim interfejsom",
-    price: "15000",
-    type: "service",
-    paymentMethod: "all",
-    expiryDate: "2025-12-31",
-  },
-  {
-    id: "BL-X9Y8Z7",
-    name: "Konsultacije - 1h",
-    description: "Jednočasovna konsultacija o digitalnom marketingu",
-    price: "5000",
-    type: "service",
-    paymentMethod: "card",
-    expiryDate: "",
-  }
-];
-
 // Schema validacija za karticu
 const cardFormSchema = z.object({
   cardNumber: z.string().min(16, "Broj kartice mora imati najmanje 16 cifara"),
@@ -43,6 +21,17 @@ const cardFormSchema = z.object({
 });
 
 type CardFormValues = z.infer<typeof cardFormSchema>;
+
+// Function to get payment links from localStorage
+const getPaymentLinks = () => {
+  try {
+    const storedLinks = localStorage.getItem("paymentLinks");
+    return storedLinks ? JSON.parse(storedLinks) : [];
+  } catch (error) {
+    console.error("Error loading payment links:", error);
+    return [];
+  }
+};
 
 const PaymentLink = () => {
   const { linkId } = useParams();
@@ -65,10 +54,11 @@ const PaymentLink = () => {
   });
 
   useEffect(() => {
-    // Simulacija učitavanja podataka sa servera
+    // Load payment links from localStorage
+    const paymentLinks = getPaymentLinks();
+    const foundLink = paymentLinks.find((link: any) => link.id === linkId);
+    
     setTimeout(() => {
-      const foundLink = mockPaymentLinks.find(link => link.id === linkId);
-      
       if (foundLink) {
         setPaymentLink(foundLink);
       } else {
@@ -80,7 +70,7 @@ const PaymentLink = () => {
       }
       
       setLoading(false);
-    }, 1000);
+    }, 500);
   }, [linkId, toast]);
 
   const onSubmit = (data: CardFormValues) => {
@@ -96,6 +86,38 @@ const PaymentLink = () => {
         title: "Plaćanje uspešno",
         description: "Vaša transakcija je uspešno obrađena",
       });
+      
+      // Update link status in localStorage (optional)
+      const paymentLinks = getPaymentLinks();
+      const updatedLinks = paymentLinks.map((link: any) => {
+        if (link.id === linkId) {
+          return { ...link, status: "completed" };
+        }
+        return link;
+      });
+      
+      localStorage.setItem("paymentLinks", JSON.stringify(updatedLinks));
+      
+      // Create transaction record in localStorage
+      const transactions = JSON.parse(localStorage.getItem("transactions") || "[]");
+      transactions.push({
+        id: `TRX-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
+        linkId: linkId,
+        paymentType: "card",
+        amount: paymentLink.price,
+        status: "completed",
+        date: new Date().toISOString(),
+        items: [
+          {
+            name: paymentLink.name,
+            description: paymentLink.description,
+            price: paymentLink.price,
+            quantity: 1
+          }
+        ]
+      });
+      localStorage.setItem("transactions", JSON.stringify(transactions));
+      
     }, 2000);
   };
 
