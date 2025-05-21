@@ -26,6 +26,7 @@ import Register from "./pages/Register";
 import Dashboard from "./pages/admin/Dashboard";
 import Products from "./pages/admin/Products";
 import NewProduct from "./pages/admin/NewProduct";
+import EditProduct from "./pages/admin/EditProduct";
 import Orders from "./pages/admin/Orders";
 import Settings from "./pages/admin/Settings";
 import Design from "./pages/admin/Design";
@@ -34,9 +35,15 @@ import Profile from "./pages/admin/Profile";
 import Racunovodstvo from "./pages/admin/Racunovodstvo";
 import BrziLink from "./pages/admin/BrziLink";
 import Fakture from "./pages/admin/Fakture";
+import NovaFaktura from "./pages/admin/NovaFaktura";
+import NoviPredracun from "./pages/admin/NoviPredracun";
+import NoviObracun from "./pages/admin/NoviObracun";
 
 // Store Pages
 import Storefront from "./pages/store/Storefront";
+
+// Payment Pages
+import PaymentLink from "./pages/payment/PaymentLink";
 
 import NotFound from "./pages/NotFound";
 
@@ -83,6 +90,7 @@ const App = () => (
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/products" element={<Products />} />
               <Route path="/products/new" element={<NewProduct />} />
+              <Route path="/products/:id" element={<EditProduct />} />
               <Route path="/orders" element={<Orders />} />
               <Route path="/orders/:id" element={<Orders />} />
               <Route path="/settings" element={<Settings />} />
@@ -92,6 +100,12 @@ const App = () => (
               <Route path="/racunovodstvo" element={<Racunovodstvo />} />
               <Route path="/brzi-link" element={<BrziLink />} />
               <Route path="/fakture" element={<Fakture />} />
+              <Route path="/fakture/nova" element={<NovaFaktura />} />
+              <Route path="/predracun/novi" element={<NoviPredracun />} />
+              <Route path="/obracun/novi" element={<NoviObracun />} />
+              
+              {/* Payment Links */}
+              <Route path="/pay/:linkId" element={<PaymentLink />} />
               
               {/* 404 Route */}
               <Route path="*" element={<NotFound />} />
