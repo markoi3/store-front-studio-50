@@ -30,7 +30,7 @@ const Storefront = () => {
     console.log("All products:", allProducts);
     
     // Filter for published products
-    const publishedProducts = allProducts.filter((p: any) => p.published);
+    const publishedProducts = allProducts.filter((p: any) => p.published !== false); // Default to shown if not specified
     console.log("Published products:", publishedProducts);
     
     // Add storeId to each product for correct routing

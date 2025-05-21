@@ -46,6 +46,9 @@ import Storefront from "./pages/store/Storefront";
 // Payment Pages
 import PaymentLink from "./pages/payment/PaymentLink";
 
+// Public Document Pages
+import PublicDocument from "./pages/public/PublicDocument";
+
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -108,6 +111,9 @@ const App = () => (
               
               {/* Payment Links */}
               <Route path="/pay/:linkId" element={<PaymentLink />} />
+              
+              {/* Public Document Pages */}
+              <Route path="/public/:docType/:docId" element={<PublicDocument />} />
               
               {/* 404 Route */}
               <Route path="*" element={<NotFound />} />

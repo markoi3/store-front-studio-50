@@ -1,5 +1,4 @@
-
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,6 +33,8 @@ import {
   FileCheck,
   FileClock,
   Mail,
+  Share2,
+  Link as LinkIcon,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
@@ -136,6 +137,7 @@ const Fakture = () => {
   const [activeTab, setActiveTab] = useState<string>("sve");
   const [stavke, setStavke] = useState(fakturePodaci);
   const [emailAddress, setEmailAddress] = useState("");
+  const [shareLink, setShareLink] = useState("");
   const { toast } = useToast();
   const location = useLocation();
 
@@ -220,6 +222,19 @@ const Fakture = () => {
     toast({
       title: "Email poslat",
       description: `Dokument ${id} je uspešno poslat na ${email}`,
+    });
+  };
+
+  const handleShareLink = (docType: string, id: string) => {
+    const publicUrl = `${window.location.origin}/public/${docType}/${id}`;
+    setShareLink(publicUrl);
+    
+    // Copy to clipboard
+    navigator.clipboard.writeText(publicUrl).then(() => {
+      toast({
+        title: "Link kopiran",
+        description: "Javni link je kopiran u clipboard",
+      });
     });
   };
 
@@ -424,6 +439,44 @@ const Fakture = () => {
                                     >
                                       <Mail className="h-4 w-4 mr-2" /> Pošalji
                                     </Button>
+                                  </div>
+                                </div>
+                              </PopoverContent>
+                            </Popover>
+                            
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button variant="ghost" size="sm">
+                                  <Share2 className="h-4 w-4 mr-1" /> Deli
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-80" align="end">
+                                <div className="space-y-3">
+                                  <h4 className="font-medium">Javni link za deljenje</h4>
+                                  <p className="text-sm text-muted-foreground">
+                                    Kopirajte link do javne stranice {faktura.tip === "faktura" ? "fakture" : 
+                                    faktura.tip === "predračun" ? "predračuna" : "obračuna"}
+                                  </p>
+                                  <div className="space-y-2">
+                                    <div className="flex items-center">
+                                      <Input
+                                        value={shareLink || `${window.location.origin}/public/${faktura.tip}/${faktura.id}`}
+                                        readOnly
+                                      />
+                                      <Button 
+                                        variant="ghost" 
+                                        size="icon"
+                                        className="ml-2"
+                                        onClick={() => handleShareLink(faktura.tip, faktura.id)}
+                                      >
+                                        <LinkIcon className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                    <Link to={`/public/${faktura.tip}/${faktura.id}`} target="_blank">
+                                      <Button className="w-full">
+                                        <Share2 className="h-4 w-4 mr-2" /> Otvori javnu stranicu
+                                      </Button>
+                                    </Link>
                                   </div>
                                 </div>
                               </PopoverContent>

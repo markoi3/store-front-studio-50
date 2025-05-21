@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -22,10 +21,19 @@ const cardFormSchema = z.object({
 
 type CardFormValues = z.infer<typeof cardFormSchema>;
 
-// Function to get payment links from localStorage
+// Function to get payment links from localStorage with debugging
 const getPaymentLinks = () => {
   try {
     const storedLinks = localStorage.getItem("paymentLinks");
+    console.log("Raw paymentLinks from localStorage:", storedLinks);
+    
+    // If there are no links, check if there are any in "brziLinkovi"
+    if (!storedLinks) {
+      const brziLinkovi = localStorage.getItem("brziLinkovi");
+      console.log("Raw brziLinkovi from localStorage:", brziLinkovi);
+      return brziLinkovi ? JSON.parse(brziLinkovi) : [];
+    }
+    
     return storedLinks ? JSON.parse(storedLinks) : [];
   } catch (error) {
     console.error("Error loading payment links:", error);
@@ -54,16 +62,24 @@ const PaymentLink = () => {
   });
 
   useEffect(() => {
-    // Load payment links from localStorage
-    const paymentLinks = getPaymentLinks();
-    console.log("Available payment links:", paymentLinks);
-    console.log("Looking for link ID:", linkId);
+    console.log("Current linkId param:", linkId);
     
-    const foundLink = paymentLinks.find((link: any) => link.id === linkId);
+    // Check both paymentLinks and brziLinkovi storages
+    let paymentLinks = getPaymentLinks();
+    let foundLink = paymentLinks.find((link: any) => link.id === linkId);
+    
+    // If link is not found in paymentLinks, check brziLinkovi
+    if (!foundLink) {
+      const brziLinkovi = JSON.parse(localStorage.getItem("brziLinkovi") || "[]");
+      console.log("Checking brziLinkovi:", brziLinkovi);
+      foundLink = brziLinkovi.find((link: any) => link.id === linkId);
+    }
+    
+    console.log("Found payment link:", foundLink);
     
     setTimeout(() => {
       if (foundLink) {
-        console.log("Found payment link:", foundLink);
+        console.log("Setting payment link:", foundLink);
         setPaymentLink(foundLink);
       } else {
         console.log("Payment link not found");
@@ -75,7 +91,7 @@ const PaymentLink = () => {
       }
       
       setLoading(false);
-    }, 500);
+    }, 300);
   }, [linkId, toast]);
 
   const onSubmit = (data: CardFormValues) => {
@@ -92,16 +108,22 @@ const PaymentLink = () => {
         description: "Vaša transakcija je uspešno obrađena",
       });
       
-      // Update link status in localStorage (optional)
-      const paymentLinks = getPaymentLinks();
-      const updatedLinks = paymentLinks.map((link: any) => {
-        if (link.id === linkId) {
-          return { ...link, status: "completed" };
-        }
-        return link;
-      });
+      // Update link status in localStorage (both paymentLinks and brziLinkovi)
+      const updateLinkStatus = (storageKey: string) => {
+        const storedLinks = JSON.parse(localStorage.getItem(storageKey) || "[]");
+        const updatedLinks = storedLinks.map((link: any) => {
+          if (link.id === linkId) {
+            return { ...link, status: "completed" };
+          }
+          return link;
+        });
+        
+        localStorage.setItem(storageKey, JSON.stringify(updatedLinks));
+      };
       
-      localStorage.setItem("paymentLinks", JSON.stringify(updatedLinks));
+      // Update both storages
+      updateLinkStatus("paymentLinks");
+      updateLinkStatus("brziLinkovi");
       
       // Create transaction record in localStorage
       const transactions = JSON.parse(localStorage.getItem("transactions") || "[]");
@@ -213,16 +235,16 @@ const PaymentLink = () => {
     <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>{paymentLink.name}</CardTitle>
+          <CardTitle>{paymentLink?.name}</CardTitle>
           <CardDescription>
-            {paymentLink.description}
+            {paymentLink?.description}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="border-t border-b py-4">
             <div className="flex justify-between items-center">
               <span className="text-muted-foreground">Iznos</span>
-              <span className="font-bold text-xl">{Number(paymentLink.price).toLocaleString("sr-RS")} RSD</span>
+              <span className="font-bold text-xl">{paymentLink ? Number(paymentLink.price).toLocaleString("sr-RS") : "0"} RSD</span>
             </div>
           </div>
           
