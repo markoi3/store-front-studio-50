@@ -5,7 +5,6 @@ import {
   Package, 
   ShoppingCart, 
   Settings, 
-  Palette, 
   BarChart, 
   User, 
   LogOut,
@@ -18,14 +17,11 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 
-// Definišemo interface za User da bismo dodali polja koja nedostaju
-interface StoreInfo {
-  slug?: string;
-  name?: string;
-}
-
 interface ExtendedUser {
-  store?: StoreInfo;
+  store?: {
+    slug?: string;
+    name?: string;
+  };
   username?: string;
   [key: string]: any;
 }
@@ -47,7 +43,6 @@ export const AdminSidebar = () => {
     { path: "/racunovodstvo", label: "Računodstvo", icon: <Calculator className="h-5 w-5" /> },
     { path: "/brzi-link", label: "Brzi link", icon: <LinkIcon className="h-5 w-5" /> },
     { path: "/fakture", label: "Fakture", icon: <FileText className="h-5 w-5" /> },
-    { path: "/design", label: "Dizajn", icon: <Palette className="h-5 w-5" /> },
     { path: "/analytics", label: "Analitika", icon: <BarChart className="h-5 w-5" /> },
     { path: "/settings", label: "Podešavanja", icon: <Settings className="h-5 w-5" /> },
     { path: "/profile", label: "Profil", icon: <User className="h-5 w-5" /> },
@@ -81,7 +76,7 @@ export const AdminSidebar = () => {
               to={item.path}
               className={cn(
                 "flex items-center space-x-3 px-4 py-2.5 rounded-lg text-sm transition-colors",
-                pathname === item.path
+                pathname === item.path || (item.path === "/settings" && pathname === "/design")
                   ? "bg-primary text-primary-foreground font-medium shadow-sm"
                   : "text-muted-foreground hover:bg-accent hover:text-foreground"
               )}

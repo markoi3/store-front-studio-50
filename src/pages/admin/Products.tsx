@@ -11,6 +11,7 @@ import {
 import { Link, useLocation } from "react-router-dom";
 import { Product } from "@/components/shop/ProductCard";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 // Sample products data with additional fields
 const defaultProducts: (Product & {
@@ -117,6 +118,7 @@ const Products = () => {
   const [filter, setFilter] = useState("all");
   const location = useLocation();
   const { toast } = useToast();
+  const { user } = useAuth();
   
   // Load products on mount and when coming back to this page
   useEffect(() => {
@@ -124,12 +126,17 @@ const Products = () => {
       const storedProducts = getStoredProducts();
       console.log("Stored products:", storedProducts);
       
+      // Filter products to only show those belonging to the current user
+      // In a real app, you'd have a userId field on each product
+      // For this demo, we'll just show all stored products plus default ones
+      const userProducts = storedProducts.filter((p: any) => !p.userId || p.userId === user?.id);
+      
       // Merge default products with stored products
       // If a product with the same ID exists in both, use the stored version
-      const storedIds = storedProducts.map(p => p.id);
+      const storedIds = userProducts.map((p: any) => p.id);
       const filteredDefaultProducts = defaultProducts.filter(p => !storedIds.includes(p.id));
       
-      setProducts([...filteredDefaultProducts, ...storedProducts]);
+      setProducts([...filteredDefaultProducts, ...userProducts]);
     };
     
     loadProducts();
@@ -144,7 +151,7 @@ const Products = () => {
       // Remove the success message after using it to prevent showing it again on page refresh
       history.replaceState({}, document.title);
     }
-  }, [location, toast]);
+  }, [location, toast, user?.id]);
   
   // Filter and search products
   const filteredProducts = products.filter((product) => {
@@ -169,6 +176,11 @@ const Products = () => {
     const storedProducts = getStoredProducts();
     const updatedStoredProducts = storedProducts.filter(p => p.id !== id);
     localStorage.setItem("products", JSON.stringify(updatedStoredProducts));
+    
+    toast({
+      title: "Proizvod obrisan",
+      description: "Proizvod je uspešno obrisan",
+    });
   };
   
   const handleTogglePublish = (id: string) => {
@@ -184,6 +196,14 @@ const Products = () => {
       p.id === id ? { ...p, published: !p.published } : p
     );
     localStorage.setItem("products", JSON.stringify(updatedStoredProducts));
+    
+    const product = products.find(p => p.id === id);
+    const newStatus = product?.published ? "skrivena" : "objavljena";
+    
+    toast({
+      title: `Proizvod ${newStatus}`,
+      description: `Proizvod je uspešno ${newStatus}`,
+    });
   };
   
   return (

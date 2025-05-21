@@ -7,6 +7,27 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Download, Mail, CreditCard } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+
+// Function to load documents from localStorage
+const loadDocuments = (docType: string) => {
+  try {
+    let data: any[] = [];
+    
+    if (docType === "faktura") {
+      data = JSON.parse(localStorage.getItem("fakture") || "[]");
+    } else if (docType === "predracun") {
+      data = JSON.parse(localStorage.getItem("predracuni") || "[]");
+    } else if (docType === "obracun") {
+      data = JSON.parse(localStorage.getItem("obracuni") || "[]");
+    }
+    
+    return data;
+  } catch (error) {
+    console.error(`Error loading ${docType} documents:`, error);
+    return [];
+  }
+};
 
 const PublicDocument = () => {
   const { docType, docId } = useParams();
@@ -16,46 +37,29 @@ const PublicDocument = () => {
   
   useEffect(() => {
     // Function to load document data
-    const loadDocument = () => {
+    const fetchDocument = () => {
       console.log(`Loading ${docType} with ID: ${docId}`);
-      let storedDocuments: any[] = [];
       
-      try {
-        if (docType === "faktura") {
-          // Check in fakture storage
-          const fakture = JSON.parse(localStorage.getItem("fakture") || "[]");
-          storedDocuments = fakture;
-        } else if (docType === "predracun") {
-          // Check in predracuni storage
-          const predracuni = JSON.parse(localStorage.getItem("predracuni") || "[]");
-          storedDocuments = predracuni;
-        } else if (docType === "obracun") {
-          // Check in obracuni storage
-          const obracuni = JSON.parse(localStorage.getItem("obracuni") || "[]");
-          storedDocuments = obracuni;
-        }
-        
-        console.log("Found documents:", storedDocuments);
-        
-        // Find the specific document
-        const foundDocument = storedDocuments.find((doc) => doc.id === docId);
-        
-        if (foundDocument) {
-          console.log("Document found:", foundDocument);
-          setDocument(foundDocument);
-        } else {
-          console.log("Document not found");
-          toast({
-            title: "Dokument nije pronađen",
-            description: "Traženi dokument ne postoji ili je obrisan.",
-            variant: "destructive",
-          });
-        }
-      } catch (error) {
-        console.error("Error loading document:", error);
+      if (!docType || !docId) {
+        setLoading(false);
+        return;
+      }
+      
+      // Load documents of the specified type
+      const documents = loadDocuments(docType);
+      console.log("Found documents:", documents);
+      
+      // Find the specific document by ID
+      const foundDocument = documents.find((doc) => doc.id === docId);
+      
+      if (foundDocument) {
+        console.log("Document found:", foundDocument);
+        setDocument(foundDocument);
+      } else {
+        console.log("Document not found");
         toast({
-          title: "Greška",
-          description: "Došlo je do greške prilikom učitavanja dokumenta.",
+          title: "Dokument nije pronađen",
+          description: "Traženi dokument ne postoji ili je obrisan.",
           variant: "destructive",
         });
       }
@@ -63,7 +67,7 @@ const PublicDocument = () => {
       setLoading(false);
     };
     
-    loadDocument();
+    fetchDocument();
   }, [docType, docId, toast]);
   
   // Function to convert docType to Serbian
@@ -90,6 +94,7 @@ const PublicDocument = () => {
   
   // Function to format date
   const formatDate = (dateString: string) => {
+    if (!dateString) return "";
     const date = new Date(dateString);
     return date.toLocaleDateString("sr-RS");
   };
@@ -137,7 +142,7 @@ const PublicDocument = () => {
             <div className="flex justify-between items-center">
               <div>
                 <p className="text-sm text-muted-foreground">{getDocTypeText()}</p>
-                <CardTitle className="text-2xl">{document.id}</CardTitle>
+                <CardTitle className="text-2xl">{document.broj || document.id}</CardTitle>
               </div>
               <div className="text-right">
                 <p className="text-sm text-muted-foreground">Datum izdavanja</p>
@@ -151,20 +156,24 @@ const PublicDocument = () => {
               <div>
                 <h3 className="font-semibold mb-2">Izdavalac</h3>
                 <div className="space-y-1">
-                  <p>{document.izdavalac?.naziv || "Vaša Firma d.o.o."}</p>
-                  <p>{document.izdavalac?.adresa || "Glavna ulica 123, Beograd"}</p>
-                  <p>PIB: {document.izdavalac?.pib || "123456789"}</p>
-                  <p>MB: {document.izdavalac?.mb || "12345678"}</p>
+                  <p>{document.izdavalac?.naziv || document.izdavalacNaziv || "Vaša Firma d.o.o."}</p>
+                  <p>{document.izdavalac?.adresa || document.izdavalacAdresa || "Glavna ulica 123, Beograd"}</p>
+                  <p>PIB: {document.izdavalac?.pib || document.izdavalacPib || "123456789"}</p>
+                  <p>MB: {document.izdavalac?.mb || document.izdavalacMb || "12345678"}</p>
                 </div>
               </div>
               
               <div>
                 <h3 className="font-semibold mb-2">Primalac</h3>
                 <div className="space-y-1">
-                  <p>{document.primalac?.naziv || document.klijent}</p>
-                  <p>{document.primalac?.adresa || ""}</p>
-                  {document.primalac?.pib && <p>PIB: {document.primalac.pib}</p>}
-                  {document.primalac?.mb && <p>MB: {document.primalac.mb}</p>}
+                  <p>{document.primalac?.naziv || document.primalacNaziv || document.klijent}</p>
+                  <p>{document.primalac?.adresa || document.primalacAdresa || ""}</p>
+                  {(document.primalac?.pib || document.primalacPib) && 
+                    <p>PIB: {document.primalac?.pib || document.primalacPib}</p>
+                  }
+                  {(document.primalac?.mb || document.primalacMb) && 
+                    <p>MB: {document.primalac?.mb || document.primalacMb}</p>
+                  }
                 </div>
               </div>
             </div>
@@ -181,30 +190,32 @@ const PublicDocument = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {document.stavke?.map((stavka: any, index: number) => (
-                    <TableRow key={index}>
-                      <TableCell>{stavka.opis || stavka.name}</TableCell>
-                      <TableCell className="text-right">{stavka.kolicina || stavka.quantity || 1}</TableCell>
-                      <TableCell className="text-right font-numeric">
-                        {typeof stavka.cena === "number" 
-                          ? stavka.cena.toLocaleString("sr-RS") 
-                          : Number(stavka.cena || stavka.price).toLocaleString("sr-RS")} RSD
-                      </TableCell>
-                      <TableCell className="text-right font-numeric">
-                        {typeof stavka.iznos === "number" 
-                          ? stavka.iznos.toLocaleString("sr-RS") 
-                          : (Number(stavka.cena || stavka.price) * Number(stavka.kolicina || stavka.quantity || 1)).toLocaleString("sr-RS")} RSD
-                      </TableCell>
-                    </TableRow>
-                  )) || (
+                  {document.stavke && document.stavke.length > 0 ? (
+                    document.stavke.map((stavka: any, index: number) => (
+                      <TableRow key={index}>
+                        <TableCell>{stavka.opis || stavka.name}</TableCell>
+                        <TableCell className="text-right">{stavka.kolicina || stavka.quantity || 1}</TableCell>
+                        <TableCell className="text-right font-numeric">
+                          {typeof stavka.cena === "number" 
+                            ? stavka.cena.toLocaleString("sr-RS") 
+                            : Number(stavka.cena || stavka.price || 0).toLocaleString("sr-RS")} RSD
+                        </TableCell>
+                        <TableCell className="text-right font-numeric">
+                          {typeof stavka.iznos === "number" 
+                            ? stavka.iznos.toLocaleString("sr-RS") 
+                            : (Number(stavka.cena || stavka.price || 0) * Number(stavka.kolicina || stavka.quantity || 1)).toLocaleString("sr-RS")} RSD
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
                     <TableRow>
-                      <TableCell>{document.name || document.opis}</TableCell>
+                      <TableCell>{document.name || document.opis || "Proizvod/usluga"}</TableCell>
                       <TableCell className="text-right">1</TableCell>
                       <TableCell className="text-right font-numeric">
-                        {Number(document.price || document.iznos).toLocaleString("sr-RS")} RSD
+                        {Number(document.price || document.iznos || 0).toLocaleString("sr-RS")} RSD
                       </TableCell>
                       <TableCell className="text-right font-numeric">
-                        {Number(document.price || document.iznos).toLocaleString("sr-RS")} RSD
+                        {Number(document.price || document.iznos || 0).toLocaleString("sr-RS")} RSD
                       </TableCell>
                     </TableRow>
                   )}
@@ -216,7 +227,7 @@ const PublicDocument = () => {
               <div className="flex justify-between items-center">
                 <span>Ukupan iznos bez PDV-a</span>
                 <span className="font-numeric">
-                  {Number(document.osnovica || (document.iznos - document.pdv) || 0).toLocaleString("sr-RS")} RSD
+                  {Number(document.osnovica || (document.iznos ? document.iznos - (document.pdv || 0) : document.price || 0)).toLocaleString("sr-RS")} RSD
                 </span>
               </div>
               <div className="flex justify-between items-center mt-2">
@@ -232,6 +243,13 @@ const PublicDocument = () => {
                 </span>
               </div>
             </div>
+            
+            {document.napomena && (
+              <div className="border-t pt-4 mt-4">
+                <h3 className="font-semibold mb-2">Napomena</h3>
+                <p>{document.napomena}</p>
+              </div>
+            )}
           </CardContent>
           
           <CardFooter className="border-t flex flex-col sm:flex-row justify-between pt-6 gap-4">

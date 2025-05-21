@@ -1,11 +1,24 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
+type StoreInfo = {
+  id: string;
+  name: string;
+  slug: string;
+  settings?: {
+    privacyPolicy?: string;
+    aboutUs?: string;
+    contactInfo?: string;
+    [key: string]: any;
+  };
+};
+
 type User = {
   id: string;
   email: string;
   name: string;
   role: "admin" | "customer";
+  store?: StoreInfo;
 };
 
 type AuthContextType = {
@@ -14,6 +27,7 @@ type AuthContextType = {
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, name: string) => Promise<void>;
   logout: () => void;
+  updateStoreSettings: (settings: any) => void;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -40,6 +54,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         email,
         name: "Shop Owner",
         role: "admin",
+        store: {
+          id: "store-1",
+          name: "Demo Prodavnica",
+          slug: "demo-prodavnica",
+          settings: {
+            privacyPolicy: "Ovo je privacy policy text",
+            aboutUs: "Ovo je about us text",
+            contactInfo: "Ovo je contact info text"
+          }
+        }
       };
       
       localStorage.setItem("user", JSON.stringify(mockUser));
@@ -56,11 +80,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsLoading(true);
     try {
       // Mock registration - this would be replaced with a real API call
+      const storeSlug = email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '-');
+      
       const mockUser: User = {
         id: "1",
         email,
         name,
         role: "admin",
+        store: {
+          id: "store-" + Date.now(),
+          name: name + "'s Store",
+          slug: storeSlug,
+          settings: {}
+        }
       };
       
       localStorage.setItem("user", JSON.stringify(mockUser));
@@ -73,13 +105,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const updateStoreSettings = (settings: any) => {
+    if (!user || !user.store) return;
+    
+    const updatedUser = {
+      ...user,
+      store: {
+        ...user.store,
+        settings: {
+          ...user.store.settings,
+          ...settings
+        }
+      }
+    };
+    
+    localStorage.setItem("user", JSON.stringify(updatedUser));
+    setUser(updatedUser);
+  };
+
   const logout = () => {
     localStorage.removeItem("user");
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, login, register, logout, updateStoreSettings }}>
       {children}
     </AuthContext.Provider>
   );
