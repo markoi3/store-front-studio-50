@@ -54,7 +54,7 @@ export const AdminSidebar = () => {
   ];
 
   return (
-    <aside className="w-64 h-screen fixed left-0 top-0 bg-[#fff6ed] shadow-md border-r border-border/30 p-5 hidden md:flex md:flex-col">
+    <aside className="w-64 h-screen fixed left-0 top-0 bg-[#fff8ea] shadow-md border-r border-border/30 p-5 hidden md:flex md:flex-col">
       <div className="flex flex-col h-full">
         <div className="flex items-center space-x-2 pb-6 mb-6 border-b border-border/30">
           <Link to="/dashboard" className="font-bold text-xl">
