@@ -76,7 +76,9 @@ export const AdminSidebar = () => {
               to={item.path}
               className={cn(
                 "flex items-center space-x-3 px-4 py-2.5 rounded-lg text-sm transition-colors",
-                pathname === item.path || (item.path === "/settings" && pathname === "/design")
+                pathname === item.path || 
+                (item.path === "/settings" && pathname === "/design") ||
+                (item.path === "/settings" && pathname.startsWith("/design"))
                   ? "bg-primary text-primary-foreground font-medium shadow-sm"
                   : "text-muted-foreground hover:bg-accent hover:text-foreground"
               )}

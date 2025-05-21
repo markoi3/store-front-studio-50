@@ -9,6 +9,7 @@ type StoreInfo = {
     privacyPolicy?: string;
     aboutUs?: string;
     contactInfo?: string;
+    menuItems?: any[];
     [key: string]: any;
   };
 };
@@ -61,7 +62,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           settings: {
             privacyPolicy: "Ovo je privacy policy text",
             aboutUs: "Ovo je about us text",
-            contactInfo: "Ovo je contact info text"
+            contactInfo: "Ovo je contact info text",
+            menuItems: [
+              { id: "1", label: "Početna", url: "/" },
+              { id: "2", label: "Proizvodi", url: "/shop" },
+              { id: "3", label: "O nama", url: "/about" },
+              { id: "4", label: "Kontakt", url: "/contact" }
+            ]
           }
         }
       };
@@ -91,7 +98,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           id: "store-" + Date.now(),
           name: name + "'s Store",
           slug: storeSlug,
-          settings: {}
+          settings: {
+            menuItems: [
+              { id: "1", label: "Početna", url: "/" },
+              { id: "2", label: "Proizvodi", url: "/shop" },
+              { id: "3", label: "O nama", url: "/about" },
+              { id: "4", label: "Kontakt", url: "/contact" }
+            ]
+          }
         }
       };
       

@@ -29,7 +29,6 @@ import NewProduct from "./pages/admin/NewProduct";
 import EditProduct from "./pages/admin/EditProduct";
 import Orders from "./pages/admin/Orders";
 import Settings from "./pages/admin/Settings";
-import Design from "./pages/admin/Design";
 import Analytics from "./pages/admin/Analytics";
 import Profile from "./pages/admin/Profile";
 import Racunovodstvo from "./pages/admin/Racunovodstvo";
@@ -99,7 +98,6 @@ const App = () => (
               <Route path="/orders/:id" element={<Transakcije />} />
               <Route path="/transakcije/:id" element={<Transakcije />} />
               <Route path="/settings" element={<Settings />} />
-              <Route path="/design" element={<Design />} />
               <Route path="/analytics" element={<Analytics />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/racunovodstvo" element={<Racunovodstvo />} />

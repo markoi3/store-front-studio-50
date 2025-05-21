@@ -15,10 +15,13 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { useNavigate } from "react-router-dom";
 import { Plus, X } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 const NewProduct = () => {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { user } = useAuth();
   
   const [productData, setProductData] = useState({
     name: "",
@@ -93,17 +96,45 @@ const NewProduct = () => {
     e.preventDefault();
     setIsSubmitting(true);
     
-    // Here you would normally send the data to your API
-    // This is just a mockup to simulate submission
-    setTimeout(() => {
-      console.log("Product Data:", {
-        ...productData,
-        variants,
-        images,
-      });
-      setIsSubmitting(false);
-      navigate("/products");
-    }, 1000);
+    // Create a new product object
+    const newProduct = {
+      id: `product-${Date.now()}`,
+      name: productData.name,
+      price: parseFloat(productData.price),
+      description: productData.description,
+      category: productData.category,
+      stock: parseInt(productData.stock),
+      seoTitle: productData.seoTitle || productData.name,
+      seoDescription: productData.seoDescription,
+      slug: productData.slug,
+      published: productData.published,
+      variants: variants,
+      image: images.length > 0 ? images[0] : "",
+      images: images,
+      userId: user?.id,
+      storeId: user?.store?.id,
+      createdAt: new Date().toISOString(),
+    };
+
+    // Get existing products from localStorage
+    const existingProductsStr = localStorage.getItem("products");
+    const existingProducts = existingProductsStr ? JSON.parse(existingProductsStr) : [];
+    
+    // Add new product to the array
+    const updatedProducts = [...existingProducts, newProduct];
+    
+    // Save updated products back to localStorage
+    localStorage.setItem("products", JSON.stringify(updatedProducts));
+    
+    console.log("Product saved:", newProduct);
+    
+    toast({
+      title: "Product created",
+      description: "Your product has been created successfully.",
+    });
+    
+    setIsSubmitting(false);
+    navigate("/products");
   };
   
   const categories = [
