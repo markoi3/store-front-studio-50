@@ -1,29 +1,18 @@
-
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-
 const SaasHome = () => {
-  return (
-    <div className="flex flex-col min-h-screen">
+  return <div className="flex flex-col min-h-screen">
       {/* Navigation */}
       <header className="border-b bg-white sticky top-0 z-40">
         <div className="container mx-auto px-4">
           <div className="flex h-16 items-center justify-between">
             <div className="flex items-center space-x-4">
-              <Link to="/" className="font-bold text-xl">E-Shop Builder</Link>
+              <Link to="/" className="font-bold text-xl">Axia</Link>
               <nav className="hidden md:flex items-center space-x-6">
-                <Link to="#features" className="text-sm font-medium text-muted-foreground hover:text-foreground">
-                  Features
-                </Link>
-                <Link to="#pricing" className="text-sm font-medium text-muted-foreground hover:text-foreground">
-                  Pricing
-                </Link>
-                <Link to="#testimonials" className="text-sm font-medium text-muted-foreground hover:text-foreground">
-                  Testimonials
-                </Link>
-                <Link to="#faq" className="text-sm font-medium text-muted-foreground hover:text-foreground">
-                  FAQ
-                </Link>
+                <Link to="#features" className="text-sm font-medium text-muted-foreground hover:text-foreground">Funkcionalnosti</Link>
+                <Link to="#pricing" className="text-sm font-medium text-muted-foreground hover:text-foreground">Cene</Link>
+                <Link to="#testimonials" className="text-sm font-medium text-muted-foreground hover:text-foreground">Utisci</Link>
+                <Link to="#faq" className="text-sm font-medium text-muted-foreground hover:text-foreground">O nama</Link>
               </nav>
             </div>
             <div className="flex items-center space-x-4">
@@ -43,28 +32,18 @@ const SaasHome = () => {
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-6">
-                Create your online store in minutes
-              </h1>
-              <p className="text-xl text-muted-foreground mb-8 max-w-lg">
-                The all-in-one platform to build and grow your online business. No coding required.
-              </p>
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-6">Pomažemo ti da razvijaš online biznis.</h1>
+              <p className="text-xl text-muted-foreground mb-8 max-w-lg">Platforma za tvoje biznis finansije - i rast.</p>
               <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
-                <Button size="lg" className="text-lg">Start Free Trial</Button>
-                <Button size="lg" variant="outline" className="text-lg">
-                  Watch Demo
-                </Button>
+                <Button size="lg" className="text-lg">Započni besplatno</Button>
+                <Button size="lg" variant="outline" className="text-lg">Pogledaj Demo</Button>
               </div>
             </div>
             <div className="hidden lg:block">
               <div className="relative">
                 <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-accent rounded-xl blur-lg"></div>
                 <div className="relative bg-white p-4 rounded-xl shadow-lg">
-                  <img
-                    src="https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=800&auto=format&fit=crop"
-                    alt="E-Shop Builder Dashboard"
-                    className="rounded-lg shadow-sm"
-                  />
+                  <img src="https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=800&auto=format&fit=crop" alt="E-Shop Builder Dashboard" className="rounded-lg shadow-sm" />
                 </div>
               </div>
             </div>
@@ -457,8 +436,6 @@ const SaasHome = () => {
           </div>
         </div>
       </footer>
-    </div>
-  );
+    </div>;
 };
-
 export default SaasHome;
