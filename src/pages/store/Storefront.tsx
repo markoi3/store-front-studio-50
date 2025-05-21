@@ -1,10 +1,9 @@
 
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { ShopLayout } from "@/components/layout/ShopLayout";
 import { Button } from "@/components/ui/button";
 import { Product } from "@/components/shop/ProductCard";
-import { Link } from "react-router-dom";
 
 // Function to get stored products
 const getStoredProducts = () => {
@@ -30,7 +29,11 @@ const getStoredUsers = () => {
 };
 
 // Function to get menu items
-const getMenuItems = () => {
+const getMenuItems = (storeSettings) => {
+  if (storeSettings?.menuItems) {
+    return storeSettings.menuItems;
+  }
+  
   try {
     const menuItems = localStorage.getItem("storeMenuItems");
     return menuItems ? JSON.parse(menuItems) : [
@@ -41,7 +44,12 @@ const getMenuItems = () => {
     ];
   } catch (error) {
     console.error("Error loading menu items:", error);
-    return [];
+    return [
+      { id: "1", label: "Početna", url: "/" },
+      { id: "2", label: "Proizvodi", url: "/shop" },
+      { id: "3", label: "O nama", url: "/about" },
+      { id: "4", label: "Kontakt", url: "/contact" }
+    ];
   }
 };
 
@@ -53,15 +61,15 @@ const Storefront = () => {
   const [menuItems, setMenuItems] = useState([]);
   
   useEffect(() => {
-    // Load menu items
-    setMenuItems(getMenuItems());
-    
     // Load all stored products
     const allProducts = getStoredProducts();
     console.log("All products:", allProducts);
     
-    // Filter for published products
-    const publishedProducts = allProducts.filter((p: any) => p.published !== false);
+    // Filter for published products that belong to this store
+    const publishedProducts = allProducts.filter((p: any) => 
+      p.published !== false && 
+      (!p.storeId || p.storeId === storeId)
+    );
     console.log("Published products:", publishedProducts);
     
     // Add storeId to each product for correct routing
@@ -115,6 +123,9 @@ const Storefront = () => {
             }
           ]
         };
+        
+        // Set menu items from the store settings
+        setMenuItems(getMenuItems(user.store.settings));
         break;
       }
     }
@@ -125,6 +136,7 @@ const Storefront = () => {
         id: storeId,
         name: "Demo Prodavnica",
         description: "Ovo je demo prodavnica",
+        settings: {},
         elements: [
           {
             id: '1',
@@ -156,6 +168,9 @@ const Storefront = () => {
           }
         ]
       };
+      
+      // Set default menu items
+      setMenuItems(getMenuItems({}));
     }
     
     setStore(foundStore);
@@ -243,15 +258,34 @@ const Storefront = () => {
   const renderCustomNavigation = () => {
     return (
       <div className="flex justify-center space-x-6 mb-8">
-        {menuItems.map((item: any) => (
+        {menuItems.map((item: any) => {
+          // Format the URL to include the store slug for appropriate routing
+          let url = item.url;
+          if (url === "/" || url === "") {
+            url = `/store/${storeId}`;
+          } else if (!url.startsWith("/store")) {
+            url = `/store/${storeId}${url.startsWith('/') ? url : `/${url}`}`;
+          }
+          
+          return (
+            <Link 
+              key={item.id}
+              to={url}
+              className="text-foreground hover:text-primary font-medium"
+            >
+              {item.label}
+            </Link>
+          );
+        })}
+        
+        {store.settings?.privacyPolicy && (
           <Link 
-            key={item.id}
-            to={item.url.startsWith('/') ? item.url : `/${item.url}`}
+            to={`/store/${storeId}/privacy-policy`}
             className="text-foreground hover:text-primary font-medium"
           >
-            {item.label}
+            Politika Privatnosti
           </Link>
-        ))}
+        )}
       </div>
     );
   };
@@ -310,7 +344,7 @@ const Storefront = () => {
                       ? product.price.toLocaleString("sr-RS") 
                       : parseFloat(product.price).toLocaleString("sr-RS")} RSD
                   </p>
-                  <Link to={`/product/${product.slug || product.id}`}>
+                  <Link to={`/store/${storeId}/product/${product.slug || product.id}`}>
                     <Button className="w-full">Detaljnije</Button>
                   </Link>
                 </div>
@@ -326,18 +360,6 @@ const Storefront = () => {
               <p className="text-lg">
                 {store.elements.find((el: any) => el.type === 'text').settings.content}
               </p>
-            </div>
-          </div>
-        )}
-        
-        {/* Privacy Policy Section (if exists) */}
-        {store.settings?.privacyPolicy && (
-          <div className="container mx-auto px-4 py-12 border-t">
-            <div className="max-w-3xl mx-auto">
-              <h2 className="text-2xl font-bold mb-4">Politika privatnosti</h2>
-              <div className="prose">
-                {store.settings.privacyPolicy}
-              </div>
             </div>
           </div>
         )}

@@ -134,6 +134,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
     
     localStorage.setItem("user", JSON.stringify(updatedUser));
+    localStorage.setItem("storeMenuItems", JSON.stringify(settings.menuItems || []));
     setUser(updatedUser);
   };
 

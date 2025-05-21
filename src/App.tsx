@@ -41,12 +41,14 @@ import Transakcije from "./pages/admin/Transakcije";
 
 // Store Pages
 import Storefront from "./pages/store/Storefront";
+import StorePrivacyPolicy from "./pages/store/StorePrivacyPolicy";
 
 // Payment Pages
 import PaymentLink from "./pages/payment/PaymentLink";
 
 // Public Document Pages
 import PublicDocument from "./pages/public/PublicDocument";
+import DocumentView from "./pages/public/DocumentView";
 
 import NotFound from "./pages/NotFound";
 
@@ -73,7 +75,7 @@ const App = () => (
               <Route path="/store/:storeId/about" element={<About />} />
               <Route path="/store/:storeId/contact" element={<Contact />} />
               <Route path="/store/:storeId/terms" element={<Terms />} />
-              <Route path="/store/:storeId/privacy" element={<Privacy />} />
+              <Route path="/store/:storeId/privacy-policy" element={<StorePrivacyPolicy />} />
               
               {/* Demo Store Routes (for testing) */}
               <Route path="/home" element={<Home />} />
@@ -98,6 +100,7 @@ const App = () => (
               <Route path="/orders/:id" element={<Transakcije />} />
               <Route path="/transakcije/:id" element={<Transakcije />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="/settings/design" element={<Settings />} />
               <Route path="/analytics" element={<Analytics />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/racunovodstvo" element={<Racunovodstvo />} />
@@ -112,6 +115,7 @@ const App = () => (
               
               {/* Public Document Pages */}
               <Route path="/public/:docType/:docId" element={<PublicDocument />} />
+              <Route path="/public/document/:docType/:docId" element={<DocumentView />} />
               
               {/* 404 Route */}
               <Route path="*" element={<NotFound />} />

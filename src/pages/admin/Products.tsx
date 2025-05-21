@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -127,8 +128,6 @@ const Products = () => {
       console.log("Stored products:", storedProducts);
       
       // Filter products to only show those belonging to the current user
-      // In a real app, you'd have a userId field on each product
-      // For this demo, we'll just show all stored products plus default ones
       const userProducts = storedProducts.filter((p: any) => !p.userId || p.userId === user?.id);
       
       // Merge default products with stored products
@@ -136,6 +135,7 @@ const Products = () => {
       const storedIds = userProducts.map((p: any) => p.id);
       const filteredDefaultProducts = defaultProducts.filter(p => !storedIds.includes(p.id));
       
+      console.log("Combined products:", [...filteredDefaultProducts, ...userProducts]);
       setProducts([...filteredDefaultProducts, ...userProducts]);
     };
     
@@ -149,7 +149,7 @@ const Products = () => {
       });
       
       // Remove the success message after using it to prevent showing it again on page refresh
-      history.replaceState({}, document.title);
+      window.history.replaceState({}, document.title);
     }
   }, [location, toast, user?.id]);
   
@@ -327,7 +327,7 @@ const Products = () => {
                       <td className="p-4">
                         <span className="capitalize">{product.category}</span>
                       </td>
-                      <td className="p-4">${product.price.toFixed(2)}</td>
+                      <td className="p-4">{product.price.toLocaleString('sr-RS')} RSD</td>
                       <td className="p-4">
                         <span
                           className={`inline-block px-2 py-1 text-xs rounded-full ${
@@ -354,7 +354,9 @@ const Products = () => {
                             </DropdownMenuItem>
                             <DropdownMenuItem>
                               <Link 
-                                to={`/product/${product.slug}`} 
+                                to={product.storeId 
+                                  ? `/store/${product.storeId}/product/${product.slug}` 
+                                  : `/product/${product.slug}`} 
                                 className="w-full"
                                 target="_blank"
                               >
