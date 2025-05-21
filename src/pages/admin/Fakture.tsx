@@ -24,7 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   FileText,
   Download,
@@ -118,11 +118,16 @@ const getStoredItems = () => {
     }
     
     if (storedObracuni) {
-      const storedObracuni = JSON.parse(localStorage.getItem("obracuni") || "[]");
-      allItems = [...allItems, ...storedObracuni];
+      const parsedObracuni = JSON.parse(localStorage.getItem("obracuni") || "[]");
+      allItems = [...allItems, ...parsedObracuni];
     }
     
-    return allItems;
+    // Remove duplicates based on id
+    const uniqueItems = Array.from(
+      new Map(allItems.map(item => [item.id, item])).values()
+    );
+    
+    return uniqueItems;
   } catch (error) {
     console.error("Error loading stored items:", error);
     return fakturePodaci;
@@ -140,6 +145,7 @@ const Fakture = () => {
   const [shareLink, setShareLink] = useState("");
   const { toast } = useToast();
   const location = useLocation();
+  const navigate = useNavigate();
 
   // Load stored items on initial load and when the location changes (user navigates to this page)
   useEffect(() => {
@@ -152,8 +158,18 @@ const Fakture = () => {
         title: "Uspešno",
         description: location.state.message || "Operacija je uspešno izvršena",
       });
+      
+      // Clear the location state to prevent showing the message again on refresh
+      navigate(location.pathname, { replace: true });
     }
-  }, [location, toast]);
+  }, [location, toast, navigate]);
+
+  // Save initial data to localStorage to ensure we have data to display
+  useEffect(() => {
+    if (!localStorage.getItem("fakture")) {
+      localStorage.setItem("fakture", JSON.stringify(fakturePodaci));
+    }
+  }, []);
 
   // Filtriranje faktura
   const filtriraneStavke = stavke.filter((faktura) => {
@@ -376,14 +392,14 @@ const Fakture = () => {
                           <div className="flex items-center">
                             {faktura.tip === "faktura" ? (
                               <FileCheck className="h-4 w-4 mr-1 text-blue-500" />
-                            ) : faktura.tip === "predračun" ? (
+                            ) : faktura.tip === "predracun" ? (
                               <FileClock className="h-4 w-4 mr-1 text-amber-500" />
                             ) : (
                               <FileText className="h-4 w-4 mr-1 text-green-500" />
                             )}
                             <span className="capitalize">
                               {faktura.tip === "faktura" ? "Faktura" : 
-                               faktura.tip === "predračun" ? "Predračun" : "Obračun"}
+                               faktura.tip === "predracun" ? "Predračun" : "Obračun"}
                             </span>
                           </div>
                         </TableCell>
@@ -455,7 +471,7 @@ const Fakture = () => {
                                   <h4 className="font-medium">Javni link za deljenje</h4>
                                   <p className="text-sm text-muted-foreground">
                                     Kopirajte link do javne stranice {faktura.tip === "faktura" ? "fakture" : 
-                                    faktura.tip === "predračun" ? "predračuna" : "obračuna"}
+                                    faktura.tip === "predracun" ? "predračuna" : "obračuna"}
                                   </p>
                                   <div className="space-y-2">
                                     <div className="flex items-center">

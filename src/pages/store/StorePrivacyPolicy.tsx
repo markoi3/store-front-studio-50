@@ -9,11 +9,16 @@ const StorePrivacyPolicy = () => {
   const { storeId } = useParams();
   const [storeData, setStoreData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const loadStoreData = () => {
       try {
+        // Mock API call to fetch store data based on slug
+        // First, check if there's a logged-in user with this store slug
         const storedUser = localStorage.getItem("user");
+        let foundStore = false;
+        
         if (storedUser) {
           const userData = JSON.parse(storedUser);
           if (userData.store && userData.store.slug === storeId) {
@@ -21,23 +26,32 @@ const StorePrivacyPolicy = () => {
               name: userData.store.name,
               privacyPolicy: userData.store.settings?.privacyPolicy || "Politika privatnosti nije definisana."
             });
-          } else {
-            // Store not found in current user, set default message
+            foundStore = true;
+          }
+        }
+        
+        // If not found in current user, search all users (in a real app this would be a database query)
+        if (!foundStore) {
+          // For demo purposes, we're hardcoding this check
+          if (storeId === "demo-prodavnica") {
             setStoreData({
-              name: "Prodavnica",
-              privacyPolicy: "Politika privatnosti nije definisana."
+              name: "Demo Prodavnica",
+              privacyPolicy: "Ovo je demo politika privatnosti za Demo Prodavnicu."
+            });
+          } else {
+            // In this case, the store wasn't found
+            setError("Prodavnica nije pronađena");
+            setStoreData({
+              name: "Nepoznata Prodavnica",
+              privacyPolicy: "Prodavnica sa ovim URL-om ne postoji."
             });
           }
-        } else {
-          // No user found, set default message
-          setStoreData({
-            name: "Prodavnica",
-            privacyPolicy: "Politika privatnosti nije definisana."
-          });
         }
+        
         setLoading(false);
       } catch (error) {
         console.error("Error loading store data:", error);
+        setError("Došlo je do greške pri učitavanju podataka");
         setStoreData({
           name: "Prodavnica",
           privacyPolicy: "Došlo je do greške pri učitavanju politike privatnosti."
@@ -58,6 +72,22 @@ const StorePrivacyPolicy = () => {
             <div className="h-4 w-full bg-muted rounded"></div>
             <div className="h-4 w-5/6 bg-muted rounded"></div>
             <div className="h-4 w-4/6 bg-muted rounded"></div>
+          </div>
+        </div>
+      </ShopLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <ShopLayout>
+        <div className="container mx-auto px-4 py-12">
+          <div className="max-w-4xl mx-auto text-center">
+            <h1 className="text-3xl font-bold mb-4">Store Not Found</h1>
+            <p className="text-muted-foreground mb-8">{error}</p>
+            <Link to="/">
+              <Button>Return to Home</Button>
+            </Link>
           </div>
         </div>
       </ShopLayout>
