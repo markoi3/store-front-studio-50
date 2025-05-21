@@ -1,103 +1,132 @@
 
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, Download, FileText, Printer } from "lucide-react";
+import { ChevronLeft, Printer, Download } from "lucide-react";
 
 const DocumentView = () => {
-  const { documentType, documentId } = useParams();
-  const [document, setDocument] = useState<any | null>(null);
+  const { docType, docId } = useParams();
+  const [document, setDocument] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // This would be an API call to fetch the document in a real app
+    // For now, we'll simulate it with some mock data
     const loadDocument = () => {
-      try {
-        // Mock API call to fetch document data
-        let documentData = null;
-        
-        // Get appropriate storage based on document type
-        const storageKey = documentType === 'faktura' ? 'fakture' : 
-                          documentType === 'predracun' ? 'predracuni' : 
-                          'obracuni';
-        
-        // Get all documents from storage
-        const storedDocuments = localStorage.getItem(storageKey);
-        console.log("Looking for document", documentId, "in", storageKey, "storage");
-        
-        if (storedDocuments) {
-          const documents = JSON.parse(storedDocuments);
-          documentData = documents.find((doc: any) => doc.id === documentId);
+      setTimeout(() => {
+        if (!docType || !docId) {
+          setError("Dokument nije pronađen");
+          setLoading(false);
+          return;
         }
-        
-        // Also check in the main fakture storage which contains all document types
-        if (!documentData) {
-          const allDocuments = localStorage.getItem("fakture");
-          if (allDocuments) {
-            const documents = JSON.parse(allDocuments);
-            documentData = documents.find((doc: any) => doc.id === documentId);
-          }
+
+        // Mock document data based on type
+        let mockDocument: any = null;
+
+        if (docType === "faktura") {
+          mockDocument = {
+            id: docId,
+            type: "faktura",
+            broj: `F-${docId.substring(0, 5)}`,
+            datum: "2023-05-20",
+            datumDospeca: "2023-06-20",
+            klijent: {
+              naziv: "Klijent DOO",
+              adresa: "Ulica 123, Grad",
+              pib: "123456789",
+              maticniBroj: "12345678"
+            },
+            stavke: [
+              { id: 1, naziv: "Proizvod 1", kolicina: 2, cena: 1200, ukupno: 2400 },
+              { id: 2, naziv: "Proizvod 2", kolicina: 1, cena: 3500, ukupno: 3500 }
+            ],
+            ukupno: 5900,
+            pdv: 1180,
+            ukupnoSaPdv: 7080,
+            valuta: "RSD",
+            napomena: "Rok plaćanja 30 dana. Hvala na poverenju!"
+          };
+        } else if (docType === "predracun") {
+          mockDocument = {
+            id: docId,
+            type: "predracun",
+            broj: `P-${docId.substring(0, 5)}`,
+            datum: "2023-05-18",
+            vaziDo: "2023-06-18",
+            klijent: {
+              naziv: "Drugi Klijent DOO",
+              adresa: "Druga ulica 456, Drugi grad",
+              pib: "987654321",
+              maticniBroj: "87654321"
+            },
+            stavke: [
+              { id: 1, naziv: "Usluga 1", kolicina: 1, cena: 5000, ukupno: 5000 },
+              { id: 2, naziv: "Usluga 2", kolicina: 2, cena: 2500, ukupno: 5000 }
+            ],
+            ukupno: 10000,
+            pdv: 2000,
+            ukupnoSaPdv: 12000,
+            valuta: "RSD",
+            napomena: "Predračun važi 30 dana. Plaćanje unapred."
+          };
+        } else if (docType === "obracun") {
+          mockDocument = {
+            id: docId,
+            type: "obracun",
+            broj: `O-${docId.substring(0, 5)}`,
+            datum: "2023-05-15",
+            period: "April 2023",
+            klijent: {
+              naziv: "Treći Klijent DOO",
+              adresa: "Treća ulica 789, Treći grad",
+              pib: "246813579",
+              maticniBroj: "13579246"
+            },
+            stavke: [
+              { id: 1, naziv: "Mesečna pretplata", kolicina: 1, cena: 3000, ukupno: 3000 },
+              { id: 2, naziv: "Dodatne usluge", kolicina: 5, cena: 600, ukupno: 3000 }
+            ],
+            ukupno: 6000,
+            pdv: 1200,
+            ukupnoSaPdv: 7200,
+            valuta: "RSD",
+            napomena: "Obračun za mesec april 2023."
+          };
         }
-        
-        if (documentData) {
-          setDocument(documentData);
+
+        if (mockDocument) {
+          setDocument(mockDocument);
+          setLoading(false);
         } else {
-          setError("Document not found");
+          setError("Dokument nije pronađen ili tip dokumenta nije podržan");
+          setLoading(false);
         }
-        
-        setLoading(false);
-      } catch (error) {
-        console.error("Error loading document:", error);
-        setError("Error loading document");
-        setLoading(false);
-      }
+      }, 800); // Simulate network delay
     };
 
     loadDocument();
-  }, [documentType, documentId]);
+  }, [docType, docId]);
 
   const handlePrint = () => {
     window.print();
   };
 
   const handleDownload = () => {
-    // Mock download functionality
-    alert("Downloading document...");
+    // In a real app, this would generate a PDF or similar document
+    alert("Funkcionalnost preuzimanja biće dostupna uskoro");
   };
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-12">
+      <div className="min-h-screen bg-background py-12 px-4">
         <div className="max-w-4xl mx-auto">
-          <Card className="border shadow-sm">
-            <CardHeader className="border-b">
-              <CardTitle>Loading Document...</CardTitle>
-            </CardHeader>
-            <CardContent className="p-12">
-              <div className="animate-pulse space-y-4">
-                <div className="h-6 w-1/3 bg-muted rounded"></div>
-                <div className="h-4 w-1/2 bg-muted rounded"></div>
-                <div className="h-4 w-full bg-muted rounded"></div>
-                <div className="h-40 w-full bg-muted rounded"></div>
-                <div className="h-10 w-1/4 bg-muted rounded"></div>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="animate-pulse space-y-4">
+            <div className="h-8 w-64 bg-muted rounded"></div>
+            <div className="h-4 w-full bg-muted rounded"></div>
+            <div className="h-4 w-5/6 bg-muted rounded"></div>
+            <div className="h-4 w-4/6 bg-muted rounded"></div>
+          </div>
         </div>
       </div>
     );
@@ -105,173 +134,140 @@ const DocumentView = () => {
 
   if (error || !document) {
     return (
-      <div className="container mx-auto px-4 py-12">
-        <div className="max-w-4xl mx-auto">
-          <Card className="border shadow-sm">
-            <CardHeader className="border-b">
-              <CardTitle className="text-red-500">Document Not Found</CardTitle>
-              <CardDescription>
-                The document you're trying to access does not exist or has been deleted.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-12">
-              <div className="flex flex-col items-center justify-center text-center">
-                <AlertCircle className="h-12 w-12 text-red-500 mb-4" />
-                <p>
-                  We couldn't find the requested document. Please check the URL or contact the
-                  document owner for assistance.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+      <div className="min-h-screen bg-background py-12 px-4 flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <h1 className="text-2xl font-bold mb-4">Dokument nije pronađen</h1>
+          <p className="text-muted-foreground mb-6">
+            {error || "Dokument koji pokušavate da otvorite nije pronađen ili je obrisan."}
+          </p>
+          <Button asChild>
+            <Link to="/">Povratak na početnu</Link>
+          </Button>
         </div>
       </div>
     );
   }
 
-  const documentTitle = documentType === 'faktura' ? 'Faktura' : 
-                       documentType === 'predracun' ? 'Predračun' : 
-                       'Obračun';
+  // Document type name in Serbian
+  const docTypeName = 
+    document.type === "faktura" ? "Faktura" : 
+    document.type === "predracun" ? "Predračun" : 
+    document.type === "obracun" ? "Obračun" : 
+    "Dokument";
 
   return (
-    <div className="container mx-auto px-4 py-12">
-      <div className="max-w-4xl mx-auto">
-        <Card className="border shadow-sm print:border-none print:shadow-none" id="printable-document">
-          <CardHeader className="border-b print:border-none">
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="flex items-center">
-                  <FileText className="mr-2 h-5 w-5" />
-                  {documentTitle} {document.id}
-                </CardTitle>
-                <CardDescription>
-                  Datum: {document.datum}
-                  {document.rokPlacanja && ` | Rok plaćanja: ${document.rokPlacanja}`}
-                </CardDescription>
-              </div>
-              <div className="flex gap-2 print:hidden">
-                <Button variant="outline" size="sm" onClick={handlePrint}>
-                  <Printer className="mr-1 h-4 w-4" /> Štampaj
-                </Button>
-                <Button variant="outline" size="sm" onClick={handleDownload}>
-                  <Download className="mr-1 h-4 w-4" /> Preuzmi PDF
-                </Button>
-              </div>
-            </div>
-          </CardHeader>
+    <div className="min-h-screen bg-background">
+      <div className="max-w-5xl mx-auto p-6">
+        {/* Header with actions */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 print:hidden">
+          <Link to="/" className="inline-flex items-center text-primary hover:text-primary/80 mb-4 md:mb-0">
+            <ChevronLeft className="h-4 w-4 mr-1" /> Nazad na stranicu
+          </Link>
           
-          <CardContent className="p-6 md:p-8 space-y-6">
-            {/* Header Info */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <h3 className="font-semibold text-muted-foreground text-sm mb-2">Izdavalac:</h3>
-                <div className="space-y-1">
-                  <p className="font-medium">Vaša Firma D.O.O.</p>
-                  <p>Glavna ulica 123</p>
-                  <p>11000 Beograd, Srbija</p>
-                  <p>PIB: 123456789</p>
-                  <p>MB: 12345678</p>
-                </div>
+          <div className="flex space-x-3">
+            <Button variant="outline" size="sm" onClick={handlePrint} className="flex items-center">
+              <Printer className="h-4 w-4 mr-2" /> Štampaj
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleDownload} className="flex items-center">
+              <Download className="h-4 w-4 mr-2" /> Preuzmi
+            </Button>
+          </div>
+        </div>
+        
+        {/* Document content */}
+        <div className="bg-white shadow-lg rounded-lg p-8 print:shadow-none print:p-0">
+          {/* Document header */}
+          <div className="flex justify-between items-start border-b border-gray-200 pb-6 mb-6">
+            <div>
+              <h1 className="text-2xl font-bold">{docTypeName}</h1>
+              <p className="text-muted-foreground">Broj: {document.broj}</p>
+              <p className="text-muted-foreground">Datum: {document.datum}</p>
+              {document.type === "faktura" && (
+                <p className="text-muted-foreground">Datum dospeća: {document.datumDospeca}</p>
+              )}
+              {document.type === "predracun" && (
+                <p className="text-muted-foreground">Važi do: {document.vaziDo}</p>
+              )}
+              {document.type === "obracun" && (
+                <p className="text-muted-foreground">Period: {document.period}</p>
+              )}
+            </div>
+            <div className="text-right">
+              <h2 className="font-medium">Vaša Kompanija DOO</h2>
+              <p className="text-sm text-muted-foreground">Adresa kompanije 123</p>
+              <p className="text-sm text-muted-foreground">11000 Beograd, Srbija</p>
+              <p className="text-sm text-muted-foreground">PIB: 123456789</p>
+              <p className="text-sm text-muted-foreground">Tel: +381 11 123 4567</p>
+            </div>
+          </div>
+          
+          {/* Client info */}
+          <div className="mb-8">
+            <h2 className="text-lg font-medium mb-2">Klijent:</h2>
+            <div className="bg-gray-50 p-4 rounded-md">
+              <p className="font-medium">{document.klijent.naziv}</p>
+              <p>{document.klijent.adresa}</p>
+              <p>PIB: {document.klijent.pib}</p>
+              <p>Matični broj: {document.klijent.maticniBroj}</p>
+            </div>
+          </div>
+          
+          {/* Items table */}
+          <div className="mb-8 overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="bg-gray-50">
+                  <th className="border border-gray-200 px-4 py-2 text-left">R.br.</th>
+                  <th className="border border-gray-200 px-4 py-2 text-left">Naziv</th>
+                  <th className="border border-gray-200 px-4 py-2 text-right">Količina</th>
+                  <th className="border border-gray-200 px-4 py-2 text-right">Cena</th>
+                  <th className="border border-gray-200 px-4 py-2 text-right">Ukupno</th>
+                </tr>
+              </thead>
+              <tbody>
+                {document.stavke.map((stavka: any, index: number) => (
+                  <tr key={stavka.id}>
+                    <td className="border border-gray-200 px-4 py-2">{index + 1}</td>
+                    <td className="border border-gray-200 px-4 py-2">{stavka.naziv}</td>
+                    <td className="border border-gray-200 px-4 py-2 text-right">{stavka.kolicina}</td>
+                    <td className="border border-gray-200 px-4 py-2 text-right">
+                      {stavka.cena.toLocaleString('sr-RS')} {document.valuta}
+                    </td>
+                    <td className="border border-gray-200 px-4 py-2 text-right">
+                      {stavka.ukupno.toLocaleString('sr-RS')} {document.valuta}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          
+          {/* Totals */}
+          <div className="flex justify-end mb-8">
+            <div className="w-64">
+              <div className="flex justify-between py-2">
+                <span>Ukupno bez PDV:</span>
+                <span className="font-medium">{document.ukupno.toLocaleString('sr-RS')} {document.valuta}</span>
               </div>
-              
-              <div>
-                <h3 className="font-semibold text-muted-foreground text-sm mb-2">Klijent:</h3>
-                <div className="space-y-1">
-                  <p className="font-medium">{document.klijent}</p>
-                  <p>{document.adresa || "Adresa nije uneta"}</p>
-                  <p>PIB: {document.pib || "Nije unet"}</p>
-                  <p>MB: {document.maticniBroj || "Nije unet"}</p>
-                </div>
+              <div className="flex justify-between py-2">
+                <span>PDV (20%):</span>
+                <span>{document.pdv.toLocaleString('sr-RS')} {document.valuta}</span>
+              </div>
+              <div className="flex justify-between py-2 border-t border-gray-200 font-bold">
+                <span>Ukupno sa PDV:</span>
+                <span>{document.ukupnoSaPdv.toLocaleString('sr-RS')} {document.valuta}</span>
               </div>
             </div>
-            
-            {/* Document Details */}
-            <div className="border rounded-md overflow-hidden">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Opis</TableHead>
-                    <TableHead className="text-right">Količina</TableHead>
-                    <TableHead className="text-right">Cena</TableHead>
-                    <TableHead className="text-right">PDV (%)</TableHead>
-                    <TableHead className="text-right">Ukupno</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {document.stavke ? (
-                    document.stavke.map((stavka: any, index: number) => (
-                      <TableRow key={stavka.id || index}>
-                        <TableCell>{stavka.opis}</TableCell>
-                        <TableCell className="text-right">{stavka.kolicina}</TableCell>
-                        <TableCell className="text-right font-numeric">
-                          {Number(stavka.cena).toLocaleString("sr-RS")} RSD
-                        </TableCell>
-                        <TableCell className="text-right">{stavka.pdvStopa}%</TableCell>
-                        <TableCell className="text-right font-numeric">
-                          {Number(stavka.ukupno).toLocaleString("sr-RS")} RSD
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={5} className="text-center text-muted-foreground">
-                        Nema stavki za prikaz.
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
+          </div>
+          
+          {/* Notes */}
+          {document.napomena && (
+            <div className="border-t border-gray-200 pt-4">
+              <h3 className="font-medium mb-2">Napomena:</h3>
+              <p className="text-muted-foreground">{document.napomena}</p>
             </div>
-            
-            {/* Summary */}
-            <div className="flex flex-col items-end">
-              <div className="w-full md:w-64 space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Ukupno bez PDV-a:</span>
-                  <span className="font-medium font-numeric">
-                    {Number(document.iznos - (document.pdv || 0)).toLocaleString("sr-RS")} RSD
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">PDV:</span>
-                  <span className="font-medium font-numeric">
-                    {Number(document.pdv || 0).toLocaleString("sr-RS")} RSD
-                  </span>
-                </div>
-                <div className="flex justify-between border-t pt-2">
-                  <span className="font-bold">Ukupno za plaćanje:</span>
-                  <span className="font-bold font-numeric">
-                    {Number(document.iznos).toLocaleString("sr-RS")} RSD
-                  </span>
-                </div>
-              </div>
-            </div>
-            
-            {/* Footer Info */}
-            {document.napomena && (
-              <div className="pt-4 border-t">
-                <h3 className="font-semibold mb-2">Napomena:</h3>
-                <p className="text-muted-foreground">{document.napomena}</p>
-              </div>
-            )}
-            
-            <div className="pt-4 border-t">
-              <h3 className="font-semibold mb-2">Način plaćanja:</h3>
-              <p className="text-muted-foreground">{document.nacinPlacanja || "Nije naveden"}</p>
-            </div>
-            
-            {document.status && (
-              <div className="pt-4 border-t">
-                <div className={`inline-block px-3 py-1 rounded-full text-sm font-medium
-                  ${document.status === "plaćeno" ? "bg-green-100 text-green-800" :
-                    document.status === "čeka uplatu" ? "bg-amber-100 text-amber-800" :
-                    "bg-blue-100 text-blue-800"}`}>
-                  Status: {document.status}
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+          )}
+        </div>
       </div>
     </div>
   );

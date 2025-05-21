@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,28 +15,22 @@ import {
 } from "@/components/ui/select";
 import { StoreBuilder } from "@/components/design/StoreBuilder";
 import { toast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 
 const Settings = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("general");
   const [menuItems, setMenuItems] = useState<any[]>([]);
-  const { user, updateStoreSettings } = useAuth();
   
-  // Add storeSlug to the settings
   const [storeSettings, setStoreSettings] = useState({
     storeName: "My E-Shop",
-    storeSlug: "",
     storeEmail: "contact@myeshop.com",
     storePhone: "+1 (555) 123-4567",
     storeAddress: "123 Main St, New York, NY 10001, USA",
     currency: "usd",
     weightUnit: "kg",
     timezone: "America/New_York",
-    privacyPolicy: "",
-    aboutUs: "",
-    contactInfo: "",
   });
   
   const [paymentSettings, setPaymentSettings] = useState({
@@ -89,24 +83,7 @@ const Settings = () => {
       setMenuItems(defaultMenuItems);
       localStorage.setItem("storeMenuItems", JSON.stringify(defaultMenuItems));
     }
-    
-    // Load store settings from user context
-    if (user && user.store && user.store.settings) {
-      setStoreSettings({
-        storeName: user.store.name || "My E-Shop",
-        storeSlug: user.store.slug || "",
-        storeEmail: user.store.settings.storeEmail || "contact@myeshop.com",
-        storePhone: user.store.settings.storePhone || "+1 (555) 123-4567",
-        storeAddress: user.store.settings.storeAddress || "123 Main St, New York, NY 10001, USA",
-        currency: user.store.settings.currency || "usd",
-        weightUnit: user.store.settings.weightUnit || "kg",
-        timezone: user.store.settings.timezone || "America/New_York",
-        privacyPolicy: user.store.settings.privacyPolicy || "",
-        aboutUs: user.store.settings.aboutUs || "",
-        contactInfo: user.store.settings.contactInfo || "",
-      });
-    }
-  }, [user]);
+  }, []);
   
   const handleStoreChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -196,35 +173,12 @@ const Settings = () => {
   };
   
   const handleSaveSettings = () => {
-    // Prepare all settings to save
-    const combinedSettings = {
-      storeSlug: storeSettings.storeSlug,
-      storeName: storeSettings.storeName,
-      storeEmail: storeSettings.storeEmail,
-      storePhone: storeSettings.storePhone,
-      storeAddress: storeSettings.storeAddress,
-      currency: storeSettings.currency,
-      weightUnit: storeSettings.weightUnit,
-      timezone: storeSettings.timezone,
-      privacyPolicy: storeSettings.privacyPolicy,
-      aboutUs: storeSettings.aboutUs,
-      contactInfo: storeSettings.contactInfo,
-      
-      // Payment settings
-      paymentSettings: paymentSettings,
-      
-      // Shipping settings
-      shippingSettings: shippingSettings,
-      
-      // Tax settings
-      taxSettings: taxSettings,
-      
-      // Menu items
-      menuItems: menuItems
-    };
-    
-    // Update the store settings in AuthContext
-    updateStoreSettings(combinedSettings);
+    // Here you would normally send the data to your API
+    console.log("Store Settings:", storeSettings);
+    console.log("Payment Settings:", paymentSettings);
+    console.log("Shipping Settings:", shippingSettings);
+    console.log("Tax Settings:", taxSettings);
+    console.log("Menu Items:", menuItems);
     
     toast({
       title: "Settings saved",
@@ -267,20 +221,6 @@ const Settings = () => {
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="storeSlug">Store URL Slug</Label>
-                    <Input
-                      id="storeSlug"
-                      name="storeSlug"
-                      value={storeSettings.storeSlug}
-                      onChange={handleStoreChange}
-                      placeholder="my-store"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      This will be used in your store URL: yourdomain.com/store/{storeSettings.storeSlug || "my-store"}
-                    </p>
-                  </div>
-                  
-                  <div className="space-y-2">
                     <Label htmlFor="storeEmail">Email</Label>
                     <Input
                       id="storeEmail"
@@ -311,18 +251,6 @@ const Settings = () => {
                       rows={4}
                       value={storeSettings.storeAddress}
                       onChange={handleStoreChange}
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="privacyPolicy">Privacy Policy</Label>
-                    <Textarea
-                      id="privacyPolicy"
-                      name="privacyPolicy"
-                      rows={4}
-                      value={storeSettings.privacyPolicy}
-                      onChange={handleStoreChange}
-                      placeholder="Enter your store's privacy policy here..."
                     />
                   </div>
                 </div>
@@ -391,7 +319,7 @@ const Settings = () => {
             </div>
           </TabsContent>
           
-          {/* Payment Settings Tab */}
+          {/* Payment Settings */}
           <TabsContent value="payment" className="space-y-6 py-4">
             <div className="bg-card rounded-lg shadow-custom p-6">
               <div className="flex items-center justify-between mb-6">
@@ -539,7 +467,7 @@ const Settings = () => {
             </div>
           </TabsContent>
           
-          {/* Shipping Settings Tab */}
+          {/* Shipping Settings */}
           <TabsContent value="shipping" className="space-y-6 py-4">
             <div className="bg-card rounded-lg shadow-custom p-6">
               <div className="flex items-center justify-between mb-6">
@@ -648,7 +576,7 @@ const Settings = () => {
             </div>
           </TabsContent>
           
-          {/* Tax Settings Tab */}
+          {/* Tax Settings */}
           <TabsContent value="tax" className="space-y-6 py-4">
             <div className="bg-card rounded-lg shadow-custom p-6">
               <div className="flex items-center justify-between mb-6">

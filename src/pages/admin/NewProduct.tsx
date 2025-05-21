@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -95,20 +96,9 @@ const NewProduct = () => {
     e.preventDefault();
     setIsSubmitting(true);
     
-    if (!user || !user.store) {
-      toast({
-        title: "Error",
-        description: "You must be logged in with a store to create products.",
-        variant: "destructive",
-      });
-      setIsSubmitting(false);
-      return;
-    }
-    
     // Create a new product object
-    const productId = `product-${Date.now()}`;
     const newProduct = {
-      id: productId,
+      id: `product-${Date.now()}`,
       name: productData.name,
       price: parseFloat(productData.price),
       description: productData.description,
@@ -121,9 +111,8 @@ const NewProduct = () => {
       variants: variants,
       image: images.length > 0 ? images[0] : "",
       images: images,
-      userId: user.id,
-      storeId: user.store.id,
-      storeSlug: user.store.slug, // Add store slug for easy lookup
+      userId: user?.id,
+      storeId: user?.store?.id,
       createdAt: new Date().toISOString(),
     };
 
