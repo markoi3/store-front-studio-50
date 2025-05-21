@@ -10,6 +10,7 @@ import { Link } from "react-router-dom";
 const getStoredProducts = () => {
   try {
     const products = localStorage.getItem("products");
+    console.log("Retrieved stored products:", products);
     return products ? JSON.parse(products) : [];
   } catch (error) {
     console.error("Error loading products:", error);
@@ -24,9 +25,21 @@ const Storefront = () => {
   const [storeProducts, setStoreProducts] = useState<Product[]>([]);
   
   useEffect(() => {
-    // Load stored products that are published
-    const products = getStoredProducts().filter((p: any) => p.published);
-    setStoreProducts(products);
+    // Load all stored products
+    const allProducts = getStoredProducts();
+    console.log("All products:", allProducts);
+    
+    // Filter for published products
+    const publishedProducts = allProducts.filter((p: any) => p.published);
+    console.log("Published products:", publishedProducts);
+    
+    // Add storeId to each product for correct routing
+    const productsWithStoreId = publishedProducts.map((product: any) => ({
+      ...product,
+      storeId: storeId
+    }));
+    
+    setStoreProducts(productsWithStoreId);
     
     // In a real application, we would fetch store data from an API
     // For now, using mock data
@@ -110,33 +123,42 @@ const Storefront = () => {
       name: "Proizvod 1",
       price: 9900,
       image: "https://via.placeholder.com/300",
-      slug: "proizvod-1"
+      slug: "proizvod-1",
+      storeId: storeId,
+      category: "furniture"
     },
     {
       id: "default2",
       name: "Proizvod 2",
       price: 12900,
       image: "https://via.placeholder.com/300",
-      slug: "proizvod-2"
+      slug: "proizvod-2",
+      storeId: storeId,
+      category: "furniture"
     },
     {
       id: "default3",
       name: "Proizvod 3",
       price: 7900,
       image: "https://via.placeholder.com/300",
-      slug: "proizvod-3"
+      slug: "proizvod-3",
+      storeId: storeId,
+      category: "kitchen"
     },
     {
       id: "default4",
       name: "Proizvod 4",
       price: 15900,
       image: "https://via.placeholder.com/300",
-      slug: "proizvod-4"
+      slug: "proizvod-4",
+      storeId: storeId,
+      category: "lighting"
     }
   ];
   
   // Use stored products if available, otherwise use defaults
   const displayProducts = storeProducts.length > 0 ? storeProducts : defaultProducts;
+  console.log("Display products:", displayProducts);
   
   return (
     <ShopLayout>

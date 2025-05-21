@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Link, useLocation } from "react-router-dom";
 import { Product } from "@/components/shop/ProductCard";
+import { useToast } from "@/hooks/use-toast";
 
 // Sample products data with additional fields
 const defaultProducts: (Product & {
@@ -115,11 +116,13 @@ const Products = () => {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
   const location = useLocation();
+  const { toast } = useToast();
   
   // Load products on mount and when coming back to this page
   useEffect(() => {
     const loadProducts = () => {
       const storedProducts = getStoredProducts();
+      console.log("Stored products:", storedProducts);
       
       // Merge default products with stored products
       // If a product with the same ID exists in both, use the stored version
@@ -133,10 +136,15 @@ const Products = () => {
     
     // Show toast if there's a success message in location state
     if (location.state?.success) {
+      toast({
+        title: "Proizvod sačuvan",
+        description: location.state.message || "Proizvod je uspešno sačuvan",
+      });
+      
       // Remove the success message after using it to prevent showing it again on page refresh
       history.replaceState({}, document.title);
     }
-  }, [location]);
+  }, [location, toast]);
   
   // Filter and search products
   const filteredProducts = products.filter((product) => {
@@ -322,6 +330,15 @@ const Products = () => {
                             <DropdownMenuItem>
                               <Link to={`/products/${product.id}`} className="w-full">
                                 Edit
+                              </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                              <Link 
+                                to={`/product/${product.slug}`} 
+                                className="w-full"
+                                target="_blank"
+                              >
+                                View Product
                               </Link>
                             </DropdownMenuItem>
                             <DropdownMenuItem

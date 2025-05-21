@@ -56,12 +56,17 @@ const PaymentLink = () => {
   useEffect(() => {
     // Load payment links from localStorage
     const paymentLinks = getPaymentLinks();
+    console.log("Available payment links:", paymentLinks);
+    console.log("Looking for link ID:", linkId);
+    
     const foundLink = paymentLinks.find((link: any) => link.id === linkId);
     
     setTimeout(() => {
       if (foundLink) {
+        console.log("Found payment link:", foundLink);
         setPaymentLink(foundLink);
       } else {
+        console.log("Payment link not found");
         toast({
           title: "Greška",
           description: "Link za plaćanje nije pronađen ili je istekao",
