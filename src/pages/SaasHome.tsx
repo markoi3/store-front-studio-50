@@ -32,7 +32,7 @@ const SaasHome = () => {
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-6">Pomažemo ti da razvijaš online biznis.</h1>
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-6">Tvoje mesto za online poslovanje.</h1>
               <p className="text-xl text-muted-foreground mb-8 max-w-lg">Platforma za tvoje biznis finansije - i rast.</p>
               <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
                 <Button size="lg" className="text-lg">Započni besplatno</Button>
