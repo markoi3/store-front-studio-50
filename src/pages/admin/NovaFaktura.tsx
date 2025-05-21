@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -100,23 +99,51 @@ const NovaFaktura = () => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    // Simulacija slanja podataka na server
+    // Generate a unique ID for the new invoice
+    const newId = `FAK-${new Date().getFullYear()}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
+    
+    // Create the complete faktura object
+    const newFaktura = {
+      id: fakturaData.broj || newId,
+      tip: "faktura",
+      datum: fakturaData.datum,
+      rokPlacanja: fakturaData.rokPlacanja,
+      klijent: fakturaData.klijent,
+      iznos: ukupnoSaPDV,
+      pdv: ukupanPDV,
+      status: "čeka uplatu",
+      // Add other fields needed
+      adresa: fakturaData.adresa,
+      pib: fakturaData.pib,
+      maticniBroj: fakturaData.maticniBroj,
+      napomena: fakturaData.napomena,
+      nacinPlacanja: fakturaData.nacinPlacanja,
+      stavke: [...stavke],
+    };
+
+    // Get existing fakture from localStorage or initialize empty array
+    const existingFakture = JSON.parse(localStorage.getItem('fakture') || '[]');
+    
+    // Add the new faktura
+    const updatedFakture = [...existingFakture, newFaktura];
+    
+    // Save back to localStorage
+    localStorage.setItem('fakture', JSON.stringify(updatedFakture));
+
+    // Log for debugging
+    console.info("Kreirana faktura:", newFaktura);
+    
     setTimeout(() => {
-      console.log("Kreirana faktura:", {
-        ...fakturaData,
-        stavke,
-        ukupnoBezPDV,
-        ukupanPDV,
-        ukupnoSaPDV,
-      });
-      
       setIsSubmitting(false);
-      toast({
-        title: "Uspešno",
-        description: "Faktura je kreirana",
+      
+      // Navigate to fakture page with success state
+      navigate("/fakture", { 
+        state: { 
+          success: true, 
+          message: "Faktura je uspešno kreirana" 
+        } 
       });
-      navigate("/fakture");
-    }, 1000);
+    }, 500);
   };
 
   return (

@@ -22,6 +22,27 @@ import { useNavigate } from "react-router-dom";
 import { Calculator } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
+// Period mapping for human-readable display
+const periodMapping: Record<string, string> = {
+  januar: "Januar",
+  februar: "Februar",
+  mart: "Mart",
+  april: "April",
+  maj: "Maj",
+  jun: "Jun",
+  jul: "Jul",
+  avgust: "Avgust",
+  septembar: "Septembar",
+  oktobar: "Oktobar",
+  novembar: "Novembar",
+  decembar: "Decembar",
+  kvartal1: "Prvi kvartal",
+  kvartal2: "Drugi kvartal",
+  kvartal3: "Treći kvartal",
+  kvartal4: "Četvrti kvartal",
+  godina: "Cela godina"
+};
+
 const NoviObracun = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -111,20 +132,50 @@ const NoviObracun = () => {
     
     setIsSubmitting(true);
 
-    // Simulacija slanja podataka na server
+    // Generate a unique ID for the new calculation
+    const newId = `OBR-${obracunData.godina}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
+    
+    const periodName = periodMapping[obracunData.period] || obracunData.period;
+    
+    // Create complete obracun object
+    const newObracun = {
+      id: newId,
+      tip: "obračun",
+      naziv: `${periodName} ${obracunData.godina}`,
+      period: obracunData.period,
+      godina: obracunData.godina,
+      ukupanPromet: parseFloat(obracunData.ukupanPromet),
+      stopa: obracunData.stopa,
+      datum: new Date().toISOString().split('T')[0],
+      osnovica: rezultati.osnovica,
+      pdvIznos: rezultati.pdvIznos,
+      porezNaDobit: rezultati.porezNaDobit,
+      ukupanPorez: (rezultati.pdvIznos || 0) + (rezultati.porezNaDobit || 0)
+    };
+
+    // Retrieve existing obračuni from localStorage or initialize empty array
+    const existingObracuni = JSON.parse(localStorage.getItem('obracuni') || '[]');
+    
+    // Add new obračun
+    const updatedObracuni = [...existingObracuni, newObracun];
+    
+    // Save back to localStorage
+    localStorage.setItem('obracuni', JSON.stringify(updatedObracuni));
+
+    // Log for debugging
+    console.info("Kreiran obračun:", newObracun);
+    
     setTimeout(() => {
-      console.log("Kreiran obračun:", {
-        ...obracunData,
-        ...rezultati,
-      });
-      
       setIsSubmitting(false);
-      toast({
-        title: "Uspešno",
-        description: "Obračun je kreiran",
+      
+      // Navigate to racunovodstvo page with success state
+      navigate("/racunovodstvo", { 
+        state: { 
+          success: true, 
+          message: "Obračun je uspešno kreiran" 
+        } 
       });
-      navigate("/racunovodstvo");
-    }, 1000);
+    }, 500);
   };
 
   const periodi = [

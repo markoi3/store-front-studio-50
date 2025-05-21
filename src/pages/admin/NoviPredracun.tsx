@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -94,23 +93,50 @@ const NoviPredracun = () => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    // Simulacija slanja podataka na server
+    // Generate a unique ID for the new predračun
+    const newId = `PR-${new Date().getFullYear()}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
+    
+    // Create the complete predračun object
+    const newPredracun = {
+      id: predracunData.broj || newId,
+      tip: "predračun",
+      datum: predracunData.datum,
+      rokPlacanja: predracunData.vaziDo,
+      klijent: predracunData.klijent,
+      iznos: ukupnoSaPDV,
+      pdv: ukupanPDV,
+      status: "poslato",
+      // Add other fields needed
+      adresa: predracunData.adresa,
+      pib: predracunData.pib,
+      maticniBroj: predracunData.maticniBroj,
+      napomena: predracunData.napomena,
+      stavke: [...stavke],
+    };
+
+    // Get existing predračuni from localStorage or initialize empty array
+    const existingPredracuni = JSON.parse(localStorage.getItem('predracuni') || '[]');
+    
+    // Add the new predračun
+    const updatedPredracuni = [...existingPredracuni, newPredracun];
+    
+    // Save back to localStorage
+    localStorage.setItem('predracuni', JSON.stringify(updatedPredracuni));
+
+    // Log for debugging
+    console.info("Kreiran predračun:", newPredracun);
+    
     setTimeout(() => {
-      console.log("Kreiran predračun:", {
-        ...predracunData,
-        stavke,
-        ukupnoBezPDV,
-        ukupanPDV,
-        ukupnoSaPDV,
-      });
-      
       setIsSubmitting(false);
-      toast({
-        title: "Uspešno",
-        description: "Predračun je kreiran",
+      
+      // Navigate to fakture page with success state
+      navigate("/fakture", { 
+        state: { 
+          success: true, 
+          message: "Predračun je uspešno kreiran" 
+        } 
       });
-      navigate("/fakture");
-    }, 1000);
+    }, 500);
   };
 
   return (

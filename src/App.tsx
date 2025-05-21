@@ -38,6 +38,7 @@ import Fakture from "./pages/admin/Fakture";
 import NovaFaktura from "./pages/admin/NovaFaktura";
 import NoviPredracun from "./pages/admin/NoviPredracun";
 import NoviObracun from "./pages/admin/NoviObracun";
+import Transakcije from "./pages/admin/Transakcije";
 
 // Store Pages
 import Storefront from "./pages/store/Storefront";
@@ -92,7 +93,8 @@ const App = () => (
               <Route path="/products/new" element={<NewProduct />} />
               <Route path="/products/:id" element={<EditProduct />} />
               <Route path="/orders" element={<Orders />} />
-              <Route path="/orders/:id" element={<Orders />} />
+              <Route path="/orders/:id" element={<Transakcije />} />
+              <Route path="/transakcije/:id" element={<Transakcije />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/design" element={<Design />} />
               <Route path="/analytics" element={<Analytics />} />

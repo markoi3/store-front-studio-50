@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,20 +24,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import {
   FileText,
   Download,
   Plus,
-  Filter,
   AlertCircle,
   FileCheck,
   FileClock,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useToast } from "@/hooks/use-toast";
 
-// Podaci o fakturama
-const fakturePodaci = [
+// Initial fake data
+let fakturePodaci = [
   {
     id: "FAK-2023-001",
     tip: "faktura",
@@ -91,15 +90,58 @@ const fakturePodaci = [
   },
 ];
 
+// Function to check local storage for new items
+const getStoredItems = () => {
+  try {
+    const storedFakture = localStorage.getItem("fakture");
+    const storedPredracuni = localStorage.getItem("predracuni");
+    const storedObracuni = localStorage.getItem("obracuni");
+    
+    let allItems = [...fakturePodaci];
+    
+    if (storedFakture) {
+      const parsedFakture = JSON.parse(storedFakture);
+      allItems = [...allItems, ...parsedFakture];
+    }
+    
+    if (storedPredracuni) {
+      const parsedPredracuni = JSON.parse(storedPredracuni);
+      allItems = [...allItems, ...parsedPredracuni];
+    }
+    
+    return allItems;
+  } catch (error) {
+    console.error("Error loading stored items:", error);
+    return fakturePodaci;
+  }
+};
+
 const Fakture = () => {
   const [period, setPeriod] = useState<string>("all");
   const [status, setStatus] = useState<string>("all");
   const [tip, setTip] = useState<string>("all");
   const [search, setSearch] = useState<string>("");
   const [activeTab, setActiveTab] = useState<string>("sve");
+  const [stavke, setStavke] = useState(fakturePodaci);
+  const { toast } = useToast();
+  const location = useLocation();
+
+  // Load stored items on initial load and when the location changes (user navigates to this page)
+  useEffect(() => {
+    const allItems = getStoredItems();
+    setStavke(allItems);
+    
+    // Check if we have a success message from another page
+    if (location.state?.success) {
+      toast({
+        title: "Uspešno",
+        description: location.state.message || "Operacija je uspešno izvršena",
+      });
+    }
+  }, [location, toast]);
 
   // Filtriranje faktura
-  const filtriraneStavke = fakturePodaci.filter((faktura) => {
+  const filtriraneStavke = stavke.filter((faktura) => {
     // Filter po tipu (faktura/predračun)
     const tipMatch = tip === "all" || faktura.tip === tip;
     

@@ -1,6 +1,8 @@
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -9,9 +11,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Calculator, Download, Filter } from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -19,106 +25,142 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Link, useLocation } from "react-router-dom";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  Calculator,
+  FileText,
+  Plus,
+  AlertCircle,
+  Download,
+} from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
-// Podaci o poreskim kalkulacijama
-const racunovodstveniPodaci = [
+// Mock data for initial obračuni
+const initialObracuni = [
   {
-    id: "1001",
-    period: "Januar 2023",
-    ukupanPromet: 158600,
-    pdvIznos: 26433.33,
-    porezNaDobit: 13250,
-    status: "obračunato",
+    id: "OBR-2023-001",
+    tip: "obračun",
+    naziv: "Oktobar 2023",
+    period: "oktobar",
+    godina: "2023",
+    datum: "2023-11-01",
+    ukupanPromet: 120000,
+    stopa: "20",
+    osnovica: 100000,
+    pdvIznos: 20000,
+    porezNaDobit: 15000,
+    ukupanPorez: 35000
   },
   {
-    id: "1002",
-    period: "Februar 2023",
-    ukupanPromet: 204350,
-    pdvIznos: 34058.33,
-    porezNaDobit: 17029.17,
-    status: "plaćeno",
-  },
-  {
-    id: "1003",
-    period: "Mart 2023",
-    ukupanPromet: 178900,
-    pdvIznos: 29816.67,
-    porezNaDobit: 14908.33,
-    status: "obračunato",
-  },
-  {
-    id: "1004",
-    period: "April 2023",
-    ukupanPromet: 192400,
-    pdvIznos: 32066.67,
-    porezNaDobit: 16033.33,
-    status: "plaćeno",
-  },
+    id: "OBR-2023-002",
+    tip: "obračun",
+    naziv: "Treći kvartal 2023",
+    period: "kvartal3",
+    godina: "2023",
+    datum: "2023-10-05",
+    ukupanPromet: 380000,
+    stopa: "20",
+    osnovica: 316666.67,
+    pdvIznos: 63333.33,
+    porezNaDobit: 47500,
+    ukupanPorez: 110833.33
+  }
 ];
 
 const Racunovodstvo = () => {
-  const [period, setPeriod] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [godina, setGodina] = useState<string>(new Date().getFullYear().toString());
+  const [period, setPeriod] = useState<string>("all");
+  const [search, setSearch] = useState<string>("");
+  const [obracuni, setObracuni] = useState(initialObracuni);
+  const { toast } = useToast();
+  const location = useLocation();
 
-  // Filtriranje podataka
-  const filtriranPodaci = racunovodstveniPodaci.filter((podatak) => {
-    return (
-      (statusFilter === "all" || podatak.status === statusFilter) &&
-      (period === "all" || podatak.period.includes(period))
-    );
+  const loadObracuni = useCallback(() => {
+    try {
+      const storedObracuni = localStorage.getItem("obracuni");
+      
+      let allObracuni = [...initialObracuni];
+      
+      if (storedObracuni) {
+        const parsedObracuni = JSON.parse(storedObracuni);
+        allObracuni = [...allObracuni, ...parsedObracuni];
+      }
+      
+      setObracuni(allObracuni);
+    } catch (error) {
+      console.error("Error loading stored obracuni:", error);
+    }
+  }, []);
+
+  // Load stored items and check for success message on page load
+  useEffect(() => {
+    loadObracuni();
+    
+    if (location.state?.success) {
+      toast({
+        title: "Uspešno",
+        description: location.state.message || "Operacija je uspešno izvršena",
+      });
+      // Clear the state after showing toast
+      window.history.replaceState({}, document.title);
+    }
+  }, [location, toast, loadObracuni]);
+
+  const filtriraniObracuni = obracuni.filter(obracun => {
+    // Filter po godini
+    const godinaMatch = godina === "all" || obracun.godina === godina;
+    
+    // Filter po periodu
+    const periodMatch = period === "all" || obracun.period === period;
+    
+    // Filter po pretrazi
+    const searchMatch = search === "" || 
+      obracun.naziv.toLowerCase().includes(search.toLowerCase()) ||
+      obracun.id.toLowerCase().includes(search.toLowerCase());
+    
+    return godinaMatch && periodMatch && searchMatch;
   });
 
-  // Ukupan promet za sve filtrirane podatke
-  const ukupanPromet = filtriranPodaci.reduce(
-    (sum, podatak) => sum + podatak.ukupanPromet,
-    0
-  );
+  // Ukupan PDV i porez na dobit za filtrirane obračune
+  const ukupanPDV = filtriraniObracuni.reduce((sum, obracun) => sum + (obracun.pdvIznos || 0), 0);
+  const ukupanPorezNaDobit = filtriraniObracuni.reduce((sum, obracun) => sum + (obracun.porezNaDobit || 0), 0);
+  const ukupanPorez = ukupanPDV + ukupanPorezNaDobit;
 
-  // Ukupan PDV za sve filtrirane podatke
-  const ukupanPDV = filtriranPodaci.reduce(
-    (sum, podatak) => sum + podatak.pdvIznos,
-    0
-  );
+  // Generate unique years for filter select
+  const godine = Array.from(
+    new Set([...obracuni.map(o => o.godina), new Date().getFullYear().toString()])
+  ).sort((a, b) => parseInt(b) - parseInt(a));
 
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Računodstvo</h1>
-          <Button>
-            <Calculator className="mr-2 h-4 w-4" />
-            Novi obračun
-          </Button>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <h1 className="text-2xl font-bold">Računovodstvo</h1>
+          <div className="flex flex-wrap gap-2">
+            <Link to="/obracun/novi">
+              <Button variant="default">
+                <Calculator className="mr-2 h-4 w-4" />
+                Novi obračun poreza
+              </Button>
+            </Link>
+            <Link to="/fakture">
+              <Button variant="outline">
+                <FileText className="mr-2 h-4 w-4" />
+                Fakture i predračuni
+              </Button>
+            </Link>
+          </div>
         </div>
 
         {/* Kartice pregleda */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg">Ukupan promet</CardTitle>
-              <CardDescription>Tekuća godina</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-3xl font-numeric font-bold">
-                {ukupanPromet.toLocaleString("sr-RS")} RSD
-              </p>
-            </CardContent>
-          </Card>
-
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-lg">Ukupan PDV</CardTitle>
-              <CardDescription>Tekuća godina</CardDescription>
+              <CardDescription>Za izabrani period</CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-numeric font-bold">
+              <p className="text-2xl font-numeric font-bold">
                 {ukupanPDV.toLocaleString("sr-RS")} RSD
               </p>
             </CardContent>
@@ -126,94 +168,127 @@ const Racunovodstvo = () => {
 
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-lg">Poreska stopa</CardTitle>
-              <CardDescription>Trenutna</CardDescription>
+              <CardTitle className="text-lg">Porez na dobit</CardTitle>
+              <CardDescription>Za izabrani period</CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-numeric font-bold">20%</p>
+              <p className="text-2xl font-numeric font-bold">
+                {ukupanPorezNaDobit.toLocaleString("sr-RS")} RSD
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg">Ukupno poreza</CardTitle>
+              <CardDescription>Svi porezi</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-2xl font-numeric font-bold">
+                {ukupanPorez.toLocaleString("sr-RS")} RSD
+              </p>
             </CardContent>
           </Card>
         </div>
 
         {/* Filteri */}
-        <div className="flex flex-col md:flex-row gap-4 mb-6">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-col md:flex-row justify-between gap-4 mb-4">
+          <div className="flex flex-wrap gap-2">
+            <Select value={godina} onValueChange={setGodina}>
+              <SelectTrigger className="w-[120px]">
+                <SelectValue placeholder="Godina" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Sve godine</SelectItem>
+                {godine.map(g => (
+                  <SelectItem key={g} value={g}>{g}.</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
             <Select value={period} onValueChange={setPeriod}>
-              <SelectTrigger className="w-full md:w-48">
+              <SelectTrigger className="w-[160px]">
                 <SelectValue placeholder="Period" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Svi periodi</SelectItem>
-                <SelectItem value="Januar">Januar</SelectItem>
-                <SelectItem value="Februar">Februar</SelectItem>
-                <SelectItem value="Mart">Mart</SelectItem>
-                <SelectItem value="April">April</SelectItem>
+                <SelectItem value="januar">Januar</SelectItem>
+                <SelectItem value="februar">Februar</SelectItem>
+                <SelectItem value="mart">Mart</SelectItem>
+                <SelectItem value="april">April</SelectItem>
+                <SelectItem value="maj">Maj</SelectItem>
+                <SelectItem value="jun">Jun</SelectItem>
+                <SelectItem value="jul">Jul</SelectItem>
+                <SelectItem value="avgust">Avgust</SelectItem>
+                <SelectItem value="septembar">Septembar</SelectItem>
+                <SelectItem value="oktobar">Oktobar</SelectItem>
+                <SelectItem value="novembar">Novembar</SelectItem>
+                <SelectItem value="decembar">Decembar</SelectItem>
+                <SelectItem value="kvartal1">Prvi kvartal</SelectItem>
+                <SelectItem value="kvartal2">Drugi kvartal</SelectItem>
+                <SelectItem value="kvartal3">Treći kvartal</SelectItem>
+                <SelectItem value="kvartal4">Četvrti kvartal</SelectItem>
+                <SelectItem value="godina">Cela godina</SelectItem>
               </SelectContent>
             </Select>
-
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full md:w-48">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Svi statusi</SelectItem>
-                <SelectItem value="obračunato">Obračunato</SelectItem>
-                <SelectItem value="plaćeno">Plaćeno</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="flex-1">
-            <Input placeholder="Pretraži po periodu ili ID-u" />
+            
+            <div className="flex-1 min-w-[200px]">
+              <Input
+                placeholder="Pretraži obračune"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
           </div>
         </div>
 
-        {/* Tabela sa podacima */}
+        {/* Tabela obračuna */}
         <div className="bg-card shadow-sm rounded-lg overflow-hidden border">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>ID</TableHead>
+                <TableHead>ID obračuna</TableHead>
                 <TableHead>Period</TableHead>
-                <TableHead>Ukupan promet</TableHead>
-                <TableHead>PDV iznos</TableHead>
+                <TableHead>Datum</TableHead>
+                <TableHead>PDV</TableHead>
                 <TableHead>Porez na dobit</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead>Ukupno poreza</TableHead>
                 <TableHead className="text-right">Akcije</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtriranPodaci.map((podatak) => (
-                <TableRow key={podatak.id}>
-                  <TableCell className="font-medium">{podatak.id}</TableCell>
-                  <TableCell>{podatak.period}</TableCell>
-                  <TableCell className="font-numeric">
-                    {podatak.ukupanPromet.toLocaleString("sr-RS")} RSD
-                  </TableCell>
-                  <TableCell className="font-numeric">
-                    {podatak.pdvIznos.toLocaleString("sr-RS")} RSD
-                  </TableCell>
-                  <TableCell className="font-numeric">
-                    {podatak.porezNaDobit.toLocaleString("sr-RS")} RSD
-                  </TableCell>
-                  <TableCell>
-                    <span
-                      className={`py-1 px-2 rounded-full text-xs ${
-                        podatak.status === "plaćeno"
-                          ? "bg-green-100 text-green-800"
-                          : "bg-blue-100 text-blue-800"
-                      }`}
-                    >
-                      {podatak.status}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="sm">
-                      <Download className="h-4 w-4 mr-1" /> Preuzmi
-                    </Button>
+              {filtriraniObracuni.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-8">
+                    <div className="flex flex-col items-center justify-center text-muted-foreground">
+                      <AlertCircle className="h-12 w-12 opacity-20 mb-2" />
+                      <p>Nema pronađenih obračuna</p>
+                    </div>
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                filtriraniObracuni.map((obracun) => (
+                  <TableRow key={obracun.id}>
+                    <TableCell className="font-medium">{obracun.id}</TableCell>
+                    <TableCell>{obracun.naziv}</TableCell>
+                    <TableCell>{obracun.datum}</TableCell>
+                    <TableCell className="font-numeric">
+                      {obracun.pdvIznos.toLocaleString("sr-RS")} RSD
+                    </TableCell>
+                    <TableCell className="font-numeric">
+                      {obracun.porezNaDobit.toLocaleString("sr-RS")} RSD
+                    </TableCell>
+                    <TableCell className="font-numeric">
+                      {obracun.ukupanPorez.toLocaleString("sr-RS")} RSD
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button variant="ghost" size="sm">
+                        <Download className="h-4 w-4 mr-1" /> PDF
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </div>
