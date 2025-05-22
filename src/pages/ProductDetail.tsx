@@ -39,11 +39,14 @@ const ProductDetail = () => {
         if (error) {
           console.error("Error fetching product:", error);
         } else if (data) {
-          // Make sure price is a number
+          // Make sure price is a number and convert image arrays
           const productData: ProductData = {
             ...data,
             price: Number(data.price),
-            images: Array.isArray(data.images) ? data.images : [],
+            // Convert JSON images to string[]
+            images: Array.isArray(data.images) 
+              ? data.images.map(img => typeof img === 'string' ? img : String(img))
+              : [],
             variants: Array.isArray(data.variants) ? data.variants : []
           };
           

@@ -3,14 +3,7 @@ import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-interface StoreData {
-  id: string;
-  name: string;
-  slug: string;
-  settings: StoreSettings;
-}
-
-interface StoreSettings {
+export interface StoreSettings {
   menuItems?: Array<{id: string; label: string; url: string}>;
   logo?: {
     url?: string;
@@ -21,6 +14,13 @@ interface StoreSettings {
   contactInfo?: string;
   pageElements?: any[];
   [key: string]: any;
+}
+
+interface StoreData {
+  id: string;
+  name: string;
+  slug: string;
+  settings: StoreSettings;
 }
 
 export function useStore() {
@@ -55,7 +55,7 @@ export function useStore() {
             id: data.id,
             name: data.name,
             slug: data.slug,
-            settings: data.settings || {}
+            settings: data.settings && typeof data.settings === 'object' ? data.settings as StoreSettings : {}
           };
           
           setStore(storeData);

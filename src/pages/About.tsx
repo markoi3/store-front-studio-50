@@ -3,11 +3,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { withStoreLayout } from "@/components/layout/StorePageLayout";
 import { supabase } from "@/integrations/supabase/client";
-
-interface StoreSettings {
-  aboutUs?: string;
-  [key: string]: any;
-}
+import { StoreSettings } from "@/hooks/useStore";
 
 const AboutPage = () => {
   const { storeId } = useParams<{ storeId?: string }>();
