@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -77,10 +77,12 @@ const Settings = () => {
   
   const [isUpdatingStore, setIsUpdatingStore] = useState(false);
   const [isSavingSettings, setIsSavingSettings] = useState(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   // Load store information when component mounts
   useEffect(() => {
-    if (user?.store) {
+    if (user?.store && isInitialLoad) {
+      console.log("Loading store settings from user context", user.store);
       setStoreInfo({
         name: user.store.name || "",
         slug: user.store.slug || ""
@@ -111,8 +113,9 @@ const Settings = () => {
           setTaxSettings(user.store.settings.taxSettings);
         }
       }
+      setIsInitialLoad(false);
     }
-  }, [user]);
+  }, [user, isInitialLoad]);
   
   const handleStoreInfoChange = (
     e: React.ChangeEvent<HTMLInputElement>
@@ -225,7 +228,7 @@ const Settings = () => {
     }
   };
   
-  const handleSaveSettings = async () => {
+  const handleSaveSettings = useCallback(async () => {
     if (!user?.store) {
       toast.error("No store found for your account");
       return;
@@ -233,6 +236,8 @@ const Settings = () => {
     
     setIsSavingSettings(true);
     try {
+      console.log("Saving store settings...");
+      
       // Combine all settings into one object
       const combinedSettings = {
         aboutUs: contentSettings.aboutUs,
@@ -242,6 +247,7 @@ const Settings = () => {
         paymentSettings,
         shippingSettings,
         taxSettings,
+        // Preserve any existing menu items
         menuItems: user.store.settings?.menuItems || [
           { id: "1", label: "Početna", url: "/" },
           { id: "2", label: "Proizvodi", url: "/shop" },
@@ -249,6 +255,8 @@ const Settings = () => {
           { id: "4", label: "Kontakt", url: "/contact" }
         ]
       };
+      
+      console.log("Combined settings:", combinedSettings);
       
       // Update the database
       const { error } = await supabase
@@ -259,21 +267,28 @@ const Settings = () => {
         .eq('id', user.store.id);
       
       if (error) {
+        console.error("Error updating store settings:", error);
         throw new Error(error.message);
       }
       
-      // Update the local context without causing infinite loop
+      // Update the local context
       if (updateStoreSettings) {
-        await updateStoreSettings(combinedSettings);
+        try {
+          await updateStoreSettings(combinedSettings);
+          console.log("Local context updated successfully");
+        } catch (contextError) {
+          console.error("Error updating local context:", contextError);
+        }
       }
       
       toast.success("Settings saved successfully");
     } catch (error) {
+      console.error("Failed to save settings:", error);
       toast.error("Failed to save settings: " + (error as Error).message);
     } finally {
       setIsSavingSettings(false);
     }
-  };
+  }, [user, contentSettings, storeSettings, paymentSettings, shippingSettings, taxSettings, updateStoreSettings]);
   
   return (
     <AdminLayout>

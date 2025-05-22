@@ -218,7 +218,7 @@ const ProductDetail = () => {
           {/* Product Details */}
           <div className="w-full lg:w-1/2">
             <h1 className="text-3xl font-bold mb-2">{product.name}</h1>
-            <p className="text-2xl mb-4">{product.price.toLocaleString("sr-RS")} RSD</p>
+            <p className="text-2xl mb-4">{product.price.toString()} RSD</p>
             
             <p className="text-muted-foreground mb-6">{product.description}</p>
             
@@ -239,7 +239,7 @@ const ProductDetail = () => {
                     >
                       {variant.name}
                       {variant.price !== null && variant.price !== product.price
-                        ? ` (+${(variant.price - product.price).toLocaleString("sr-RS")} RSD)`
+                        ? ` (+${(variant.price - product.price).toString()} RSD)`
                         : ""}
                     </button>
                   ))}
