@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { ShopLayout } from "@/components/layout/ShopLayout";
@@ -261,32 +260,32 @@ const Storefront = () => {
         {renderCustomNavigation()}
         
         {/* Hero Section */}
-        {store.elements.find((el) => el.type === 'hero') && (
+        {store?.elements.find((el) => el.type === 'hero') && (
           <div className="relative h-[70vh] bg-accent">
             <img 
-              src={store.elements.find((el) => el.type === 'hero').settings.backgroundImage} 
+              src={store.elements.find((el) => el.type === 'hero')?.settings.backgroundImage} 
               alt="Hero" 
               className="absolute inset-0 w-full h-full object-cover" 
             />
             <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center text-white px-4">
               <h1 className="text-4xl md:text-5xl font-bold mb-4 text-center">
-                {store.elements.find((el) => el.type === 'hero').settings.title}
+                {store.elements.find((el) => el.type === 'hero')?.settings.title}
               </h1>
               <p className="text-xl md:text-2xl mb-6 max-w-2xl text-center">
-                {store.elements.find((el) => el.type === 'hero').settings.subtitle}
+                {store.elements.find((el) => el.type === 'hero')?.settings.subtitle}
               </p>
               <Button size="lg" className="text-lg px-6">
-                {store.elements.find((el) => el.type === 'hero').settings.buttonText}
+                {store.elements.find((el) => el.type === 'hero')?.settings.buttonText}
               </Button>
             </div>
           </div>
         )}
         
         {/* Featured Products */}
-        {store.elements.find((el) => el.type === 'products') && (
+        {store?.elements.find((el) => el.type === 'products') && (
           <div className="container mx-auto px-4 py-12">
             <h2 className="text-3xl font-bold mb-6 text-center">
-              {store.elements.find((el) => el.type === 'products').settings.title}
+              {store.elements.find((el) => el.type === 'products')?.settings.title}
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {displayProducts.slice(0, 4).map((product: Product) => (
@@ -318,18 +317,18 @@ const Storefront = () => {
         )}
         
         {/* Text Section */}
-        {store.elements.find((el) => el.type === 'text') && (
+        {store?.elements.find((el) => el.type === 'text') && (
           <div className="container mx-auto px-4 py-12">
             <div className="max-w-3xl mx-auto text-center">
               <p className="text-lg">
-                {store.elements.find((el) => el.type === 'text').settings.content}
+                {store.elements.find((el) => el.type === 'text')?.settings.content}
               </p>
             </div>
           </div>
         )}
         
         {/* Privacy Policy Section (if exists) */}
-        {store.settings.privacyPolicy && (
+        {store?.settings.privacyPolicy && (
           <div className="container mx-auto px-4 py-12 border-t">
             <div className="max-w-3xl mx-auto">
               <h2 className="text-2xl font-bold mb-4">Politika privatnosti</h2>

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -15,9 +14,13 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { useNavigate } from "react-router-dom";
 import { Plus, X } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const NewProduct = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const [productData, setProductData] = useState({
@@ -89,21 +92,73 @@ const NewProduct = () => {
     setImages(images.filter((img) => img !== image));
   };
   
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!user || !user.store) {
+      toast.error("You need to have a store to add products. Please reload the page.");
+      return;
+    }
+    
     setIsSubmitting(true);
     
-    // Here you would normally send the data to your API
-    // This is just a mockup to simulate submission
-    setTimeout(() => {
-      console.log("Product Data:", {
-        ...productData,
-        variants,
-        images,
+    try {
+      // Format the product data for database insertion
+      const newProduct = {
+        name: productData.name,
+        description: productData.description,
+        price: parseFloat(productData.price || "0"),
+        stock: parseInt(productData.stock || "0", 10),
+        category: productData.category,
+        slug: productData.slug,
+        published: productData.published,
+        seo_title: productData.seoTitle || productData.name,
+        seo_description: productData.seoDescription || productData.description,
+        store_id: user.store.id,
+        image: images.length > 0 ? images[0] : null,
+        images: images,
+        variants: variants
+      };
+      
+      // Save to Supabase
+      const { data, error } = await supabase
+        .from('products')
+        .insert(newProduct)
+        .select()
+        .single();
+        
+      if (error) {
+        console.error("Error saving product:", error);
+        toast.error("Failed to save product: " + error.message);
+        return;
+      }
+      
+      toast.success("Product saved successfully!");
+      
+      // Save to localStorage for offline access
+      try {
+        const storedProducts = JSON.parse(localStorage.getItem("products") || "[]");
+        localStorage.setItem("products", JSON.stringify([...storedProducts, {
+          ...newProduct,
+          id: data.id
+        }]));
+      } catch (e) {
+        console.error("Error saving to localStorage:", e);
+      }
+      
+      // Redirect to product list
+      navigate("/products", { 
+        state: { 
+          success: true, 
+          message: "Product has been saved successfully" 
+        } 
       });
+    } catch (error) {
+      console.error("Error in form submission:", error);
+      toast.error("An unexpected error occurred. Please try again.");
+    } finally {
       setIsSubmitting(false);
-      navigate("/products");
-    }, 1000);
+    }
   };
   
   const categories = [
