@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { ShopLayout } from "@/components/layout/ShopLayout";
@@ -45,6 +46,8 @@ const Storefront = () => {
       try {
         if (!storeId) return;
         
+        console.log("Loading store data for slug:", storeId);
+        
         // Fetch store by slug
         const { data: storeData, error: storeError } = await supabase
           .from('stores')
@@ -59,9 +62,12 @@ const Storefront = () => {
         }
         
         if (!storeData) {
+          console.error("No store found with slug:", storeId);
           setLoading(false);
           return;
         }
+        
+        console.log("Found store:", storeData);
         
         // Fetch published products for this store
         const { data: productsData, error: productsError } = await supabase
@@ -72,6 +78,8 @@ const Storefront = () => {
           
         if (productsError) {
           console.error("Error fetching products:", productsError);
+        } else {
+          console.log("Found products:", productsData || []);
         }
         
         // Parse settings safely
@@ -102,7 +110,7 @@ const Storefront = () => {
         const formattedProducts = productsData ? productsData.map((product: any) => ({
           id: product.id,
           name: product.name,
-          price: parseFloat(product.price),
+          price: parseFloat(product.price || 0),
           image: product.image,
           slug: product.slug,
           storeId: storeId,
@@ -305,7 +313,7 @@ const Storefront = () => {
                   <p className="text-muted-foreground mb-3 font-numeric">
                     {typeof product.price === 'number' 
                       ? product.price.toLocaleString("sr-RS") 
-                      : parseFloat(product.price).toLocaleString("sr-RS")} RSD
+                      : parseFloat(String(product.price || 0)).toLocaleString("sr-RS")} RSD
                   </p>
                   <Link to={`/product/${product.slug || product.id}`}>
                     <Button className="w-full">Detaljnije</Button>

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -77,21 +76,39 @@ const Settings = () => {
   });
   
   const [isUpdatingStore, setIsUpdatingStore] = useState(false);
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
 
   // Load store information when component mounts
   useEffect(() => {
     if (user?.store) {
       setStoreInfo({
-        name: user.store.name,
-        slug: user.store.slug
+        name: user.store.name || "",
+        slug: user.store.slug || ""
       });
 
       // Load content settings from store
       setContentSettings({
-        aboutUs: user.store.settings.aboutUs || "",
-        privacyPolicy: user.store.settings.privacyPolicy || "",
-        contactInfo: user.store.settings.contactInfo || ""
+        aboutUs: user.store.settings?.aboutUs || "",
+        privacyPolicy: user.store.settings?.privacyPolicy || "",
+        contactInfo: user.store.settings?.contactInfo || ""
       });
+      
+      // Load other settings if they exist in the store settings
+      if (user.store.settings?.storeSettings) {
+        setStoreSettings(user.store.settings.storeSettings);
+      }
+      
+      if (user.store.settings?.paymentSettings) {
+        setPaymentSettings(user.store.settings.paymentSettings);
+      }
+      
+      if (user.store.settings?.shippingSettings) {
+        setShippingSettings(user.store.settings.shippingSettings);
+      }
+      
+      if (user.store.settings?.taxSettings) {
+        setTaxSettings(user.store.settings.taxSettings);
+      }
     }
   }, [user]);
   
@@ -206,23 +223,45 @@ const Settings = () => {
   };
   
   const handleSaveSettings = async () => {
+    if (!user?.store) {
+      toast.error("No store found for your account");
+      return;
+    }
+    
+    setIsSavingSettings(true);
     try {
-      // Update content settings in store
-      await updateStoreSettings({
+      // Combine all settings into one object
+      const combinedSettings = {
+        ...user.store.settings,
         aboutUs: contentSettings.aboutUs,
         privacyPolicy: contentSettings.privacyPolicy,
-        contactInfo: contentSettings.contactInfo
-      });
+        contactInfo: contentSettings.contactInfo,
+        storeSettings: storeSettings,
+        paymentSettings: paymentSettings,
+        shippingSettings: shippingSettings,
+        taxSettings: taxSettings
+      };
       
-      // Here you would normally save the other settings as well
-      console.log("Store Settings:", storeSettings);
-      console.log("Payment Settings:", paymentSettings);
-      console.log("Shipping Settings:", shippingSettings);
-      console.log("Tax Settings:", taxSettings);
+      // Update the database
+      const { error } = await supabase
+        .from('stores')
+        .update({
+          settings: combinedSettings
+        })
+        .eq('id', user.store.id);
+      
+      if (error) {
+        throw new Error(error.message);
+      }
+      
+      // Update the local context
+      await updateStoreSettings(combinedSettings);
       
       toast.success("Settings saved successfully");
     } catch (error) {
       toast.error("Failed to save settings: " + (error as Error).message);
+    } finally {
+      setIsSavingSettings(false);
     }
   };
   
@@ -231,7 +270,12 @@ const Settings = () => {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold">Store Settings</h1>
-          <Button onClick={handleSaveSettings}>Save Settings</Button>
+          <Button 
+            onClick={handleSaveSettings} 
+            disabled={isSavingSettings}
+          >
+            {isSavingSettings ? "Saving..." : "Save Settings"}
+          </Button>
         </div>
         
         {/* Store Information Section */}

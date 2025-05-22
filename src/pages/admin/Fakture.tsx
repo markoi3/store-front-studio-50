@@ -195,9 +195,31 @@ const Fakture = () => {
     return tipMatch && statusMatch && periodMatch && searchMatch && tabMatch;
   });
 
+  // Safely format number to locale string
+  const formatNumber = (value: any) => {
+    if (value === undefined || value === null) {
+      return "0";
+    }
+    
+    // Convert to number if it's not already
+    const numValue = typeof value === 'number' ? value : parseFloat(value);
+    
+    // Check if it's a valid number
+    if (isNaN(numValue)) {
+      return "0";
+    }
+    
+    try {
+      return numValue.toLocaleString("sr-RS");
+    } catch (error) {
+      console.error("Error formatting number:", error);
+      return numValue.toString();
+    }
+  };
+
   // Ukupni iznosi za filtrirane stavke
-  const ukupanIznos = filtriraneStavke.reduce((sum, faktura) => sum + faktura.iznos, 0);
-  const ukupanPDV = filtriraneStavke.reduce((sum, faktura) => sum + faktura.pdv, 0);
+  const ukupanIznos = filtriraneStavke.reduce((sum, faktura) => sum + (faktura.iznos || 0), 0);
+  const ukupanPDV = filtriraneStavke.reduce((sum, faktura) => sum + (faktura.pdv || 0), 0);
   const ukupnoBezPDV = ukupanIznos - ukupanPDV;
   
   const handleDownloadPDF = (id: string) => {
@@ -268,7 +290,7 @@ const Fakture = () => {
             </CardHeader>
             <CardContent>
               <p className="text-2xl font-numeric font-bold">
-                {ukupanIznos.toLocaleString("sr-RS")} RSD
+                {formatNumber(ukupanIznos)} RSD
               </p>
             </CardContent>
           </Card>
@@ -280,7 +302,7 @@ const Fakture = () => {
             </CardHeader>
             <CardContent>
               <p className="text-2xl font-numeric font-bold">
-                {ukupnoBezPDV.toLocaleString("sr-RS")} RSD
+                {formatNumber(ukupnoBezPDV)} RSD
               </p>
             </CardContent>
           </Card>
@@ -292,7 +314,7 @@ const Fakture = () => {
             </CardHeader>
             <CardContent>
               <p className="text-2xl font-numeric font-bold">
-                {ukupanPDV.toLocaleString("sr-RS")} RSD
+                {formatNumber(ukupanPDV)} RSD
               </p>
             </CardContent>
           </Card>
@@ -390,7 +412,7 @@ const Fakture = () => {
                         <TableCell>{faktura.datum}</TableCell>
                         <TableCell>{faktura.klijent}</TableCell>
                         <TableCell className="font-numeric">
-                          {faktura.iznos.toLocaleString("sr-RS")} RSD
+                          {formatNumber(faktura.iznos)} RSD
                         </TableCell>
                         <TableCell>
                           <span

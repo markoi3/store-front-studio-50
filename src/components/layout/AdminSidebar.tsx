@@ -13,7 +13,8 @@ import {
   Calculator,
   Link as LinkIcon,
   FileText,
-  Users
+  Users,
+  Paintbrush
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
@@ -34,6 +35,7 @@ export const AdminSidebar = () => {
     { path: "/brzi-link", label: "Brzi link", icon: <LinkIcon className="h-5 w-5" /> },
     { path: "/fakture", label: "Fakture", icon: <FileText className="h-5 w-5" /> },
     { path: "/analytics", label: "Analitika", icon: <BarChart className="h-5 w-5" /> },
+    { path: "/design", label: "Dizajn", icon: <Paintbrush className="h-5 w-5" /> },
     { path: "/settings", label: "Podešavanja", icon: <Settings className="h-5 w-5" /> },
     { path: "/profile", label: "Profil", icon: <User className="h-5 w-5" /> },
   ];
