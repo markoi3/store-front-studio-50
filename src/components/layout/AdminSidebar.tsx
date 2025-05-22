@@ -1,3 +1,4 @@
+
 import { Link, useLocation } from "react-router-dom";
 import { 
   LayoutDashboard, 
@@ -26,24 +27,24 @@ export const AdminSidebar = () => {
   const storeSlug = user?.store?.slug || "";
   
   const navItems = [
-    { path: "/admin/dashboard", label: "Početna", icon: <LayoutDashboard className="h-5 w-5" /> },
-    { path: "/admin/products", label: "Proizvodi", icon: <Package className="h-5 w-5" /> },
-    { path: "/admin/orders", label: "Porudžbine", icon: <ShoppingCart className="h-5 w-5" /> },
-    { path: "/admin/customers", label: "Kupci", icon: <Users className="h-5 w-5" /> },
-    { path: "/admin/racunovodstvo", label: "Računodstvo", icon: <Calculator className="h-5 w-5" /> },
-    { path: "/admin/brzi-link", label: "Brzi link", icon: <LinkIcon className="h-5 w-5" /> },
-    { path: "/admin/fakture", label: "Fakture", icon: <FileText className="h-5 w-5" /> },
-    { path: "/admin/analytics", label: "Analitika", icon: <BarChart className="h-5 w-5" /> },
-    { path: "/admin/design", label: "Dizajn", icon: <Paintbrush className="h-5 w-5" /> },
-    { path: "/admin/settings", label: "Podešavanja", icon: <Settings className="h-5 w-5" /> },
-    { path: "/admin/profile", label: "Profil", icon: <User className="h-5 w-5" /> },
+    { path: "/dashboard", label: "Početna", icon: <LayoutDashboard className="h-5 w-5" /> },
+    { path: "/products", label: "Proizvodi", icon: <Package className="h-5 w-5" /> },
+    { path: "/orders", label: "Porudžbine", icon: <ShoppingCart className="h-5 w-5" /> },
+    { path: "/customers", label: "Kupci", icon: <Users className="h-5 w-5" /> },
+    { path: "/racunovodstvo", label: "Računodstvo", icon: <Calculator className="h-5 w-5" /> },
+    { path: "/brzi-link", label: "Brzi link", icon: <LinkIcon className="h-5 w-5" /> },
+    { path: "/fakture", label: "Fakture", icon: <FileText className="h-5 w-5" /> },
+    { path: "/analytics", label: "Analitika", icon: <BarChart className="h-5 w-5" /> },
+    { path: "/design", label: "Dizajn", icon: <Paintbrush className="h-5 w-5" /> },
+    { path: "/settings", label: "Podešavanja", icon: <Settings className="h-5 w-5" /> },
+    { path: "/profile", label: "Profil", icon: <User className="h-5 w-5" /> },
   ];
 
   return (
     <aside className="w-64 h-screen fixed left-0 top-0 bg-[#fff8ea] shadow-md border-r border-border/30 p-5 hidden md:flex md:flex-col">
       <div className="flex flex-col h-full">
         <div className="flex items-center space-x-2 pb-6 mb-6 border-b border-border/30">
-          <Link to="/admin/dashboard" className="font-bold text-xl">
+          <Link to="/dashboard" className="font-bold text-xl">
             Axia Admin
           </Link>
         </div>
@@ -69,7 +70,7 @@ export const AdminSidebar = () => {
               to={item.path}
               className={cn(
                 "flex items-center space-x-3 px-4 py-2.5 rounded-lg text-sm transition-colors",
-                pathname === item.path || (item.path !== "/admin/settings" && pathname.includes(item.path))
+                pathname === item.path || (item.path !== "/settings" && pathname.includes(item.path))
                   ? "bg-primary text-primary-foreground font-medium shadow-sm"
                   : "text-muted-foreground hover:bg-accent hover:text-foreground"
               )}
