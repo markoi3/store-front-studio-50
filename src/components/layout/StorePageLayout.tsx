@@ -1,9 +1,9 @@
-
 import { ReactNode, useEffect, useState } from "react";
-import { useParams, useNavigate, useLocation, Route, Routes } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { StoreLayout } from "./StoreLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useStore } from "@/hooks/useStore"; // Added proper import
 
 type StorePageLayoutProps = {
   children: ReactNode;

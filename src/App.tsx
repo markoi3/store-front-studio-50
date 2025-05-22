@@ -1,7 +1,6 @@
-
 import { useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { ThemeProvider } from "@/components/ui/theme-provider";
+import { ThemeProvider } from "@/components/theme-provider"; // Fixed import path
 import Home from "@/pages/Home";
 import Shop from "@/pages/Shop";
 import Login from "@/pages/Login";
@@ -39,7 +38,7 @@ import PaymentLink from "@/pages/payment/PaymentLink";
 
 // Components
 import { Toaster } from "@/components/ui/toaster";
-import { AuthContextProvider } from "@/contexts/AuthContext";
+import { AuthProvider } from "@/contexts/AuthContext"; // Fixed import name
 import { CartProvider } from "@/contexts/CartContext";
 import CustomPage from "@/pages/store/CustomPage";
 
@@ -67,7 +66,7 @@ function App() {
   return (
     <ThemeProvider>
       <CartProvider>
-        <AuthContextProvider>
+        <AuthProvider>
           <BrowserRouter>
             <Routes>
               {/* Admin Routes */}
@@ -131,7 +130,7 @@ function App() {
             </Routes>
             <Toaster />
           </BrowserRouter>
-        </AuthContextProvider>
+        </AuthProvider>
       </CartProvider>
     </ThemeProvider>
   );

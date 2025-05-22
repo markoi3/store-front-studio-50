@@ -1,4 +1,3 @@
-
 import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -142,6 +141,7 @@ export function useStore() {
     return store.settings.customPages.find(page => page.slug === slug) || null;
   };
   
+  // Make sure to export storeId for use in other components
   return {
     store,
     storeId,
