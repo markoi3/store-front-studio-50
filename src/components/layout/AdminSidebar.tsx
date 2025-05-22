@@ -23,7 +23,7 @@ export const AdminSidebar = () => {
   const { logout, user } = useAuth();
   
   // Get store slug from user context
-  const storeSlug = user?.store?.slug || "demo-prodavnica";
+  const storeSlug = user?.store?.slug || "";
   
   const navItems = [
     { path: "/dashboard", label: "Početna", icon: <LayoutDashboard className="h-5 w-5" /> },
@@ -47,17 +47,19 @@ export const AdminSidebar = () => {
           </Link>
         </div>
         
-        <Link 
-          to={`/store/${storeSlug}`} 
-          target="_blank"
-          className="flex items-center justify-between bg-primary/5 hover:bg-primary/10 text-primary mb-6 px-4 py-2.5 rounded-lg transition-colors"
-        >
-          <div className="flex items-center">
-            <Globe className="h-4 w-4 mr-2" />
-            <span className="text-sm font-medium">Pregledaj prodavnicu</span>
-          </div>
-          <ExternalLink className="h-3.5 w-3.5" />
-        </Link>
+        {storeSlug && (
+          <Link 
+            to={`/store/${storeSlug}`} 
+            target="_blank"
+            className="flex items-center justify-between bg-primary/5 hover:bg-primary/10 text-primary mb-6 px-4 py-2.5 rounded-lg transition-colors"
+          >
+            <div className="flex items-center">
+              <Globe className="h-4 w-4 mr-2" />
+              <span className="text-sm font-medium">Pregledaj prodavnicu</span>
+            </div>
+            <ExternalLink className="h-3.5 w-3.5" />
+          </Link>
+        )}
         
         <nav className="space-y-1.5 flex-1">
           {navItems.map((item) => (

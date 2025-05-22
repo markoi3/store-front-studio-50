@@ -8,10 +8,11 @@ type StoreInfo = {
   id: string;
   name: string;
   slug: string;
-  settings?: {
+  settings: {
     privacyPolicy?: string;
     aboutUs?: string;
     contactInfo?: string;
+    menuItems?: Array<{id: string; label: string; url: string}>;
     [key: string]: any;
   };
 };
@@ -91,7 +92,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         id: storeData.id,
         name: storeData.name,
         slug: storeData.slug,
-        settings: storeData.settings || {}
+        settings: storeData.settings || {
+          privacyPolicy: "",
+          aboutUs: "",
+          contactInfo: "",
+          menuItems: []
+        }
       } : undefined
     };
   };
@@ -265,7 +271,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       });
       
       toast.success("Settings updated successfully");
-      return data;
     } catch (error) {
       console.error("Update store settings error:", error);
       throw error;

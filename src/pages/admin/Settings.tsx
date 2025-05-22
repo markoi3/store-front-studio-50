@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,9 +14,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 const Settings = () => {
+  const { user, updateStoreSettings } = useAuth();
+
+  const [storeInfo, setStoreInfo] = useState({
+    name: "",
+    slug: "",
+  });
+  
   const [storeSettings, setStoreSettings] = useState({
     storeName: "My E-Shop",
     storeEmail: "contact@myeshop.com",
@@ -60,6 +69,45 @@ const Settings = () => {
     taxRate: "10",
     taxIncludedInPrices: false,
   });
+
+  const [contentSettings, setContentSettings] = useState({
+    aboutUs: "",
+    privacyPolicy: "",
+    contactInfo: ""
+  });
+  
+  const [isUpdatingStore, setIsUpdatingStore] = useState(false);
+
+  // Load store information when component mounts
+  useEffect(() => {
+    if (user?.store) {
+      setStoreInfo({
+        name: user.store.name,
+        slug: user.store.slug
+      });
+
+      // Load content settings from store
+      setContentSettings({
+        aboutUs: user.store.settings.aboutUs || "",
+        privacyPolicy: user.store.settings.privacyPolicy || "",
+        contactInfo: user.store.settings.contactInfo || ""
+      });
+    }
+  }, [user]);
+  
+  const handleStoreInfoChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const { name, value } = e.target;
+    setStoreInfo({ ...storeInfo, [name]: value });
+  };
+
+  const handleContentChange = (
+    e: React.ChangeEvent<HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
+    setContentSettings({ ...contentSettings, [name]: value });
+  };
   
   const handleStoreChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -105,17 +153,77 @@ const Settings = () => {
     setTaxSettings({ ...taxSettings, [name]: checked });
   };
   
-  const handleSaveSettings = () => {
-    // Here you would normally send the data to your API
-    console.log("Store Settings:", storeSettings);
-    console.log("Payment Settings:", paymentSettings);
-    console.log("Shipping Settings:", shippingSettings);
-    console.log("Tax Settings:", taxSettings);
+  const handleUpdateStoreInfo = async () => {
+    if (!user?.store) return;
     
-    toast({
-      title: "Settings saved",
-      description: "Your store settings have been updated successfully.",
-    });
+    setIsUpdatingStore(true);
+    try {
+      // Validate store slug
+      const slug = storeInfo.slug.toLowerCase().trim().replace(/[^a-z0-9\-]/g, '-');
+      
+      if (slug !== user.store.slug) {
+        // Check if slug is already taken
+        const { data: existingStore, error: slugCheckError } = await supabase
+          .from('stores')
+          .select('id')
+          .eq('slug', slug)
+          .maybeSingle();
+        
+        if (slugCheckError) {
+          throw new Error(slugCheckError.message);
+        }
+        
+        if (existingStore) {
+          toast.error("This store URL is already taken. Please choose another one.");
+          return;
+        }
+      }
+      
+      // Update store info
+      const { error } = await supabase
+        .from('stores')
+        .update({
+          name: storeInfo.name,
+          slug: slug
+        })
+        .eq('id', user.store.id);
+      
+      if (error) {
+        throw new Error(error.message);
+      }
+      
+      toast.success("Store information updated successfully!");
+      
+      // Refresh the page to update user context
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    } catch (error) {
+      toast.error("Error updating store information: " + (error as Error).message);
+    } finally {
+      setIsUpdatingStore(false);
+    }
+  };
+  
+  const handleSaveSettings = async () => {
+    try {
+      // Update content settings in store
+      await updateStoreSettings({
+        aboutUs: contentSettings.aboutUs,
+        privacyPolicy: contentSettings.privacyPolicy,
+        contactInfo: contentSettings.contactInfo
+      });
+      
+      // Here you would normally save the other settings as well
+      console.log("Store Settings:", storeSettings);
+      console.log("Payment Settings:", paymentSettings);
+      console.log("Shipping Settings:", shippingSettings);
+      console.log("Tax Settings:", taxSettings);
+      
+      toast.success("Settings saved successfully");
+    } catch (error) {
+      toast.error("Failed to save settings: " + (error as Error).message);
+    }
   };
   
   return (
@@ -126,9 +234,52 @@ const Settings = () => {
           <Button onClick={handleSaveSettings}>Save Settings</Button>
         </div>
         
+        {/* Store Information Section */}
+        <div className="bg-card rounded-lg shadow-custom p-6 space-y-4">
+          <h2 className="text-lg font-bold">Store Information</h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Store Name</Label>
+              <Input
+                id="name"
+                name="name"
+                value={storeInfo.name}
+                onChange={handleStoreInfoChange}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="slug">Store URL</Label>
+              <div className="flex items-center space-x-2">
+                <span className="text-muted-foreground">/store/</span>
+                <Input
+                  id="slug"
+                  name="slug"
+                  value={storeInfo.slug}
+                  onChange={handleStoreInfoChange}
+                  placeholder="my-store"
+                  className="flex-1"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                This will be the URL of your store: /store/{storeInfo.slug}
+              </p>
+            </div>
+          </div>
+          
+          <Button 
+            onClick={handleUpdateStoreInfo}
+            disabled={isUpdatingStore}
+          >
+            {isUpdatingStore ? "Updating..." : "Update Store Info"}
+          </Button>
+        </div>
+        
         <Tabs defaultValue="general">
           <TabsList className="w-full justify-start border-b rounded-none">
             <TabsTrigger value="general">General</TabsTrigger>
+            <TabsTrigger value="content">Content</TabsTrigger>
             <TabsTrigger value="payment">Payment</TabsTrigger>
             <TabsTrigger value="shipping">Shipping</TabsTrigger>
             <TabsTrigger value="tax">Tax</TabsTrigger>
@@ -245,6 +396,51 @@ const Settings = () => {
                       <SelectItem value="Europe/Paris">Paris (CET)</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+              </div>
+            </div>
+          </TabsContent>
+          
+          {/* Content Settings */}
+          <TabsContent value="content" className="space-y-6 py-4">
+            <div className="bg-card rounded-lg shadow-custom p-6">
+              <h2 className="text-lg font-bold mb-6">Store Content</h2>
+              
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <Label htmlFor="aboutUs">About Us</Label>
+                  <Textarea
+                    id="aboutUs"
+                    name="aboutUs"
+                    rows={6}
+                    placeholder="Tell customers about your business..."
+                    value={contentSettings.aboutUs}
+                    onChange={handleContentChange}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="privacyPolicy">Privacy Policy</Label>
+                  <Textarea
+                    id="privacyPolicy"
+                    name="privacyPolicy"
+                    rows={10}
+                    placeholder="Your store's privacy policy..."
+                    value={contentSettings.privacyPolicy}
+                    onChange={handleContentChange}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="contactInfo">Contact Information</Label>
+                  <Textarea
+                    id="contactInfo"
+                    name="contactInfo"
+                    rows={4}
+                    placeholder="Additional contact information for your customers..."
+                    value={contentSettings.contactInfo}
+                    onChange={handleContentChange}
+                  />
                 </div>
               </div>
             </div>

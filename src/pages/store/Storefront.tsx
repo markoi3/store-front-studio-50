@@ -7,12 +7,34 @@ import { Product } from "@/components/shop/ProductCard";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
+interface StoreMenuItem {
+  id: string;
+  label: string;
+  url: string;
+}
+
+interface StoreSettings {
+  menuItems?: StoreMenuItem[];
+  aboutUs?: string;
+  privacyPolicy?: string;
+  contactInfo?: string;
+  [key: string]: any;
+}
+
+interface StoreData {
+  id: string;
+  name: string;
+  slug: string;
+  settings: StoreSettings;
+  elements: any[];
+}
+
 const Storefront = () => {
   const { storeId } = useParams();
-  const [store, setStore] = useState<any>(null);
+  const [store, setStore] = useState<StoreData | null>(null);
   const [loading, setLoading] = useState(true);
   const [storeProducts, setStoreProducts] = useState<Product[]>([]);
-  const [menuItems, setMenuItems] = useState([
+  const [menuItems, setMenuItems] = useState<StoreMenuItem[]>([
     { id: "1", label: "Početna", url: "/" },
     { id: "2", label: "Proizvodi", url: "/shop" },
     { id: "3", label: "O nama", url: "/about" },
@@ -54,9 +76,9 @@ const Storefront = () => {
         }
         
         // Get custom menu items from store settings if they exist
-        const customMenu = storeData.settings?.menuItems || null;
-        if (customMenu) {
-          setMenuItems(customMenu);
+        const settings = storeData.settings || {};
+        if (settings.menuItems && Array.isArray(settings.menuItems)) {
+          setMenuItems(settings.menuItems);
         }
         
         // Transform products to match our Product type
@@ -77,7 +99,6 @@ const Storefront = () => {
           id: storeData.id,
           name: storeData.name,
           slug: storeData.slug,
-          description: "Online prodavnica",
           settings: storeData.settings || {},
           elements: [
             {
@@ -104,7 +125,7 @@ const Storefront = () => {
               id: '3',
               type: 'text',
               settings: {
-                content: storeData.settings?.aboutUs || 'Nudimo visokokvalitetne proizvode sa odličnom korisničkom podrškom.',
+                content: settings.aboutUs || 'Nudimo visokokvalitetne proizvode sa odličnom korisničkom podrškom.',
                 alignment: 'center'
               }
             }
@@ -202,7 +223,7 @@ const Storefront = () => {
   const renderCustomNavigation = () => {
     return (
       <div className="flex justify-center space-x-6 mb-8">
-        {menuItems.map((item: any) => (
+        {menuItems.map((item) => (
           <Link 
             key={item.id}
             to={item.url.startsWith('/') ? item.url : `/${item.url}`}
@@ -222,32 +243,32 @@ const Storefront = () => {
         {renderCustomNavigation()}
         
         {/* Hero Section */}
-        {store.elements.find((el: any) => el.type === 'hero') && (
+        {store.elements.find((el) => el.type === 'hero') && (
           <div className="relative h-[70vh] bg-accent">
             <img 
-              src={store.elements.find((el: any) => el.type === 'hero').settings.backgroundImage} 
+              src={store.elements.find((el) => el.type === 'hero').settings.backgroundImage} 
               alt="Hero" 
               className="absolute inset-0 w-full h-full object-cover" 
             />
             <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center text-white px-4">
               <h1 className="text-4xl md:text-5xl font-bold mb-4 text-center">
-                {store.elements.find((el: any) => el.type === 'hero').settings.title}
+                {store.elements.find((el) => el.type === 'hero').settings.title}
               </h1>
               <p className="text-xl md:text-2xl mb-6 max-w-2xl text-center">
-                {store.elements.find((el: any) => el.type === 'hero').settings.subtitle}
+                {store.elements.find((el) => el.type === 'hero').settings.subtitle}
               </p>
               <Button size="lg" className="text-lg px-6">
-                {store.elements.find((el: any) => el.type === 'hero').settings.buttonText}
+                {store.elements.find((el) => el.type === 'hero').settings.buttonText}
               </Button>
             </div>
           </div>
         )}
         
         {/* Featured Products */}
-        {store.elements.find((el: any) => el.type === 'products') && (
+        {store.elements.find((el) => el.type === 'products') && (
           <div className="container mx-auto px-4 py-12">
             <h2 className="text-3xl font-bold mb-6 text-center">
-              {store.elements.find((el: any) => el.type === 'products').settings.title}
+              {store.elements.find((el) => el.type === 'products').settings.title}
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {displayProducts.slice(0, 4).map((product: Product) => (
@@ -279,18 +300,18 @@ const Storefront = () => {
         )}
         
         {/* Text Section */}
-        {store.elements.find((el: any) => el.type === 'text') && (
+        {store.elements.find((el) => el.type === 'text') && (
           <div className="container mx-auto px-4 py-12">
             <div className="max-w-3xl mx-auto text-center">
               <p className="text-lg">
-                {store.elements.find((el: any) => el.type === 'text').settings.content}
+                {store.elements.find((el) => el.type === 'text').settings.content}
               </p>
             </div>
           </div>
         )}
         
         {/* Privacy Policy Section (if exists) */}
-        {store.settings?.privacyPolicy && (
+        {store.settings.privacyPolicy && (
           <div className="container mx-auto px-4 py-12 border-t">
             <div className="max-w-3xl mx-auto">
               <h2 className="text-2xl font-bold mb-4">Politika privatnosti</h2>
