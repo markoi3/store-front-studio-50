@@ -1,47 +1,12 @@
 
-import { useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { ShopLayout } from "@/components/layout/ShopLayout";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/contexts/CartContext";
 import { ProductCard, Product } from "@/components/shop/ProductCard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
-// Sample products data
-const allProducts: Product[] = [
-  {
-    id: "1",
-    name: "Minimalist Coffee Table",
-    price: 199.99,
-    image: "https://images.unsplash.com/photo-1595428774223-ef52624120d2?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1974&q=80",
-    slug: "minimalist-coffee-table",
-    category: "furniture"
-  },
-  {
-    id: "2",
-    name: "Ergonomic Office Chair",
-    price: 249.99,
-    image: "https://images.unsplash.com/photo-1580480055273-228ff5388ef8?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1974&q=80",
-    slug: "ergonomic-office-chair",
-    category: "furniture"
-  },
-  {
-    id: "3",
-    name: "Ceramic Mug Set",
-    price: 39.99,
-    image: "https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1974&q=80",
-    slug: "ceramic-mug-set",
-    category: "kitchen"
-  },
-  {
-    id: "4",
-    name: "Modern Floor Lamp",
-    price: 129.99,
-    image: "https://images.unsplash.com/photo-1543198126-1c7d9e6d4f3f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1974&q=80",
-    slug: "modern-floor-lamp",
-    category: "lighting"
-  }
-];
+import { supabase } from "@/integrations/supabase/client";
 
 type ProductVariant = {
   id: string;
@@ -49,8 +14,7 @@ type ProductVariant = {
   price: number | null; // null means same as base price
 };
 
-// Sample product details
-const productDetails: Record<string, {
+type ProductDetails = {
   id: string;
   name: string;
   price: number;
@@ -60,157 +24,107 @@ const productDetails: Record<string, {
   category: string;
   variants: ProductVariant[];
   specifications: Record<string, string>;
-}> = {
-  "minimalist-coffee-table": {
-    id: "1",
-    name: "Minimalist Coffee Table",
-    price: 199.99,
-    images: [
-      "https://images.unsplash.com/photo-1595428774223-ef52624120d2?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1974&q=80",
-      "https://images.unsplash.com/photo-1634712282287-14ed57b9cc89?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1974&q=80",
-      "https://images.unsplash.com/photo-1616464916356-3a777b414b3d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1974&q=80"
-    ],
-    description: "Elevate your living space with our Minimalist Coffee Table. Crafted from solid oak with a smooth, matte finish, this table combines modern design with everyday functionality. Its clean lines and timeless silhouette make it a versatile piece that complements any interior style.",
-    features: [
-      "Solid oak construction",
-      "Matte finish",
-      "Spacious tabletop",
-      "Sleek, minimalist design",
-      "Sturdy and durable build"
-    ],
-    category: "furniture",
-    variants: [
-      { id: "oak", name: "Oak", price: null },
-      { id: "walnut", name: "Walnut", price: 229.99 },
-      { id: "maple", name: "Maple", price: 219.99 }
-    ],
-    specifications: {
-      "Dimensions": "120 x 60 x 45 cm",
-      "Weight": "25 kg",
-      "Material": "Solid Oak",
-      "Assembly": "Required, tools included",
-      "Warranty": "2 years"
-    }
-  },
-  "ergonomic-office-chair": {
-    id: "2",
-    name: "Ergonomic Office Chair",
-    price: 249.99,
-    images: [
-      "https://images.unsplash.com/photo-1580480055273-228ff5388ef8?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1974&q=80",
-      "https://images.unsplash.com/photo-1589364222905-9036200eb8dd?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1974&q=80"
-    ],
-    description: "Experience ultimate comfort with our Ergonomic Office Chair. Designed with your wellbeing in mind, this chair offers exceptional lumbar support, adjustable features, and breathable mesh material to keep you comfortable throughout your workday.",
-    features: [
-      "Adjustable height and armrests",
-      "Breathable mesh back",
-      "Lumbar support",
-      "360° swivel",
-      "Durable nylon base with smooth-rolling casters"
-    ],
-    category: "furniture",
-    variants: [
-      { id: "black", name: "Black", price: null },
-      { id: "gray", name: "Gray", price: null },
-      { id: "blue", name: "Blue", price: 259.99 }
-    ],
-    specifications: {
-      "Dimensions": "65 x 65 x 115-125 cm",
-      "Weight": "15 kg",
-      "Material": "Mesh, Nylon, Aluminum",
-      "Weight Capacity": "150 kg",
-      "Warranty": "3 years"
-    }
-  },
-  "ceramic-mug-set": {
-    id: "3",
-    name: "Ceramic Mug Set",
-    price: 39.99,
-    images: [
-      "https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1974&q=80",
-      "https://images.unsplash.com/photo-1577937927133-66b464c1c9e1?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1974&q=80"
-    ],
-    description: "Add a touch of elegance to your morning routine with our Ceramic Mug Set. Each mug is handcrafted from high-quality ceramic and finished with a sleek, matte glaze. Perfect for coffee, tea, or hot chocolate, these mugs are designed to keep your beverages hot longer.",
-    features: [
-      "Set of 4 mugs",
-      "Handcrafted ceramic",
-      "Matte finish",
-      "Microwave and dishwasher safe",
-      "Capacity: 350ml each"
-    ],
-    category: "kitchen",
-    variants: [
-      { id: "white", name: "White", price: null },
-      { id: "black", name: "Black", price: null },
-      { id: "mixed", name: "Mixed Colors", price: 44.99 }
-    ],
-    specifications: {
-      "Dimensions": "8 x 8 x 10 cm each",
-      "Weight": "300g each",
-      "Material": "Ceramic",
-      "Capacity": "350ml",
-      "Care": "Dishwasher and microwave safe"
-    }
-  },
-  "modern-floor-lamp": {
-    id: "4",
-    name: "Modern Floor Lamp",
-    price: 129.99,
-    images: [
-      "https://images.unsplash.com/photo-1543198126-1c7d9e6d4f3f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1974&q=80",
-      "https://images.unsplash.com/photo-1540932239986-30128078f3c5?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1974&q=80"
-    ],
-    description: "Illuminate your space with our Modern Floor Lamp. Featuring a sleek metal frame and an adjustable shade, this lamp adds both style and functionality to any room. The dimmable LED bulb allows you to create the perfect ambiance for any occasion.",
-    features: [
-      "Sleek metal frame",
-      "Adjustable shade",
-      "Dimmable LED bulb included",
-      "Foot-operated switch",
-      "Energy efficient"
-    ],
-    category: "lighting",
-    variants: [
-      { id: "brass", name: "Brass", price: null },
-      { id: "black", name: "Matte Black", price: null },
-      { id: "chrome", name: "Chrome", price: 139.99 }
-    ],
-    specifications: {
-      "Dimensions": "30 x 30 x 150 cm",
-      "Weight": "5 kg",
-      "Material": "Metal, Fabric",
-      "Bulb Type": "LED (included)",
-      "Warranty": "1 year"
-    }
-  }
+  slug: string;
+  storeId?: string;
 };
 
 const ProductDetail = () => {
-  const { slug } = useParams<{ slug: string }>();
+  const { slug, storeId } = useParams<{ slug: string; storeId?: string }>();
+  const navigate = useNavigate();
   const { addItem } = useCart();
   const [quantity, setQuantity] = useState(1);
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
   const [selectedImage, setSelectedImage] = useState(0);
+  const [product, setProduct] = useState<ProductDetails | null>(null);
+  const [similarProducts, setSimilarProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
   
-  // Find product details
-  const product = productDetails[slug || ""];
-  
-  if (!product) {
-    return (
-      <ShopLayout>
-        <div className="container mx-auto px-4 py-16 text-center">
-          <h1 className="text-2xl font-bold mb-4">Product Not Found</h1>
-          <p className="text-muted-foreground mb-6">
-            The product you're looking for doesn't exist or has been removed.
-          </p>
-          <Link to="/shop">
-            <Button>Continue Shopping</Button>
-          </Link>
-        </div>
-      </ShopLayout>
-    );
-  }
+  useEffect(() => {
+    const fetchProduct = async () => {
+      setLoading(true);
+      try {
+        if (!slug) return;
+
+        // Fetch the product by slug
+        const { data: productData, error } = await supabase
+          .from('products')
+          .select('*')
+          .eq('slug', slug)
+          .maybeSingle();
+
+        if (error) {
+          console.error('Error fetching product:', error);
+          setLoading(false);
+          return;
+        }
+
+        if (!productData) {
+          console.error('Product not found with slug:', slug);
+          setLoading(false);
+          return;
+        }
+
+        console.log('Found product:', productData);
+
+        // Format the product data
+        const formattedProduct: ProductDetails = {
+          id: productData.id,
+          name: productData.name || 'Unnamed Product',
+          price: parseFloat(productData.price) || 0,
+          images: productData.image ? [productData.image] : ['https://via.placeholder.com/300'],
+          description: productData.description || 'No description available',
+          features: ['Quality product', 'Made with care', 'Durable materials'],
+          category: productData.category || 'uncategorized',
+          variants: [],
+          specifications: {
+            'Material': 'High quality materials',
+            'Dimensions': 'Standard size',
+            'Weight': 'Light weight',
+          },
+          slug: productData.slug,
+          storeId: productData.store_id,
+        };
+
+        // Set the product data
+        setProduct(formattedProduct);
+
+        // Fetch similar products (in the same category)
+        const { data: similarData, error: similarError } = await supabase
+          .from('products')
+          .select('*')
+          .eq('category', formattedProduct.category)
+          .eq('published', true)
+          .neq('id', formattedProduct.id)
+          .limit(3);
+
+        if (similarError) {
+          console.error('Error fetching similar products:', similarError);
+        } else {
+          const formattedSimilar = similarData ? similarData.map((p: any) => ({
+            id: p.id,
+            name: p.name,
+            price: parseFloat(p.price || 0),
+            image: p.image || 'https://via.placeholder.com/300',
+            slug: p.slug,
+            category: p.category,
+            storeId: p.store_id,
+          })) : [];
+
+          setSimilarProducts(formattedSimilar);
+        }
+      } catch (error) {
+        console.error('Error in product fetch:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProduct();
+  }, [slug, storeId]);
   
   const handleAddToCart = () => {
+    if (!product) return;
+    
     const itemPrice = selectedVariant && selectedVariant.price !== null
       ? selectedVariant.price
       : product.price;
@@ -221,14 +135,50 @@ const ProductDetail = () => {
       price: itemPrice,
       quantity: quantity,
       image: product.images[0],
-      variant: selectedVariant || undefined
+      variant: selectedVariant || undefined,
+      storeId: product.storeId || storeId,
     });
   };
   
-  // Get similar products (products in the same category)
-  const similarProducts = allProducts.filter(
-    (p) => p.category === product.category && p.id !== product.id
-  ).slice(0, 3);
+  if (loading) {
+    return (
+      <ShopLayout>
+        <div className="container mx-auto px-4 py-16">
+          <div className="animate-pulse">
+            <div className="flex flex-col lg:flex-row gap-8">
+              <div className="w-full lg:w-1/2">
+                <div className="bg-accent h-96 rounded-lg"></div>
+              </div>
+              <div className="w-full lg:w-1/2">
+                <div className="h-10 bg-accent rounded w-2/3 mb-4"></div>
+                <div className="h-6 bg-accent rounded w-1/4 mb-6"></div>
+                <div className="h-24 bg-accent rounded w-full mb-6"></div>
+                <div className="h-10 bg-accent rounded w-full"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </ShopLayout>
+    );
+  }
+  
+  if (!product) {
+    return (
+      <ShopLayout>
+        <div className="container mx-auto px-4 py-16 text-center">
+          <h1 className="text-2xl font-bold mb-4">Product Not Found</h1>
+          <p className="text-muted-foreground mb-6">
+            The product you're looking for doesn't exist or has been removed.
+          </p>
+          <Button onClick={() => {
+            storeId ? navigate(`/store/${storeId}/shop`) : navigate('/shop');
+          }}>
+            Continue Shopping
+          </Button>
+        </div>
+      </ShopLayout>
+    );
+  }
   
   return (
     <ShopLayout>
@@ -267,12 +217,12 @@ const ProductDetail = () => {
           {/* Product Details */}
           <div className="w-full lg:w-1/2">
             <h1 className="text-3xl font-bold mb-2">{product.name}</h1>
-            <p className="text-2xl mb-4">${selectedVariant && selectedVariant.price !== null ? selectedVariant.price.toFixed(2) : product.price.toFixed(2)}</p>
+            <p className="text-2xl mb-4">{product.price.toLocaleString("sr-RS")} RSD</p>
             
             <p className="text-muted-foreground mb-6">{product.description}</p>
             
             {/* Variants */}
-            {product.variants.length > 0 && (
+            {product.variants && product.variants.length > 0 && (
               <div className="mb-6">
                 <h3 className="text-sm font-medium mb-3">Variants</h3>
                 <div className="flex flex-wrap gap-2">
@@ -288,7 +238,7 @@ const ProductDetail = () => {
                     >
                       {variant.name}
                       {variant.price !== null && variant.price !== product.price
-                        ? ` (+$${(variant.price - product.price).toFixed(2)})`
+                        ? ` (+${(variant.price - product.price).toLocaleString("sr-RS")} RSD)`
                         : ""}
                     </button>
                   ))}

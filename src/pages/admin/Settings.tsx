@@ -87,27 +87,29 @@ const Settings = () => {
       });
 
       // Load content settings from store
-      setContentSettings({
-        aboutUs: user.store.settings?.aboutUs || "",
-        privacyPolicy: user.store.settings?.privacyPolicy || "",
-        contactInfo: user.store.settings?.contactInfo || ""
-      });
-      
-      // Load other settings if they exist in the store settings
-      if (user.store.settings?.storeSettings) {
-        setStoreSettings(user.store.settings.storeSettings);
-      }
-      
-      if (user.store.settings?.paymentSettings) {
-        setPaymentSettings(user.store.settings.paymentSettings);
-      }
-      
-      if (user.store.settings?.shippingSettings) {
-        setShippingSettings(user.store.settings.shippingSettings);
-      }
-      
-      if (user.store.settings?.taxSettings) {
-        setTaxSettings(user.store.settings.taxSettings);
+      if (user.store.settings) {
+        setContentSettings({
+          aboutUs: user.store.settings.aboutUs || "",
+          privacyPolicy: user.store.settings.privacyPolicy || "",
+          contactInfo: user.store.settings.contactInfo || ""
+        });
+        
+        // Load other settings if they exist in the store settings
+        if (user.store.settings.storeSettings) {
+          setStoreSettings(user.store.settings.storeSettings);
+        }
+        
+        if (user.store.settings.paymentSettings) {
+          setPaymentSettings(user.store.settings.paymentSettings);
+        }
+        
+        if (user.store.settings.shippingSettings) {
+          setShippingSettings(user.store.settings.shippingSettings);
+        }
+        
+        if (user.store.settings.taxSettings) {
+          setTaxSettings(user.store.settings.taxSettings);
+        }
       }
     }
   }, [user]);
@@ -192,6 +194,7 @@ const Settings = () => {
         
         if (existingStore) {
           toast.error("This store URL is already taken. Please choose another one.");
+          setIsUpdatingStore(false);
           return;
         }
       }
@@ -232,14 +235,19 @@ const Settings = () => {
     try {
       // Combine all settings into one object
       const combinedSettings = {
-        ...user.store.settings,
         aboutUs: contentSettings.aboutUs,
         privacyPolicy: contentSettings.privacyPolicy,
         contactInfo: contentSettings.contactInfo,
-        storeSettings: storeSettings,
-        paymentSettings: paymentSettings,
-        shippingSettings: shippingSettings,
-        taxSettings: taxSettings
+        storeSettings,
+        paymentSettings,
+        shippingSettings,
+        taxSettings,
+        menuItems: user.store.settings?.menuItems || [
+          { id: "1", label: "Početna", url: "/" },
+          { id: "2", label: "Proizvodi", url: "/shop" },
+          { id: "3", label: "O nama", url: "/about" },
+          { id: "4", label: "Kontakt", url: "/contact" }
+        ]
       };
       
       // Update the database
@@ -254,8 +262,10 @@ const Settings = () => {
         throw new Error(error.message);
       }
       
-      // Update the local context
-      await updateStoreSettings(combinedSettings);
+      // Update the local context without causing infinite loop
+      if (updateStoreSettings) {
+        await updateStoreSettings(combinedSettings);
+      }
       
       toast.success("Settings saved successfully");
     } catch (error) {

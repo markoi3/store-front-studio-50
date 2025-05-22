@@ -1,6 +1,5 @@
-
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { ShopLayout } from "@/components/layout/ShopLayout";
 import { Button } from "@/components/ui/button";
 import { Product } from "@/components/shop/ProductCard";
@@ -31,6 +30,7 @@ interface StoreData {
 
 const Storefront = () => {
   const { storeId } = useParams();
+  const navigate = useNavigate();
   const [store, setStore] = useState<StoreData | null>(null);
   const [loading, setLoading] = useState(true);
   const [storeProducts, setStoreProducts] = useState<Product[]>([]);
@@ -53,7 +53,7 @@ const Storefront = () => {
           .from('stores')
           .select('*')
           .eq('slug', storeId)
-          .single();
+          .maybeSingle();
           
         if (storeError) {
           console.error("Error fetching store:", storeError);
@@ -111,7 +111,7 @@ const Storefront = () => {
           id: product.id,
           name: product.name,
           price: parseFloat(product.price || 0),
-          image: product.image,
+          image: product.image || "https://via.placeholder.com/300",
           slug: product.slug,
           storeId: storeId,
           category: product.category
@@ -244,18 +244,30 @@ const Storefront = () => {
   // Use stored products if available, otherwise use defaults
   const displayProducts = storeProducts.length > 0 ? storeProducts : defaultProducts;
 
+  // Function to handle navigation while keeping store context
+  const handleNavigate = (path: string) => {
+    if (path.startsWith('/')) {
+      // Ako path počinje sa '/', dodajemo storeId prefix
+      const fullPath = `/store/${storeId}${path}`;
+      navigate(fullPath);
+    } else {
+      navigate(path);
+    }
+  };
+
   // Custom navigation for this store
   const renderCustomNavigation = () => {
     return (
       <div className="flex justify-center space-x-6 mb-8">
         {menuItems.map((item) => (
-          <Link 
+          <Button
             key={item.id}
-            to={item.url.startsWith('/') ? item.url : `/${item.url}`}
+            variant="ghost"
             className="text-foreground hover:text-primary font-medium"
+            onClick={() => handleNavigate(item.url)}
           >
             {item.label}
-          </Link>
+          </Button>
         ))}
       </div>
     );
@@ -282,7 +294,11 @@ const Storefront = () => {
               <p className="text-xl md:text-2xl mb-6 max-w-2xl text-center">
                 {store.elements.find((el) => el.type === 'hero')?.settings.subtitle}
               </p>
-              <Button size="lg" className="text-lg px-6">
+              <Button 
+                size="lg" 
+                className="text-lg px-6"
+                onClick={() => handleNavigate('/shop')}
+              >
                 {store.elements.find((el) => el.type === 'hero')?.settings.buttonText}
               </Button>
             </div>
@@ -315,9 +331,12 @@ const Storefront = () => {
                       ? product.price.toLocaleString("sr-RS") 
                       : parseFloat(String(product.price || 0)).toLocaleString("sr-RS")} RSD
                   </p>
-                  <Link to={`/product/${product.slug || product.id}`}>
-                    <Button className="w-full">Detaljnije</Button>
-                  </Link>
+                  <Button 
+                    className="w-full"
+                    onClick={() => navigate(`/store/${storeId}/product/${product.slug || product.id}`)}
+                  >
+                    Detaljnije
+                  </Button>
                 </div>
               ))}
             </div>
