@@ -1,4 +1,3 @@
-
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { StoreBuilder } from "@/components/design/StoreBuilder";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -16,7 +15,7 @@ const Design = () => {
     // Extract tab name from URL if present
     const searchParams = new URLSearchParams(location.search);
     const tab = searchParams.get("tab");
-    if (tab && (tab === "builder" || tab === "menu")) {
+    if (tab && (tab === "builder" || tab === "menu" || tab === "logo")) {
       setActiveTab(tab);
     }
   }, [location]);
@@ -37,6 +36,7 @@ const Design = () => {
           <TabsList>
             <TabsTrigger value="builder">Elementi stranice</TabsTrigger>
             <TabsTrigger value="menu">Meni</TabsTrigger>
+            <TabsTrigger value="logo">Logo</TabsTrigger>
           </TabsList>
           
           <TabsContent value="builder" className="space-y-4">
@@ -45,6 +45,10 @@ const Design = () => {
           
           <TabsContent value="menu" className="space-y-4">
             <MenuEditor />
+          </TabsContent>
+          
+          <TabsContent value="logo" className="space-y-4">
+            <LogoEditor />
           </TabsContent>
         </Tabs>
       </div>
@@ -76,7 +80,12 @@ const MenuEditor = () => {
   
   const saveMenuItems = async (items: Array<{id: string; label: string; url: string}>) => {
     try {
-      await updateStoreSettings({ menuItems: items });
+      await updateStoreSettings({ 
+        ...user?.store?.settings,
+        menuItems: items 
+      });
+      
+      toast.success("Menu saved successfully");
     } catch (error) {
       console.error("Error saving menu items:", error);
       toast.error("Failed to save menu items. Please try again.");
@@ -200,6 +209,102 @@ const MenuEditor = () => {
           className="mt-4 px-4 py-2 bg-primary text-white rounded-md disabled:opacity-50"
         >
           Dodaj link
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// Logo editor component
+const LogoEditor = () => {
+  const { user, updateStoreSettings } = useAuth();
+  const [logoUrl, setLogoUrl] = useState("");
+  const [logoAlt, setLogoAlt] = useState("");
+  
+  useEffect(() => {
+    // Load existing logo settings
+    if (user?.store?.settings?.logo) {
+      setLogoUrl(user.store.settings.logo.url || "");
+      setLogoAlt(user.store.settings.logo.alt || "");
+    }
+  }, [user]);
+  
+  const handleSaveLogo = async () => {
+    try {
+      const updatedSettings = {
+        ...user?.store?.settings,
+        logo: {
+          url: logoUrl,
+          alt: logoAlt
+        }
+      };
+      
+      await updateStoreSettings(updatedSettings);
+      toast.success("Logo settings saved successfully");
+    } catch (error) {
+      console.error("Error saving logo settings:", error);
+      toast.error("Failed to save logo settings");
+    }
+  };
+  
+  return (
+    <div className="space-y-6 bg-card p-6 rounded-lg shadow-sm">
+      <div>
+        <h3 className="text-lg font-medium mb-4">Store Logo</h3>
+        <p className="text-muted-foreground mb-4">
+          Set your store logo that will appear in the header of your store.
+        </p>
+      </div>
+      
+      <div className="space-y-4">
+        <div>
+          <label htmlFor="logoUrl" className="block text-sm mb-1">Logo URL</label>
+          <input
+            id="logoUrl"
+            type="text"
+            value={logoUrl}
+            onChange={(e) => setLogoUrl(e.target.value)}
+            className="w-full px-3 py-2 border rounded-md"
+            placeholder="https://example.com/logo.png"
+          />
+          <p className="text-xs text-muted-foreground mt-1">
+            Enter the URL of your logo image. For best results, use a PNG or SVG with transparent background.
+          </p>
+        </div>
+        
+        {logoUrl && (
+          <div className="border rounded-md p-4 flex justify-center">
+            <img 
+              src={logoUrl} 
+              alt="Logo preview" 
+              className="max-h-24 object-contain"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = 'https://via.placeholder.com/200x80?text=Invalid+Image+URL';
+              }}
+            />
+          </div>
+        )}
+        
+        <div>
+          <label htmlFor="logoAlt" className="block text-sm mb-1">Alt Text</label>
+          <input
+            id="logoAlt"
+            type="text"
+            value={logoAlt}
+            onChange={(e) => setLogoAlt(e.target.value)}
+            className="w-full px-3 py-2 border rounded-md"
+            placeholder="Company Logo"
+          />
+          <p className="text-xs text-muted-foreground mt-1">
+            Alternative text for accessibility purposes
+          </p>
+        </div>
+        
+        <button
+          onClick={handleSaveLogo}
+          className="px-4 py-2 bg-primary text-white rounded-md"
+        >
+          Save Logo Settings
         </button>
       </div>
     </div>

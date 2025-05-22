@@ -1,7 +1,7 @@
 
 import { ReactNode, useEffect, useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { ShopLayout } from "./ShopLayout";
+import { StoreLayout } from "./StoreLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -35,7 +35,7 @@ export const StorePageLayout = ({ children }: StorePageLayoutProps) => {
             
           if (error) {
             console.error("Error fetching store:", error);
-            toast("Navigation error", {
+            toast.error("Navigation error", {
               description: "Could not load store information. Please try again.",
             });
             setLoading(false);
@@ -52,7 +52,7 @@ export const StorePageLayout = ({ children }: StorePageLayoutProps) => {
           }
         } catch (error) {
           console.error("Error redirecting to store route:", error);
-          toast("Navigation error", {
+          toast.error("Navigation error", {
             description: "Could not redirect to store route. Please try again.",
           });
         } finally {
@@ -66,18 +66,18 @@ export const StorePageLayout = ({ children }: StorePageLayoutProps) => {
   
   if (loading) {
     return (
-      <ShopLayout>
+      <StoreLayout>
         <div className="container mx-auto px-4 py-12 flex items-center justify-center min-h-[60vh]">
           <div className="animate-pulse flex flex-col items-center">
             <div className="h-8 w-40 bg-muted rounded mb-4"></div>
             <div className="h-4 w-60 bg-muted rounded"></div>
           </div>
         </div>
-      </ShopLayout>
+      </StoreLayout>
     );
   }
   
-  return <ShopLayout>{children}</ShopLayout>;
+  return <StoreLayout>{children}</StoreLayout>;
 };
 
 // Higher Order Component wrapper for store pages

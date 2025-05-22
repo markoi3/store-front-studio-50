@@ -149,42 +149,70 @@ export const StoreBuilder = () => {
   };
 
   const addElement = (type: ElementType) => {
-    const newElement = {
-      id: `element-${Date.now()}`,
-      ...elementTemplates[type]
-    };
-    
-    setElements([...elements, newElement]);
-    toast("Element added", {
-      description: `Added new ${type} element to your page.`
-    });
+    try {
+      const newElement = {
+        id: `element-${Date.now()}`,
+        ...elementTemplates[type]
+      };
+      
+      setElements(prev => [...prev, newElement]);
+      toast.success("Element added", {
+        description: `Added new ${type} element to your page.`
+      });
+    } catch (error) {
+      console.error("Error adding element:", error);
+      toast.error("Failed to add element", {
+        description: "There was a problem adding the element. Please try again."
+      });
+    }
   };
 
   const removeElement = (id: string) => {
-    setElements(elements.filter(el => el.id !== id));
+    try {
+      setElements(elements.filter(el => el.id !== id));
+      toast.success("Element removed");
+    } catch (error) {
+      console.error("Error removing element:", error);
+      toast.error("Failed to remove element");
+    }
   };
 
   const handleDragEnd = (result: any) => {
     if (!result.destination) return;
     
-    const items = Array.from(elements);
-    const [reorderedItem] = items.splice(result.source.index, 1);
-    items.splice(result.destination.index, 0, reorderedItem);
-    
-    setElements(items);
+    try {
+      const items = Array.from(elements);
+      const [reorderedItem] = items.splice(result.source.index, 1);
+      items.splice(result.destination.index, 0, reorderedItem);
+      
+      setElements(items);
+    } catch (error) {
+      console.error("Error reordering elements:", error);
+      toast.error("Failed to reorder elements");
+    }
   };
 
   const updateElementSettings = (id: string, settings: Record<string, any>) => {
-    setElements(elements.map(el => 
-      el.id === id ? { ...el, settings: { ...el.settings, ...settings } } : el
-    ));
+    try {
+      setElements(elements.map(el => 
+        el.id === id ? { ...el, settings: { ...el.settings, ...settings } } : el
+      ));
+    } catch (error) {
+      console.error("Error updating element settings:", error);
+      toast.error("Failed to update element settings");
+    }
   };
 
   const saveChanges = async () => {
     try {
+      if (!user?.store) {
+        toast.error("No store found");
+        return;
+      }
+      
       // Create updated settings object with updated elements and legal pages
       const updatedSettings = {
-        ...(user?.store?.settings || {}),
+        ...(user.store.settings || {}),
         pageElements: elements,
         legalPages: legalPages,
       };
@@ -192,26 +220,30 @@ export const StoreBuilder = () => {
       // Save to Supabase via AuthContext
       await updateStoreSettings(updatedSettings);
       
-      toast("Changes saved", {
+      toast.success("Changes saved", {
         description: "Your store design has been updated successfully."
       });
     } catch (error) {
       console.error("Error saving store design:", error);
-      toast("Error saving changes", {
-        description: "There was a problem saving your store design. Please try again.",
-        variant: "destructive"
+      toast.error("Error saving changes", {
+        description: "There was a problem saving your store design. Please try again."
       });
     }
   };
 
   const updateLegalPage = (page: keyof typeof legalPages, field: string, value: string) => {
-    setLegalPages({
-      ...legalPages,
-      [page]: {
-        ...legalPages[page],
-        [field]: value
-      }
-    });
+    try {
+      setLegalPages({
+        ...legalPages,
+        [page]: {
+          ...legalPages[page],
+          [field]: value
+        }
+      });
+    } catch (error) {
+      console.error("Error updating legal page:", error);
+      toast.error("Failed to update legal page");
+    }
   };
 
   return (
