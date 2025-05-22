@@ -12,7 +12,6 @@ import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useStore } from "@/hooks/useStore"; // Import useStore hook to access storeId
 
 type ElementType = 'hero' | 'products' | 'text' | 'image' | 'categories' | 'testimonials' | 'cta';
 
@@ -31,7 +30,6 @@ interface CustomPage {
 
 export const StoreBuilder = () => {
   const { user, updateStoreSettings } = useAuth();
-  const { storeId } = useStore(); // Get storeId from useStore hook
   const [activeSection, setActiveSection] = useState<string>("homepage");
   const [activePage, setActivePage] = useState<string>("homepage");
   const [previewMode, setPreviewMode] = useState<boolean>(false);
