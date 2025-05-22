@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 
 export type ProductVariant = {
@@ -14,6 +15,7 @@ export type CartItem = {
   quantity: number;
   image: string;
   variant?: ProductVariant;
+  storeId?: string;
 };
 
 type CartContextType = {

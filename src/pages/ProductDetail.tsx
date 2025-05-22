@@ -136,7 +136,8 @@ const ProductDetail = () => {
       quantity: quantity,
       image: product.images[0],
       variant: selectedVariant || undefined,
-      storeId: product.storeId || storeId,
+      // Only add storeId if it exists
+      ...(product.storeId && { storeId: product.storeId })
     });
   };
   
