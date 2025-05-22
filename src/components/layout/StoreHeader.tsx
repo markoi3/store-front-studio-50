@@ -10,18 +10,10 @@ export const StoreHeader = () => {
   const { totalItems } = useCart();
   const { store, getStoreUrl } = useStore();
   
-  // Default menu items if none are provided in store settings
-  const defaultMenuItems = [
-    { id: "1", label: "Home", url: "/" },
-    { id: "2", label: "Products", url: "/shop" },
-    { id: "3", label: "About", url: "/about" },
-    { id: "4", label: "Contact", url: "/contact" }
-  ];
-
-  // Get menu items from store settings or use defaults
+  // Get menu items from store settings - without default fallback
   const menuItems = store?.settings?.menuItems && Array.isArray(store.settings.menuItems) 
     ? store.settings.menuItems 
-    : defaultMenuItems;
+    : [];
 
   // Get logo from store settings
   const logo = store?.settings?.logo || null;

@@ -13,6 +13,13 @@ export interface StoreSettings {
   privacyPolicy?: string;
   contactInfo?: string;
   pageElements?: any[];
+  customPages?: Array<{id: string; title: string; slug: string; content: string; elements?: any[]}>;
+  legalPages?: {
+    privacy?: {title: string; content: string};
+    terms?: {title: string; content: string};
+    shipping?: {title: string; content: string};
+    [key: string]: any;
+  };
   [key: string]: any;
 }
 
@@ -51,11 +58,24 @@ export function useStore() {
         }
         
         if (data) {
+          console.log("Store data loaded:", data.slug);
+          
+          const settings = data.settings && typeof data.settings === 'object' 
+            ? data.settings as StoreSettings 
+            : {};
+            
+          // Log page elements for debugging
+          if (settings.pageElements && Array.isArray(settings.pageElements)) {
+            console.log(`Found ${settings.pageElements.length} page elements for store ${data.slug}`);
+          } else {
+            console.log(`No page elements found for store ${data.slug}`);
+          }
+          
           const storeData: StoreData = {
             id: data.id,
             name: data.name,
             slug: data.slug,
-            settings: data.settings && typeof data.settings === 'object' ? data.settings as StoreSettings : {}
+            settings: settings
           };
           
           setStore(storeData);

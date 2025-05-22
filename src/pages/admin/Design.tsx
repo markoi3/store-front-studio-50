@@ -5,6 +5,12 @@ import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent } from "@/components/ui/card";
+import { Trash2, Plus } from "lucide-react";
 
 const Design = () => {
   const navigate = useNavigate();
@@ -15,7 +21,7 @@ const Design = () => {
     // Extract tab name from URL if present
     const searchParams = new URLSearchParams(location.search);
     const tab = searchParams.get("tab");
-    if (tab && (tab === "builder" || tab === "menu" || tab === "logo")) {
+    if (tab && (tab === "builder" || tab === "menu" || tab === "logo" || tab === "custom")) {
       setActiveTab(tab);
     }
   }, [location]);
@@ -37,6 +43,7 @@ const Design = () => {
             <TabsTrigger value="builder">Elementi stranice</TabsTrigger>
             <TabsTrigger value="menu">Meni</TabsTrigger>
             <TabsTrigger value="logo">Logo</TabsTrigger>
+            <TabsTrigger value="custom">Custom Pages</TabsTrigger>
           </TabsList>
           
           <TabsContent value="builder" className="space-y-4">
@@ -49,6 +56,10 @@ const Design = () => {
           
           <TabsContent value="logo" className="space-y-4">
             <LogoEditor />
+          </TabsContent>
+          
+          <TabsContent value="custom" className="space-y-4">
+            <CustomPagesEditor />
           </TabsContent>
         </Tabs>
       </div>
@@ -307,6 +318,209 @@ const LogoEditor = () => {
           Save Logo Settings
         </button>
       </div>
+    </div>
+  );
+};
+
+// Custom Pages editor component
+const CustomPagesEditor = () => {
+  const { user, updateStoreSettings } = useAuth();
+  const [customPages, setCustomPages] = useState<Array<{
+    id: string;
+    title: string;
+    slug: string;
+    content: string;
+  }>>([]);
+  const [currentPage, setCurrentPage] = useState<{
+    id: string;
+    title: string;
+    slug: string;
+    content: string;
+  } | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  
+  useEffect(() => {
+    // Initialize with custom pages from user store settings
+    if (user?.store?.settings?.customPages && Array.isArray(user.store.settings.customPages)) {
+      setCustomPages(user.store.settings.customPages);
+    }
+  }, [user]);
+  
+  const handleSavePages = async () => {
+    try {
+      await updateStoreSettings({
+        ...user?.store?.settings,
+        customPages: customPages
+      });
+      
+      toast.success("Custom pages saved successfully");
+    } catch (error) {
+      console.error("Error saving custom pages:", error);
+      toast.error("Failed to save custom pages");
+    }
+  };
+  
+  const handleAddPage = () => {
+    setIsEditing(true);
+    setCurrentPage({
+      id: `page-${Date.now()}`,
+      title: "New Page",
+      slug: `page-${customPages.length + 1}`,
+      content: "Content goes here..."
+    });
+  };
+  
+  const handleEditPage = (page: typeof currentPage) => {
+    setIsEditing(true);
+    setCurrentPage(page);
+  };
+  
+  const handleDeletePage = (id: string) => {
+    setCustomPages(customPages.filter(page => page.id !== id));
+    if (currentPage?.id === id) {
+      setCurrentPage(null);
+      setIsEditing(false);
+    }
+  };
+  
+  const handleSavePage = () => {
+    if (!currentPage) return;
+    
+    const pageIndex = customPages.findIndex(page => page.id === currentPage.id);
+    
+    if (pageIndex >= 0) {
+      // Update existing page
+      const updatedPages = [...customPages];
+      updatedPages[pageIndex] = currentPage;
+      setCustomPages(updatedPages);
+    } else {
+      // Add new page
+      setCustomPages([...customPages, currentPage]);
+    }
+    
+    setIsEditing(false);
+    setCurrentPage(null);
+  };
+  
+  const handleUpdatePageField = (field: string, value: string) => {
+    if (!currentPage) return;
+    
+    setCurrentPage({
+      ...currentPage,
+      [field]: value
+    });
+  };
+  
+  const generateSlug = (title: string) => {
+    return title
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-');
+  };
+  
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-medium">Custom Pages</h3>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={handleAddPage} className="flex items-center gap-1">
+                <Plus className="h-4 w-4" /> Add Page
+              </Button>
+              <Button onClick={handleSavePages}>Save All Pages</Button>
+            </div>
+          </div>
+          
+          {customPages.length === 0 && !isEditing ? (
+            <div className="text-center py-8 border border-dashed rounded-md text-muted-foreground">
+              No custom pages yet. Click "Add Page" to create your first page.
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {!isEditing && (
+                <div className="grid gap-4">
+                  {customPages.map(page => (
+                    <div key={page.id} className="flex justify-between items-center p-4 border rounded-md">
+                      <div>
+                        <h4 className="font-medium">{page.title}</h4>
+                        <p className="text-sm text-muted-foreground">/page/{page.slug}</p>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" onClick={() => handleEditPage(page)}>
+                          Edit
+                        </Button>
+                        <Button 
+                          variant="destructive" 
+                          size="sm" 
+                          onClick={() => handleDeletePage(page.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              {isEditing && currentPage && (
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="page-title">Page Title</Label>
+                    <Input
+                      id="page-title"
+                      value={currentPage.title}
+                      onChange={(e) => {
+                        const newTitle = e.target.value;
+                        handleUpdatePageField('title', newTitle);
+                        // Auto-generate slug if title changes
+                        handleUpdatePageField('slug', generateSlug(newTitle));
+                      }}
+                      className="mb-1"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      This is displayed at the top of the page
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="page-slug">URL Slug</Label>
+                    <Input
+                      id="page-slug"
+                      value={currentPage.slug}
+                      onChange={(e) => handleUpdatePageField('slug', e.target.value)}
+                      className="mb-1"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      The URL of your page will be: /page/{currentPage.slug}
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="page-content">Content</Label>
+                    <Textarea
+                      id="page-content"
+                      value={currentPage.content}
+                      onChange={(e) => handleUpdatePageField('content', e.target.value)}
+                      rows={10}
+                    />
+                  </div>
+                  
+                  <div className="flex justify-end gap-2">
+                    <Button variant="outline" onClick={() => {
+                      setIsEditing(false);
+                      setCurrentPage(null);
+                    }}>
+                      Cancel
+                    </Button>
+                    <Button onClick={handleSavePage}>Save Page</Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };

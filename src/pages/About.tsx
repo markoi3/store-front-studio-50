@@ -9,6 +9,7 @@ const AboutPage = () => {
   const { storeId } = useParams<{ storeId?: string }>();
   const [storeSettings, setStoreSettings] = useState<StoreSettings | null>(null);
   const [loading, setLoading] = useState(true);
+  const [pageElements, setPageElements] = useState<any[]>([]);
   
   useEffect(() => {
     const fetchStoreSettings = async () => {
@@ -31,7 +32,15 @@ const AboutPage = () => {
             ? data.settings as StoreSettings 
             : {};
             
+          console.log("About page - Store settings loaded");
+          
           setStoreSettings(settingsObj);
+          
+          // Load page elements if available
+          if (settingsObj.aboutPageElements && Array.isArray(settingsObj.aboutPageElements)) {
+            console.log(`About page - Found ${settingsObj.aboutPageElements.length} page elements`);
+            setPageElements(settingsObj.aboutPageElements);
+          }
         }
       } catch (error) {
         console.error("Error in fetchStoreSettings:", error);
@@ -44,6 +53,44 @@ const AboutPage = () => {
   }, [storeId]);
   
   const aboutContent = storeSettings?.aboutUs || "About Us content will be displayed here.";
+  
+  const renderPageElement = (element: any) => {
+    switch (element.type) {
+      case 'text':
+        return (
+          <div 
+            key={element.id} 
+            className={`my-4 text-${element.settings.alignment || 'left'}`}
+            style={{
+              color: element.settings.textColor || 'inherit',
+              backgroundColor: element.settings.backgroundColor || 'transparent',
+              fontSize: element.settings.fontSize === 'large' ? '1.25rem' : 
+                       element.settings.fontSize === 'xlarge' ? '1.5rem' :
+                       element.settings.fontSize === 'small' ? '0.875rem' : '1rem'
+            }}
+          >
+            <p>{element.settings.content}</p>
+          </div>
+        );
+      case 'image':
+        return (
+          <div key={element.id} className="my-4">
+            <img 
+              src={element.settings.src} 
+              alt={element.settings.alt || ''} 
+              className="max-w-full mx-auto" 
+              style={{
+                borderRadius: element.settings.borderRadius || '4px',
+                width: element.settings.width || '100%',
+                height: element.settings.height || 'auto'
+              }}
+            />
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
   
   return (
     <div className="container mx-auto px-4 py-12">
@@ -59,6 +106,13 @@ const AboutPage = () => {
         ) : (
           <div className="prose max-w-none">
             {aboutContent}
+            
+            {/* Render page elements if available */}
+            {pageElements.length > 0 && (
+              <div className="mt-8 space-y-6">
+                {pageElements.map(element => renderPageElement(element))}
+              </div>
+            )}
           </div>
         )}
       </div>
