@@ -1,4 +1,3 @@
-
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -80,7 +79,7 @@ const Dashboard = () => {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold">Kontrolna tabla</h1>
-          <Link to="/products/new">
+          <Link to="/admin/products/new">
             <Button>Dodaj novi proizvod</Button>
           </Link>
         </div>
@@ -237,7 +236,7 @@ const Dashboard = () => {
                         </span>
                       </td>
                       <td className="py-3">
-                        <Link to={`/orders/${order.id}`}>
+                        <Link to={`/admin/orders/${order.id}`}>
                           <Button variant="ghost" size="sm">
                             Pregled
                           </Button>
@@ -249,7 +248,7 @@ const Dashboard = () => {
               </table>
             </div>
             <div className="mt-4 text-center">
-              <Link to="/orders">
+              <Link to="/admin/orders">
                 <Button variant="outline">Prikaži sve porudžbine</Button>
               </Link>
             </div>

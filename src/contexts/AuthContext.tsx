@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from "@supabase/supabase-js";
@@ -207,9 +206,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         
         toast.success("Login successful!");
         
-        // Force page reload to ensure clean state
+        // Force page reload to ensure clean state - ENSURE correct admin path
         setTimeout(() => {
-          window.location.href = '/dashboard';
+          window.location.href = '/admin/dashboard';
         }, 100);
       }
     } catch (error) {
@@ -265,9 +264,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         
         toast.success("Registration successful!");
         
-        // Force page reload to ensure clean state
+        // Force page reload to ensure clean state - ENSURE correct admin path
         setTimeout(() => {
-          window.location.href = '/dashboard';
+          window.location.href = '/admin/dashboard';
         }, 100);
       }
     } catch (error) {
