@@ -1,130 +1,140 @@
 
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider } from "@/contexts/AuthContext";
+import { ThemeProvider } from "@/components/ui/theme-provider";
+import Home from "@/pages/Home";
+import Shop from "@/pages/Shop";
+import Login from "@/pages/Login";
+import Register from "@/pages/Register";
+import ProductDetail from "@/pages/ProductDetail";
+import Cart from "@/pages/Cart";
+import Checkout from "@/pages/Checkout";
+import ThankYou from "@/pages/ThankYou";
+import NotFound from "@/pages/NotFound";
+import Contact from "@/pages/Contact";
+import About from "@/pages/About";
+import Privacy from "@/pages/Privacy";
+import Terms from "@/pages/Terms";
+import Storefront from "@/pages/store/Storefront";
+import Dashboard from "@/pages/admin/Dashboard";
+import Products from "@/pages/admin/Products";
+import Orders from "@/pages/admin/Orders";
+import Settings from "@/pages/admin/Settings";
+import Profile from "@/pages/admin/Profile";
+import EditProduct from "@/pages/admin/EditProduct";
+import NewProduct from "@/pages/admin/NewProduct";
+import Customers from "@/pages/admin/Customers";
+import Analytics from "@/pages/admin/Analytics";
+import SaasHome from "@/pages/SaasHome";
+import Design from "@/pages/admin/Design";
+import Racunovodstvo from "@/pages/admin/Racunovodstvo";
+import Fakture from "@/pages/admin/Fakture";
+import NovaFaktura from "@/pages/admin/NovaFaktura";
+import NoviPredracun from "@/pages/admin/NoviPredracun";
+import NoviObracun from "@/pages/admin/NoviObracun";
+import BrziLink from "@/pages/admin/BrziLink";
+import Transakcije from "@/pages/admin/Transakcije";
+import PublicDocument from "@/pages/public/PublicDocument";
+import PaymentLink from "@/pages/payment/PaymentLink";
+
+// Components
+import { Toaster } from "@/components/ui/toaster";
+import { AuthContextProvider } from "@/contexts/AuthContext";
 import { CartProvider } from "@/contexts/CartContext";
+import CustomPage from "@/pages/store/CustomPage";
 
-// Public Pages
-import SaasHome from "./pages/SaasHome";
-import Home from "./pages/Home";
-import Shop from "./pages/Shop";
-import ProductDetail from "./pages/ProductDetail";
-import Cart from "./pages/Cart";
-import Checkout from "./pages/Checkout";
-import ThankYou from "./pages/ThankYou";
-import About from "./pages/About";
-import Contact from "./pages/Contact";
-import Terms from "./pages/Terms";
-import Privacy from "./pages/Privacy";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
+function App() {
+  const [isAdmin, setIsAdmin] = useState(false);
 
-// Admin Pages
-import Dashboard from "./pages/admin/Dashboard";
-import Products from "./pages/admin/Products";
-import NewProduct from "./pages/admin/NewProduct";
-import EditProduct from "./pages/admin/EditProduct";
-import Orders from "./pages/admin/Orders";
-import Settings from "./pages/admin/Settings";
-import Design from "./pages/admin/Design";
-import Analytics from "./pages/admin/Analytics";
-import Profile from "./pages/admin/Profile";
-import Racunovodstvo from "./pages/admin/Racunovodstvo";
-import BrziLink from "./pages/admin/BrziLink";
-import Fakture from "./pages/admin/Fakture";
-import NovaFaktura from "./pages/admin/NovaFaktura";
-import NoviPredracun from "./pages/admin/NoviPredracun";
-import NoviObracun from "./pages/admin/NoviObracun";
-import Transakcije from "./pages/admin/Transakcije";
-import Customers from "./pages/admin/Customers";
+  // Check if we are on an admin route
+  useEffect(() => {
+    const checkIfAdmin = () => {
+      const path = window.location.pathname;
+      const isAdminRoute = path.startsWith("/admin") || path === "/design";
+      setIsAdmin(isAdminRoute);
+    };
 
-// Store Pages
-import Storefront from "./pages/store/Storefront";
+    checkIfAdmin();
+    
+    // Listen for route changes
+    window.addEventListener('popstate', checkIfAdmin);
+    
+    return () => {
+      window.removeEventListener('popstate', checkIfAdmin);
+    };
+  }, []);
 
-// Payment Pages
-import PaymentLink from "./pages/payment/PaymentLink";
-
-// Public Document Pages
-import PublicDocument from "./pages/public/PublicDocument";
-
-import NotFound from "./pages/NotFound";
-
-const queryClient = new QueryClient();
-
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
+  return (
+    <ThemeProvider>
       <CartProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
+        <AuthContextProvider>
           <BrowserRouter>
             <Routes>
-              {/* SaaS Platform Home */}
+              {/* Admin Routes */}
+              <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+              <Route path="/admin/dashboard" element={<Dashboard />} />
+              <Route path="/admin/products" element={<Products />} />
+              <Route path="/admin/products/new" element={<NewProduct />} />
+              <Route path="/admin/products/:productId" element={<EditProduct />} />
+              <Route path="/admin/orders" element={<Orders />} />
+              <Route path="/admin/customers" element={<Customers />} />
+              <Route path="/admin/analytics" element={<Analytics />} />
+              <Route path="/admin/settings" element={<Settings />} />
+              <Route path="/design" element={<Design />} />
+              <Route path="/admin/profile" element={<Profile />} />
+              <Route path="/admin/racunovodstvo" element={<Racunovodstvo />} />
+              <Route path="/admin/fakture" element={<Fakture />} />
+              <Route path="/admin/fakture/nova" element={<NovaFaktura />} />
+              <Route path="/admin/fakture/predracun" element={<NoviPredracun />} />
+              <Route path="/admin/fakture/obracun" element={<NoviObracun />} />
+              <Route path="/admin/fakture/brzi-link" element={<BrziLink />} />
+              <Route path="/admin/transakcije" element={<Transakcije />} />
+              <Route path="/admin/*" element={<NotFound />} />
+              
+              {/* Public Routes */}
               <Route path="/" element={<SaasHome />} />
-              
-              {/* Store Routes */}
-              <Route path="/store/:storeId" element={<Storefront />} />
-              <Route path="/store/:storeId/product/:slug" element={<ProductDetail />} />
-              <Route path="/store/:storeId/cart" element={<Cart />} />
-              <Route path="/store/:storeId/checkout" element={<Checkout />} />
-              <Route path="/store/:storeId/thank-you" element={<ThankYou />} />
-              <Route path="/store/:storeId/about" element={<About />} />
-              <Route path="/store/:storeId/contact" element={<Contact />} />
-              <Route path="/store/:storeId/terms" element={<Terms />} />
-              <Route path="/store/:storeId/privacy" element={<Privacy />} />
-              
-              {/* Demo Store Routes (for testing) - Redirect to proper store URLs */}
-              <Route path="/home" element={<Navigate to="/store" replace />} />
-              <Route path="/shop" element={<Navigate to="/store" replace />} />
-              <Route path="/product/:slug" element={<Navigate to="/store" replace />} />
-              <Route path="/cart" element={<Navigate to="/store" replace />} />
-              <Route path="/checkout" element={<Navigate to="/store" replace />} />
-              <Route path="/thank-you" element={<Navigate to="/store" replace />} />
-              <Route path="/about" element={<Navigate to="/store" replace />} />
-              <Route path="/contact" element={<Navigate to="/store" replace />} />
-              <Route path="/terms" element={<Navigate to="/store" replace />} />
-              <Route path="/privacy" element={<Navigate to="/store" replace />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               
-              {/* Admin Routes */}
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/products" element={<Products />} />
-              <Route path="/products/new" element={<NewProduct />} />
-              <Route path="/products/:id" element={<EditProduct />} />
-              <Route path="/orders" element={<Orders />} />
-              <Route path="/orders/:id" element={<Transakcije />} />
-              <Route path="/customers" element={<Customers />} />
-              <Route path="/transakcije/:id" element={<Transakcije />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/design" element={<Design />} />
-              <Route path="/analytics" element={<Analytics />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/racunovodstvo" element={<Racunovodstvo />} />
-              <Route path="/brzi-link" element={<BrziLink />} />
-              <Route path="/fakture" element={<Fakture />} />
-              <Route path="/fakture/nova" element={<NovaFaktura />} />
-              <Route path="/predracun/novi" element={<NoviPredracun />} />
-              <Route path="/obracun/novi" element={<NoviObracun />} />
+              {/* Main Store Routes */}
+              <Route path="/shop" element={<Shop />} />
+              <Route path="/product/:productId" element={<ProductDetail />} />
+              <Route path="/cart" element={<Cart />} />
+              <Route path="/checkout" element={<Checkout />} />
+              <Route path="/thank-you" element={<ThankYou />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/terms" element={<Terms />} />
               
-              {/* Payment Links */}
-              <Route path="/pay/:linkId" element={<PaymentLink />} />
+              {/* Store-specific Routes */}
+              <Route path="/store/:storeId" element={<Storefront />} />
+              <Route path="/store/:storeId/shop" element={<Shop />} />
+              <Route path="/store/:storeId/product/:productId" element={<ProductDetail />} />
+              <Route path="/store/:storeId/cart" element={<Cart />} />
+              <Route path="/store/:storeId/checkout" element={<Checkout />} />
+              <Route path="/store/:storeId/thank-you" element={<ThankYou />} />
+              <Route path="/store/:storeId/contact" element={<Contact />} />
+              <Route path="/store/:storeId/about" element={<About />} />
+              <Route path="/store/:storeId/privacy" element={<Privacy />} />
+              <Route path="/store/:storeId/terms" element={<Terms />} />
               
-              {/* Public Document Pages */}
-              <Route path="/public/:docType/:docId" element={<PublicDocument />} />
+              {/* Custom Page Route */}
+              <Route path="/store/:storeId/:slug" element={<CustomPage />} />
               
-              {/* 404 Route */}
+              {/* Public Document Routes */}
+              <Route path="/doc/:token" element={<PublicDocument />} />
+              <Route path="/pay/:token" element={<PaymentLink />} />
+              
+              {/* Catch-all Route */}
               <Route path="*" element={<NotFound />} />
             </Routes>
+            <Toaster />
           </BrowserRouter>
-        </TooltipProvider>
+        </AuthContextProvider>
       </CartProvider>
-    </AuthProvider>
-  </QueryClientProvider>
-);
+    </ThemeProvider>
+  );
+}
 
 export default App;

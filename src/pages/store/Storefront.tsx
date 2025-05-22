@@ -1,204 +1,64 @@
+
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { ShopLayout } from "@/components/layout/ShopLayout";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Product } from "@/components/shop/ProductCard";
 import { Link } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-
-interface StoreMenuItem {
-  id: string;
-  label: string;
-  url: string;
-}
-
-interface StoreSettings {
-  menuItems?: StoreMenuItem[];
-  aboutUs?: string;
-  privacyPolicy?: string;
-  contactInfo?: string;
-  pageElements?: any[];
-  [key: string]: any;
-}
-
-interface StoreData {
-  id: string;
-  name: string;
-  slug: string;
-  settings: StoreSettings;
-  elements: any[];
-}
+import { withStoreLayout } from "@/components/layout/StorePageLayout";
+import { useStore } from "@/hooks/useStore";
 
 const Storefront = () => {
-  const { storeId } = useParams();
+  const { store, loading, storeId, getStoreUrl, getPageElements } = useStore();
   const navigate = useNavigate();
-  const [store, setStore] = useState<StoreData | null>(null);
-  const [loading, setLoading] = useState(true);
   const [storeProducts, setStoreProducts] = useState<Product[]>([]);
-  const [menuItems, setMenuItems] = useState<StoreMenuItem[]>([
-    { id: "1", label: "Početna", url: "/" },
-    { id: "2", label: "Proizvodi", url: "/shop" },
-    { id: "3", label: "O nama", url: "/about" },
-    { id: "4", label: "Kontakt", url: "/contact" }
-  ]);
+  
+  // Get page elements for the homepage
+  const pageElements = getPageElements('homepage');
   
   useEffect(() => {
-    const loadStoreData = async () => {
+    const loadStoreProducts = async () => {
+      if (!store) return;
+      
       try {
-        if (!storeId) return;
-        
-        console.log("Loading store data for slug:", storeId);
-        
-        // Fetch store by slug
-        const { data: storeData, error: storeError } = await supabase
-          .from('stores')
-          .select('*')
-          .eq('slug', storeId)
-          .maybeSingle();
-          
-        if (storeError) {
-          console.error("Error fetching store:", storeError);
-          setLoading(false);
-          return;
+        // In a real implementation, you would fetch products from the database
+        // For now, we'll just use defaults or existing products
+        if (storeProducts.length === 0) {
+          setStoreProducts(defaultProducts);
         }
-        
-        if (!storeData) {
-          console.error("No store found with slug:", storeId);
-          setLoading(false);
-          return;
-        }
-        
-        console.log("Found store:", storeData);
-        
-        // Fetch published products for this store
-        const { data: productsData, error: productsError } = await supabase
-          .from('products')
-          .select('*')
-          .eq('store_id', storeData.id)
-          .eq('published', true);
-          
-        if (productsError) {
-          console.error("Error fetching products:", productsError);
-        } else {
-          console.log("Found products:", productsData || []);
-        }
-        
-        // Parse settings safely
-        const defaultSettings: StoreSettings = {
-          menuItems: [
-            { id: "1", label: "Početna", url: "/" },
-            { id: "2", label: "Proizvodi", url: "/shop" },
-            { id: "3", label: "O nama", url: "/about" },
-            { id: "4", label: "Kontakt", url: "/contact" }
-          ],
-          aboutUs: "",
-          privacyPolicy: "",
-          contactInfo: ""
-        };
-        
-        // Process store settings
-        const storeSettings: StoreSettings = 
-          (typeof storeData.settings === 'object' && storeData.settings !== null) 
-            ? { ...defaultSettings, ...storeData.settings }
-            : defaultSettings;
-            
-        // Set menu items from settings
-        if (storeSettings.menuItems && Array.isArray(storeSettings.menuItems)) {
-          setMenuItems(storeSettings.menuItems);
-        }
-        
-        // Transform products to match our Product type
-        const formattedProducts = productsData ? productsData.map((product: any) => ({
-          id: product.id,
-          name: product.name,
-          price: parseFloat(product.price || 0),
-          image: product.image || "https://via.placeholder.com/300",
-          slug: product.slug,
-          storeId: storeId,
-          category: product.category
-        })) : [];
-        
-        setStoreProducts(formattedProducts);
-        
-        // Format store data
-        const formattedStore: StoreData = {
-          id: storeData.id,
-          name: storeData.name,
-          slug: storeData.slug,
-          settings: storeSettings,
-          elements: storeSettings.pageElements || [
-            {
-              id: '1',
-              type: 'hero',
-              settings: {
-                title: `Dobrodošli u ${storeData.name}`,
-                subtitle: 'Otkrijte naše neverovatne proizvode',
-                buttonText: 'Kupuj odmah',
-                buttonLink: '/shop',
-                backgroundImage: 'https://images.unsplash.com/photo-1588345921523-c2dcdb7f1dcd?w=800&auto=format&fit=crop'
-              }
-            },
-            {
-              id: '2',
-              type: 'products',
-              settings: {
-                title: 'Istaknuti proizvodi',
-                count: 4,
-                layout: 'grid'
-              }
-            },
-            {
-              id: '3',
-              type: 'text',
-              settings: {
-                content: storeSettings.aboutUs || 'Nudimo visokokvalitetne proizvode sa odličnom korisničkom podrškom.',
-                alignment: 'center'
-              }
-            }
-          ]
-        };
-        
-        setStore(formattedStore);
       } catch (error) {
-        console.error("Error loading store data:", error);
-      } finally {
-        setLoading(false);
+        console.error("Error loading products:", error);
       }
     };
     
-    loadStoreData();
-  }, [storeId]);
+    loadStoreProducts();
+  }, [store]);
   
   if (loading) {
     return (
-      <ShopLayout>
-        <div className="container mx-auto px-4 py-12">
-          <div className="flex justify-center items-center min-h-[60vh]">
-            <div className="animate-pulse flex flex-col items-center">
-              <div className="h-8 w-40 bg-muted rounded mb-4"></div>
-              <div className="h-4 w-60 bg-muted rounded"></div>
-            </div>
+      <div className="container mx-auto px-4 py-12">
+        <div className="flex justify-center items-center min-h-[60vh]">
+          <div className="animate-pulse flex flex-col items-center">
+            <div className="h-8 w-40 bg-muted rounded mb-4"></div>
+            <div className="h-4 w-60 bg-muted rounded"></div>
           </div>
         </div>
-      </ShopLayout>
+      </div>
     );
   }
   
   if (!store) {
     return (
-      <ShopLayout>
-        <div className="container mx-auto px-4 py-12">
-          <div className="flex justify-center items-center min-h-[60vh]">
-            <div className="text-center">
-              <h1 className="text-2xl font-bold mb-2">Prodavnica nije pronađena</h1>
-              <p className="text-muted-foreground mb-6">Prodavnica koju tražite ne postoji ili više nije dostupna.</p>
-              <Button asChild>
-                <a href="/">Povratak na početnu</a>
-              </Button>
-            </div>
+      <div className="container mx-auto px-4 py-12">
+        <div className="flex justify-center items-center min-h-[60vh]">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold mb-2">Store Not Found</h1>
+            <p className="text-muted-foreground mb-6">The store you're looking for doesn't exist or is no longer available.</p>
+            <Button asChild>
+              <a href="/">Back to Home</a>
+            </Button>
           </div>
         </div>
-      </ShopLayout>
+      </div>
     );
   }
   
@@ -206,37 +66,37 @@ const Storefront = () => {
   const defaultProducts = [
     {
       id: "default1",
-      name: "Proizvod 1",
+      name: "Product 1",
       price: 9900,
       image: "https://via.placeholder.com/300",
-      slug: "proizvod-1",
+      slug: "product-1",
       storeId: storeId,
       category: "furniture"
     },
     {
       id: "default2",
-      name: "Proizvod 2",
+      name: "Product 2",
       price: 12900,
       image: "https://via.placeholder.com/300",
-      slug: "proizvod-2",
+      slug: "product-2",
       storeId: storeId,
       category: "furniture"
     },
     {
       id: "default3",
-      name: "Proizvod 3",
+      name: "Product 3",
       price: 7900,
       image: "https://via.placeholder.com/300",
-      slug: "proizvod-3",
+      slug: "product-3",
       storeId: storeId,
       category: "kitchen"
     },
     {
       id: "default4",
-      name: "Proizvod 4",
+      name: "Product 4",
       price: 15900,
       image: "https://via.placeholder.com/300",
-      slug: "proizvod-4",
+      slug: "product-4",
       storeId: storeId,
       category: "lighting"
     }
@@ -245,73 +105,39 @@ const Storefront = () => {
   // Use stored products if available, otherwise use defaults
   const displayProducts = storeProducts.length > 0 ? storeProducts : defaultProducts;
 
-  // Function to handle navigation while keeping store context
-  const handleNavigate = (path: string) => {
-    if (path.startsWith('/')) {
-      // Ako path počinje sa '/', dodajemo storeId prefix
-      const fullPath = `/store/${storeId}${path}`;
-      navigate(fullPath);
-    } else {
-      navigate(path);
-    }
-  };
-
-  // Custom navigation for this store
-  const renderCustomNavigation = () => {
-    return (
-      <div className="flex justify-center space-x-6 mb-8">
-        {menuItems.map((item) => (
-          <Button
-            key={item.id}
-            variant="ghost"
-            className="text-foreground hover:text-primary font-medium"
-            onClick={() => handleNavigate(item.url)}
-          >
-            {item.label}
-          </Button>
-        ))}
-      </div>
-    );
-  };
-  
-  return (
-    <ShopLayout>
-      <div className="space-y-12">
-        {/* Navigation */}
-        {renderCustomNavigation()}
-        
-        {/* Hero Section */}
-        {store?.elements.find((el) => el.type === 'hero') && (
+  // Render page elements
+  const renderPageElements = () => {
+    if (!pageElements || pageElements.length === 0) {
+      // Use default elements if no custom elements available
+      return (
+        <>
+          {/* Default Hero Section */}
           <div className="relative h-[70vh] bg-accent">
             <img 
-              src={store.elements.find((el) => el.type === 'hero')?.settings.backgroundImage} 
-              alt="Hero" 
+              src="https://images.unsplash.com/photo-1588345921523-c2dcdb7f1dcd?w=800&auto=format&fit=crop" 
+              alt="Default Hero" 
               className="absolute inset-0 w-full h-full object-cover" 
             />
             <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center text-white px-4">
               <h1 className="text-4xl md:text-5xl font-bold mb-4 text-center">
-                {store.elements.find((el) => el.type === 'hero')?.settings.title}
+                {`Welcome to ${store.name}`}
               </h1>
               <p className="text-xl md:text-2xl mb-6 max-w-2xl text-center">
-                {store.elements.find((el) => el.type === 'hero')?.settings.subtitle}
+                Discover our amazing products
               </p>
               <Button 
                 size="lg" 
                 className="text-lg px-6"
-                onClick={() => handleNavigate('/shop')}
+                onClick={() => navigate(getStoreUrl("/shop"))}
               >
-                {store.elements.find((el) => el.type === 'hero')?.settings.buttonText}
+                Shop Now
               </Button>
             </div>
           </div>
-        )}
-        
-        {/* Featured Products */}
-        {store?.elements.find((el) => el.type === 'products') && (
+
+          {/* Default Featured Products */}
           <div className="container mx-auto px-4 py-12">
-            <h2 className="text-3xl font-bold mb-6 text-center">
-              {store.elements.find((el) => el.type === 'products')?.settings.title}
-            </h2>
+            <h2 className="text-3xl font-bold mb-6 text-center">Featured Products</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {displayProducts.slice(0, 4).map((product: Product) => (
                 <div key={product.id} className="product-card">
@@ -334,41 +160,188 @@ const Storefront = () => {
                   </p>
                   <Button 
                     className="w-full"
-                    onClick={() => navigate(`/store/${storeId}/product/${product.slug || product.id}`)}
+                    onClick={() => navigate(getStoreUrl(`/product/${product.slug || product.id}`))}
                   >
-                    Detaljnije
+                    Details
                   </Button>
                 </div>
               ))}
             </div>
           </div>
-        )}
-        
-        {/* Text Section */}
-        {store?.elements.find((el) => el.type === 'text') && (
-          <div className="container mx-auto px-4 py-12">
-            <div className="max-w-3xl mx-auto text-center">
-              <p className="text-lg">
-                {store.elements.find((el) => el.type === 'text')?.settings.content}
-              </p>
-            </div>
-          </div>
-        )}
-        
-        {/* Privacy Policy Section (if exists) */}
-        {store?.settings.privacyPolicy && (
-          <div className="container mx-auto px-4 py-12 border-t">
-            <div className="max-w-3xl mx-auto">
-              <h2 className="text-2xl font-bold mb-4">Politika privatnosti</h2>
-              <div className="prose">
-                {store.settings.privacyPolicy}
+        </>
+      );
+    }
+
+    return pageElements.map((element) => {
+      switch (element.type) {
+        case 'hero':
+          return (
+            <div key={element.id} className="relative h-[70vh] bg-accent">
+              <img 
+                src={element.settings.backgroundImage} 
+                alt="Hero" 
+                className="absolute inset-0 w-full h-full object-cover" 
+              />
+              <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center text-white px-4">
+                <h1 className="text-4xl md:text-5xl font-bold mb-4 text-center">
+                  {element.settings.title}
+                </h1>
+                <p className="text-xl md:text-2xl mb-6 max-w-2xl text-center">
+                  {element.settings.subtitle}
+                </p>
+                <Button 
+                  size="lg" 
+                  className="text-lg px-6"
+                  onClick={() => navigate(getStoreUrl(element.settings.buttonLink || '/shop'))}
+                >
+                  {element.settings.buttonText}
+                </Button>
               </div>
             </div>
+          );
+        case 'products':
+          return (
+            <div key={element.id} className="container mx-auto px-4 py-12">
+              <h2 className="text-3xl font-bold mb-6 text-center">
+                {element.settings.title}
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {displayProducts.slice(0, element.settings.count || 4).map((product: Product) => (
+                  <div key={product.id} className="product-card">
+                    <div className="aspect-square bg-accent mb-3 rounded-md overflow-hidden">
+                      {product.image ? (
+                        <img 
+                          src={product.image} 
+                          alt={product.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-muted"></div>
+                      )}
+                    </div>
+                    <h3 className="font-medium">{product.name}</h3>
+                    <p className="text-muted-foreground mb-3 font-numeric">
+                      {typeof product.price === 'number' 
+                        ? product.price.toLocaleString("sr-RS") 
+                        : parseFloat(String(product.price || 0)).toLocaleString("sr-RS")} RSD
+                    </p>
+                    <Button 
+                      className="w-full"
+                      onClick={() => navigate(getStoreUrl(`/product/${product.slug || product.id}`))}
+                    >
+                      Details
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        case 'text':
+          return (
+            <div key={element.id} className="container mx-auto px-4 py-12">
+              <div className={`max-w-3xl mx-auto text-${element.settings.alignment || 'center'}`}>
+                <p className="text-lg">
+                  {element.settings.content}
+                </p>
+              </div>
+            </div>
+          );
+        case 'image':
+          return (
+            <div key={element.id} className="container mx-auto px-4 py-12">
+              <div className="max-w-3xl mx-auto">
+                <img 
+                  src={element.settings.src} 
+                  alt={element.settings.alt || ''} 
+                  className="w-full rounded-lg shadow-md" 
+                />
+              </div>
+            </div>
+          );
+        case 'categories':
+          return (
+            <div key={element.id} className="container mx-auto px-4 py-12">
+              <h2 className="text-3xl font-bold mb-6 text-center">{element.settings.title}</h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="aspect-square relative bg-accent rounded-lg overflow-hidden">
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/20 hover:bg-black/40 transition-colors">
+                    <span className="text-white text-xl font-bold">Furniture</span>
+                  </div>
+                </div>
+                <div className="aspect-square relative bg-accent rounded-lg overflow-hidden">
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/20 hover:bg-black/40 transition-colors">
+                    <span className="text-white text-xl font-bold">Kitchen</span>
+                  </div>
+                </div>
+                <div className="aspect-square relative bg-accent rounded-lg overflow-hidden">
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/20 hover:bg-black/40 transition-colors">
+                    <span className="text-white text-xl font-bold">Lighting</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        case 'testimonials':
+          return (
+            <div key={element.id} className="container mx-auto px-4 py-12 bg-accent/10">
+              <h2 className="text-3xl font-bold mb-6 text-center">{element.settings.title}</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-4xl mx-auto">
+                <div className="bg-background p-6 rounded-lg shadow-sm">
+                  <p className="italic mb-4">"Amazing quality and fast shipping! Will definitely shop here again."</p>
+                  <p className="font-medium">— Sarah K.</p>
+                </div>
+                <div className="bg-background p-6 rounded-lg shadow-sm">
+                  <p className="italic mb-4">"The products exceeded my expectations. Great customer service too!"</p>
+                  <p className="font-medium">— Mark T.</p>
+                </div>
+                <div className="bg-background p-6 rounded-lg shadow-sm">
+                  <p className="italic mb-4">"Very satisfied with my purchase. The quality is outstanding."</p>
+                  <p className="font-medium">— Jennifer M.</p>
+                </div>
+              </div>
+            </div>
+          );
+        case 'cta':
+          return (
+            <div key={element.id} className={`py-12 ${element.settings.backgroundColor || 'bg-primary'}`}>
+              <div className="container mx-auto px-4 text-center">
+                <h2 className={`text-2xl md:text-3xl font-bold mb-6 ${element.settings.textColor || 'text-primary-foreground'}`}>
+                  {element.settings.title}
+                </h2>
+                <Button 
+                  variant="secondary" 
+                  size="lg" 
+                  onClick={() => navigate(getStoreUrl(element.settings.buttonLink || '/contact'))}
+                >
+                  {element.settings.buttonText}
+                </Button>
+              </div>
+            </div>
+          );
+        default:
+          return null;
+      }
+    });
+  };
+  
+  return (
+    <div className="space-y-12">
+      {/* Render the page elements */}
+      {renderPageElements()}
+      
+      {/* Privacy Policy Section (if exists) */}
+      {store?.settings?.privacyPolicy && (
+        <div className="container mx-auto px-4 py-12 border-t">
+          <div className="max-w-3xl mx-auto">
+            <h2 className="text-2xl font-bold mb-4">Privacy Policy</h2>
+            <div className="prose">
+              {store.settings.privacyPolicy}
+            </div>
           </div>
-        )}
-      </div>
-    </ShopLayout>
+        </div>
+      )}
+    </div>
   );
 };
 
-export default Storefront;
+export default withStoreLayout(Storefront);

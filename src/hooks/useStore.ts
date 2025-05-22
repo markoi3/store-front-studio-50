@@ -12,7 +12,19 @@ export interface StoreSettings {
   aboutUs?: string;
   privacyPolicy?: string;
   contactInfo?: string;
-  pageElements?: any[];
+  pageElements?: {
+    [key: string]: Array<{
+      id: string;
+      type: string;
+      settings: Record<string, any>;
+    }>;
+  };
+  customPages?: Array<{
+    id: string;
+    title: string;
+    slug: string;
+    content: string;
+  }>;
   [key: string]: any;
 }
 
@@ -51,11 +63,40 @@ export function useStore() {
         }
         
         if (data) {
+          // Ensure we have valid settings with proper structure
+          const defaultSettings: StoreSettings = {
+            menuItems: [
+              { id: "1", label: "Home", url: "/" },
+              { id: "2", label: "Products", url: "/shop" },
+              { id: "3", label: "About", url: "/about" },
+              { id: "4", label: "Contact", url: "/contact" }
+            ],
+            pageElements: {
+              homepage: []
+            },
+            customPages: []
+          };
+          
+          // Make sure settings is an object and merge with defaults
+          const settings = (data.settings && typeof data.settings === 'object') 
+            ? { ...defaultSettings, ...data.settings }
+            : defaultSettings;
+            
+          // Ensure pageElements is properly structured
+          if (!settings.pageElements || typeof settings.pageElements !== 'object') {
+            settings.pageElements = { homepage: [] };
+          }
+          
+          // Ensure customPages exists
+          if (!settings.customPages || !Array.isArray(settings.customPages)) {
+            settings.customPages = [];
+          }
+          
           const storeData: StoreData = {
             id: data.id,
             name: data.name,
             slug: data.slug,
-            settings: data.settings && typeof data.settings === 'object' ? data.settings as StoreSettings : {}
+            settings: settings
           };
           
           setStore(storeData);
@@ -87,11 +128,27 @@ export function useStore() {
     return `/store/${storeId}/${cleanPath}`;
   };
   
+  // Get page elements specific to a page
+  const getPageElements = (pageName: string = 'homepage') => {
+    if (!store?.settings?.pageElements) return [];
+    
+    return store.settings.pageElements[pageName] || [];
+  };
+
+  // Get custom page by slug
+  const getCustomPage = (slug: string) => {
+    if (!store?.settings?.customPages) return null;
+    
+    return store.settings.customPages.find(page => page.slug === slug) || null;
+  };
+  
   return {
     store,
     storeId,
     loading,
     error,
-    getStoreUrl
+    getStoreUrl,
+    getPageElements,
+    getCustomPage
   };
 }
