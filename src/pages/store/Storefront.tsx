@@ -6,11 +6,13 @@ import { Product } from "@/components/shop/ProductCard";
 import { Link } from "react-router-dom";
 import { withStoreLayout } from "@/components/layout/StorePageLayout";
 import { useStore } from "@/hooks/useStore";
+import { supabase } from "@/integrations/supabase/client";
 
 const Storefront = () => {
   const { store, loading, storeId, getStoreUrl, getPageElements } = useStore();
   const navigate = useNavigate();
   const [storeProducts, setStoreProducts] = useState<Product[]>([]);
+  const [productsLoading, setProductsLoading] = useState(true);
   
   // Get page elements for the homepage
   const pageElements = getPageElements('homepage');
@@ -20,13 +22,39 @@ const Storefront = () => {
       if (!store) return;
       
       try {
-        // In a real implementation, you would fetch products from the database
-        // For now, we'll just use defaults or existing products
-        if (storeProducts.length === 0) {
-          setStoreProducts(defaultProducts);
+        setProductsLoading(true);
+        
+        // Fetch the current store's products from Supabase
+        const { data: products, error } = await supabase
+          .from('products')
+          .select('*')
+          .eq('store_id', store.id)
+          .eq('published', true);
+        
+        if (error) {
+          console.error("Error loading products:", error);
+          return;
+        }
+        
+        if (products && products.length > 0) {
+          setStoreProducts(products);
+        } else {
+          console.log("No products found for store, loading from localStorage");
+          // Try to fetch from localStorage as backup
+          const storedProducts = JSON.parse(localStorage.getItem("products") || "[]");
+          const storeProducts = storedProducts.filter((p: any) => p.store_id === store.id);
+          
+          if (storeProducts.length > 0) {
+            setStoreProducts(storeProducts);
+          } else {
+            console.log("Using default products as fallback");
+            setStoreProducts(defaultProducts);
+          }
         }
       } catch (error) {
-        console.error("Error loading products:", error);
+        console.error("Error in loadStoreProducts:", error);
+      } finally {
+        setProductsLoading(false);
       }
     };
     

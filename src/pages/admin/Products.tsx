@@ -252,7 +252,7 @@ const Products = () => {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-              <Link to="/products/new">
+              <Link to="/admin/products/new">
                 <Button>Add Product</Button>
               </Link>
             </div>
@@ -348,7 +348,7 @@ const Products = () => {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem>
-                              <Link to={`/products/${product.id}`} className="w-full">
+                              <Link to={`/admin/products/${product.id}`} className="w-full">
                                 Edit
                               </Link>
                             </DropdownMenuItem>

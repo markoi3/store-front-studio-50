@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -146,8 +147,8 @@ const NewProduct = () => {
         console.error("Error saving to localStorage:", e);
       }
       
-      // Redirect to product list
-      navigate("/products", { 
+      // Redirect to product list using the correct admin path
+      navigate("/admin/products", { 
         state: { 
           success: true, 
           message: "Product has been saved successfully" 
@@ -422,7 +423,7 @@ const NewProduct = () => {
             <Button
               type="button"
               variant="outline"
-              onClick={() => navigate("/products")}
+              onClick={() => navigate("/admin/products")}
             >
               Cancel
             </Button>
