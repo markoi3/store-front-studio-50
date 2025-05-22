@@ -4,6 +4,8 @@ import { StoreBuilder } from "@/components/design/StoreBuilder";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 const Design = () => {
   const navigate = useNavigate();
@@ -52,18 +54,34 @@ const Design = () => {
 
 // Menu editor component
 const MenuEditor = () => {
-  const [menuItems, setMenuItems] = useState(() => {
-    const stored = localStorage.getItem("storeMenuItems");
-    return stored ? JSON.parse(stored) : [
-      { id: "1", label: "Početna", url: "/" },
-      { id: "2", label: "Proizvodi", url: "/shop" },
-      { id: "3", label: "O nama", url: "/about" },
-      { id: "4", label: "Kontakt", url: "/contact" }
-    ];
-  });
-  
+  const { user, updateStoreSettings } = useAuth();
+  const [menuItems, setMenuItems] = useState<Array<{id: string; label: string; url: string}>>([]);
   const [newLabel, setNewLabel] = useState("");
   const [newUrl, setNewUrl] = useState("");
+  
+  useEffect(() => {
+    // Initialize with menu items from user store
+    if (user?.store?.settings?.menuItems) {
+      setMenuItems(user.store.settings.menuItems);
+    } else {
+      // Default menu items
+      setMenuItems([
+        { id: "1", label: "Početna", url: "/" },
+        { id: "2", label: "Proizvodi", url: "/shop" },
+        { id: "3", label: "O nama", url: "/about" },
+        { id: "4", label: "Kontakt", url: "/contact" }
+      ]);
+    }
+  }, [user]);
+  
+  const saveMenuItems = async (items: Array<{id: string; label: string; url: string}>) => {
+    try {
+      await updateStoreSettings({ menuItems: items });
+    } catch (error) {
+      console.error("Error saving menu items:", error);
+      toast.error("Failed to save menu items. Please try again.");
+    }
+  };
   
   const handleAddItem = () => {
     if (!newLabel || !newUrl) return;
@@ -76,7 +94,7 @@ const MenuEditor = () => {
     
     const updatedItems = [...menuItems, newItem];
     setMenuItems(updatedItems);
-    localStorage.setItem("storeMenuItems", JSON.stringify(updatedItems));
+    saveMenuItems(updatedItems);
     
     setNewLabel("");
     setNewUrl("");
@@ -85,7 +103,7 @@ const MenuEditor = () => {
   const handleRemoveItem = (id: string) => {
     const updatedItems = menuItems.filter(item => item.id !== id);
     setMenuItems(updatedItems);
-    localStorage.setItem("storeMenuItems", JSON.stringify(updatedItems));
+    saveMenuItems(updatedItems);
   };
   
   const handleMoveItem = (index: number, direction: "up" | "down") => {
@@ -101,7 +119,7 @@ const MenuEditor = () => {
     [updatedItems[index], updatedItems[newIndex]] = [updatedItems[newIndex], updatedItems[index]];
     
     setMenuItems(updatedItems);
-    localStorage.setItem("storeMenuItems", JSON.stringify(updatedItems));
+    saveMenuItems(updatedItems);
   };
   
   return (

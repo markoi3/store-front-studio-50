@@ -34,23 +34,25 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
       const storeSlug = emailUsername.toLowerCase().replace(/[^a-z0-9]/g, '-');
       const storeName = `${user.name}'s Store`;
       
+      const defaultSettings = {
+        privacyPolicy: "",
+        aboutUs: "",
+        contactInfo: "",
+        menuItems: [
+          { id: "1", label: "Početna", url: "/" },
+          { id: "2", label: "Proizvodi", url: "/shop" },
+          { id: "3", label: "O nama", url: "/about" },
+          { id: "4", label: "Kontakt", url: "/contact" }
+        ]
+      };
+      
       const { data, error } = await supabase
         .from('stores')
         .insert({
           user_id: user.id,
           name: storeName,
           slug: storeSlug,
-          settings: {
-            privacyPolicy: "",
-            aboutUs: "",
-            contactInfo: "",
-            menuItems: [
-              { id: "1", label: "Početna", url: "/" },
-              { id: "2", label: "Proizvodi", url: "/shop" },
-              { id: "3", label: "O nama", url: "/about" },
-              { id: "4", label: "Kontakt", url: "/contact" }
-            ]
-          }
+          settings: defaultSettings
         })
         .select()
         .single();

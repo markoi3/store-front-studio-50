@@ -77,7 +77,7 @@ const Storefront = () => {
         
         // Get custom menu items from store settings if they exist
         const settings = storeData.settings || {};
-        if (settings.menuItems && Array.isArray(settings.menuItems)) {
+        if (settings && typeof settings === 'object' && settings.menuItems && Array.isArray(settings.menuItems)) {
           setMenuItems(settings.menuItems);
         }
         
@@ -95,11 +95,13 @@ const Storefront = () => {
         setStoreProducts(formattedProducts);
         
         // Format store data
-        const formattedStore = {
+        const formattedSettings: StoreSettings = typeof settings === 'object' ? settings : {};
+        
+        const formattedStore: StoreData = {
           id: storeData.id,
           name: storeData.name,
           slug: storeData.slug,
-          settings: storeData.settings || {},
+          settings: formattedSettings,
           elements: [
             {
               id: '1',
@@ -125,7 +127,7 @@ const Storefront = () => {
               id: '3',
               type: 'text',
               settings: {
-                content: settings.aboutUs || 'Nudimo visokokvalitetne proizvode sa odličnom korisničkom podrškom.',
+                content: formattedSettings.aboutUs || 'Nudimo visokokvalitetne proizvode sa odličnom korisničkom podrškom.',
                 alignment: 'center'
               }
             }
