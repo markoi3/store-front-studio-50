@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -13,16 +14,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { StoreBuilder } from "@/components/design/StoreBuilder";
 import { toast } from "@/hooks/use-toast";
-import { Link, useNavigate } from "react-router-dom";
-import { useEffect } from "react";
 
 const Settings = () => {
-  const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("general");
-  const [menuItems, setMenuItems] = useState<any[]>([]);
-  
   const [storeSettings, setStoreSettings] = useState({
     storeName: "My E-Shop",
     storeEmail: "contact@myeshop.com",
@@ -66,24 +60,6 @@ const Settings = () => {
     taxRate: "10",
     taxIncludedInPrices: false,
   });
-
-  useEffect(() => {
-    // Load menu items from localStorage
-    const storedMenuItems = localStorage.getItem("storeMenuItems");
-    if (storedMenuItems) {
-      setMenuItems(JSON.parse(storedMenuItems));
-    } else {
-      // Set default menu items if none exist
-      const defaultMenuItems = [
-        { id: "1", label: "Početna", url: "/" },
-        { id: "2", label: "Proizvodi", url: "/shop" },
-        { id: "3", label: "O nama", url: "/about" },
-        { id: "4", label: "Kontakt", url: "/contact" }
-      ];
-      setMenuItems(defaultMenuItems);
-      localStorage.setItem("storeMenuItems", JSON.stringify(defaultMenuItems));
-    }
-  }, []);
   
   const handleStoreChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -128,49 +104,6 @@ const Settings = () => {
   const handleTaxSwitchChange = (name: string, checked: boolean) => {
     setTaxSettings({ ...taxSettings, [name]: checked });
   };
-
-  // Menu editor functionality
-  const [newLabel, setNewLabel] = useState("");
-  const [newUrl, setNewUrl] = useState("");
-  
-  const handleAddItem = () => {
-    if (!newLabel || !newUrl) return;
-    
-    const newItem = {
-      id: Date.now().toString(),
-      label: newLabel,
-      url: newUrl.startsWith("/") ? newUrl : "/" + newUrl
-    };
-    
-    const updatedItems = [...menuItems, newItem];
-    setMenuItems(updatedItems);
-    localStorage.setItem("storeMenuItems", JSON.stringify(updatedItems));
-    
-    setNewLabel("");
-    setNewUrl("");
-  };
-  
-  const handleRemoveItem = (id: string) => {
-    const updatedItems = menuItems.filter(item => item.id !== id);
-    setMenuItems(updatedItems);
-    localStorage.setItem("storeMenuItems", JSON.stringify(updatedItems));
-  };
-  
-  const handleMoveItem = (index: number, direction: "up" | "down") => {
-    if (
-      (direction === "up" && index === 0) ||
-      (direction === "down" && index === menuItems.length - 1)
-    ) {
-      return;
-    }
-    
-    const newIndex = direction === "up" ? index - 1 : index + 1;
-    const updatedItems = [...menuItems];
-    [updatedItems[index], updatedItems[newIndex]] = [updatedItems[newIndex], updatedItems[index]];
-    
-    setMenuItems(updatedItems);
-    localStorage.setItem("storeMenuItems", JSON.stringify(updatedItems));
-  };
   
   const handleSaveSettings = () => {
     // Here you would normally send the data to your API
@@ -178,7 +111,6 @@ const Settings = () => {
     console.log("Payment Settings:", paymentSettings);
     console.log("Shipping Settings:", shippingSettings);
     console.log("Tax Settings:", taxSettings);
-    console.log("Menu Items:", menuItems);
     
     toast({
       title: "Settings saved",
@@ -194,13 +126,12 @@ const Settings = () => {
           <Button onClick={handleSaveSettings}>Save Settings</Button>
         </div>
         
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <Tabs defaultValue="general">
           <TabsList className="w-full justify-start border-b rounded-none">
             <TabsTrigger value="general">General</TabsTrigger>
             <TabsTrigger value="payment">Payment</TabsTrigger>
             <TabsTrigger value="shipping">Shipping</TabsTrigger>
             <TabsTrigger value="tax">Tax</TabsTrigger>
-            <TabsTrigger value="design">Design</TabsTrigger>
           </TabsList>
           
           {/* General Settings */}
@@ -623,109 +554,6 @@ const Settings = () => {
                   </div>
                 </div>
               )}
-            </div>
-          </TabsContent>
-
-          {/* Design Tab */}
-          <TabsContent value="design" className="space-y-6 py-4">
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-bold">Store Design</h2>
-              </div>
-              
-              <Tabs defaultValue="builder" className="space-y-4">
-                <TabsList>
-                  <TabsTrigger value="builder">Page Elements</TabsTrigger>
-                  <TabsTrigger value="menu">Menu</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="builder" className="space-y-4">
-                  <StoreBuilder />
-                </TabsContent>
-                
-                <TabsContent value="menu" className="space-y-4">
-                  <div className="bg-card p-6 rounded-lg shadow-sm space-y-6">
-                    <div>
-                      <h3 className="text-lg font-medium mb-4">Edit Menu</h3>
-                      <p className="text-muted-foreground mb-4">
-                        Add, remove, or change the order of links in your store's navigation menu.
-                      </p>
-                    </div>
-                    
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-3 gap-4">
-                        <div className="font-medium text-sm">Name</div>
-                        <div className="font-medium text-sm">URL</div>
-                        <div className="font-medium text-sm text-right">Actions</div>
-                      </div>
-                      
-                      {menuItems.map((item, index) => (
-                        <div key={item.id} className="grid grid-cols-3 gap-4 items-center p-3 border rounded-md bg-background">
-                          <div>{item.label}</div>
-                          <div className="text-muted-foreground">{item.url}</div>
-                          <div className="flex justify-end space-x-2">
-                            <button
-                              onClick={() => handleMoveItem(index, "up")}
-                              disabled={index === 0}
-                              className="p-1 rounded hover:bg-accent disabled:opacity-50"
-                            >
-                              ↑
-                            </button>
-                            <button
-                              onClick={() => handleMoveItem(index, "down")}
-                              disabled={index === menuItems.length - 1}
-                              className="p-1 rounded hover:bg-accent disabled:opacity-50"
-                            >
-                              ↓
-                            </button>
-                            <button
-                              onClick={() => handleRemoveItem(item.id)}
-                              className="p-1 rounded hover:bg-red-100 text-red-600"
-                            >
-                              ×
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    
-                    <div className="border-t pt-4">
-                      <h4 className="font-medium mb-3">Add new link</h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <label htmlFor="newLabel" className="block text-sm mb-1">Name</label>
-                          <Input
-                            id="newLabel"
-                            type="text"
-                            value={newLabel}
-                            onChange={(e) => setNewLabel(e.target.value)}
-                            className="w-full"
-                            placeholder="e.g., About Us"
-                          />
-                        </div>
-                        <div>
-                          <label htmlFor="newUrl" className="block text-sm mb-1">URL</label>
-                          <Input
-                            id="newUrl"
-                            type="text"
-                            value={newUrl}
-                            onChange={(e) => setNewUrl(e.target.value)}
-                            className="w-full"
-                            placeholder="e.g., /about"
-                          />
-                        </div>
-                      </div>
-                      <Button
-                        onClick={handleAddItem}
-                        disabled={!newLabel || !newUrl}
-                        className="mt-4"
-                      >
-                        Add Link
-                      </Button>
-                    </div>
-                  </div>
-                </TabsContent>
-              </Tabs>
             </div>
           </TabsContent>
         </Tabs>

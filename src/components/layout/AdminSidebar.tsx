@@ -12,8 +12,7 @@ import {
   Globe,
   Calculator,
   Link as LinkIcon,
-  FileText,
-  Palette
+  FileText
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
@@ -45,11 +44,7 @@ export const AdminSidebar = () => {
     { path: "/brzi-link", label: "Brzi link", icon: <LinkIcon className="h-5 w-5" /> },
     { path: "/fakture", label: "Fakture", icon: <FileText className="h-5 w-5" /> },
     { path: "/analytics", label: "Analitika", icon: <BarChart className="h-5 w-5" /> },
-    { path: "/settings", label: "Podešavanja", icon: <Settings className="h-5 w-5" />, 
-      subItems: [
-        { path: "/settings/design", label: "Dizajn", icon: <Palette className="h-4 w-4" /> }
-      ]
-    },
+    { path: "/settings", label: "Podešavanja", icon: <Settings className="h-5 w-5" /> },
     { path: "/profile", label: "Profil", icon: <User className="h-5 w-5" /> },
   ];
 
@@ -75,49 +70,21 @@ export const AdminSidebar = () => {
         </Link>
         
         <nav className="space-y-1.5 flex-1">
-          {navItems.map((item) => {
-            const isActive = pathname === item.path || 
-              (item.path === "/settings" && pathname === "/settings/design") ||
-              (item.path === "/settings" && pathname === "/design");
-            
-            return (
-              <div key={item.path} className="space-y-1">
-                <Link
-                  to={item.path}
-                  className={cn(
-                    "flex items-center space-x-3 px-4 py-2.5 rounded-lg text-sm transition-colors",
-                    isActive
-                      ? "bg-primary text-primary-foreground font-medium shadow-sm"
-                      : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                  )}
-                >
-                  {item.icon}
-                  <span>{item.label}</span>
-                </Link>
-                
-                {/* Display sub-items if any */}
-                {item.subItems && item.subItems.length > 0 && (isActive || pathname.startsWith(item.path + '/')) && (
-                  <div className="pl-8 space-y-1">
-                    {item.subItems.map(subItem => (
-                      <Link
-                        key={subItem.path}
-                        to={subItem.path}
-                        className={cn(
-                          "flex items-center space-x-3 px-4 py-2 rounded-lg text-sm transition-colors",
-                          pathname === subItem.path || pathname === subItem.path.replace("/settings", "")
-                            ? "bg-primary/10 text-primary font-medium"
-                            : "text-muted-foreground hover:bg-accent hover:text-foreground"
-                        )}
-                      >
-                        {subItem.icon}
-                        <span>{subItem.label}</span>
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </div>
-            );
-          })}
+          {navItems.map((item) => (
+            <Link
+              key={item.path}
+              to={item.path}
+              className={cn(
+                "flex items-center space-x-3 px-4 py-2.5 rounded-lg text-sm transition-colors",
+                pathname === item.path || (item.path === "/settings" && pathname === "/design")
+                  ? "bg-primary text-primary-foreground font-medium shadow-sm"
+                  : "text-muted-foreground hover:bg-accent hover:text-foreground"
+              )}
+            >
+              {item.icon}
+              <span>{item.label}</span>
+            </Link>
+          ))}
         </nav>
         
         <button
