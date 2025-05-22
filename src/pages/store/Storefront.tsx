@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -5,13 +6,11 @@ import { Product } from "@/components/shop/ProductCard";
 import { Link } from "react-router-dom";
 import { withStoreLayout } from "@/components/layout/StorePageLayout";
 import { useStore } from "@/hooks/useStore";
-import { supabase } from "@/integrations/supabase/client";
 
 const Storefront = () => {
   const { store, loading, storeId, getStoreUrl, getPageElements } = useStore();
   const navigate = useNavigate();
   const [storeProducts, setStoreProducts] = useState<Product[]>([]);
-  const [productsLoading, setProductsLoading] = useState(true);
   
   // Get page elements for the homepage
   const pageElements = getPageElements('homepage');
@@ -21,58 +20,13 @@ const Storefront = () => {
       if (!store) return;
       
       try {
-        setProductsLoading(true);
-        console.log("Loading products for store ID:", store.id);
-        
-        // Fetch the current store's products from Supabase
-        const { data: products, error } = await supabase
-          .from('products')
-          .select('*')
-          .eq('store_id', store.id)
-          .eq('published', true);
-        
-        if (error) {
-          console.error("Error loading products from Supabase:", error);
-          return;
-        }
-        
-        if (products && products.length > 0) {
-          console.log("Found products in Supabase:", products.length);
-          setStoreProducts(products);
-        } else {
-          console.log("No products found in Supabase for store", store.id);
-          
-          // Try to fetch from localStorage as backup
-          const storedProducts = JSON.parse(localStorage.getItem("products") || "[]");
-          console.log("All stored products:", storedProducts);
-          
-          // Make sure we're using the correct store ID format for comparison
-          const storeProducts = storedProducts.filter((p: any) => {
-            const productStoreId = typeof p.store_id === 'string' ? p.store_id : p.storeId;
-            const currentStoreId = typeof store.id === 'string' ? store.id : storeId;
-            
-            console.log(`Comparing product store ID: ${productStoreId} with current store ID: ${currentStoreId}`);
-            return productStoreId === currentStoreId || p.storeId === storeId;
-          });
-          
-          if (storeProducts.length > 0) {
-            console.log("Found products in localStorage:", storeProducts.length);
-            setStoreProducts(storeProducts);
-          } else {
-            console.log("Using default products as fallback");
-            // Use default products but set their store ID to the current store ID
-            const productsWithCorrectStoreId = defaultProducts.map(p => ({
-              ...p,
-              store_id: store.id,
-              storeId: store.id
-            }));
-            setStoreProducts(productsWithCorrectStoreId);
-          }
+        // In a real implementation, you would fetch products from the database
+        // For now, we'll just use defaults or existing products
+        if (storeProducts.length === 0) {
+          setStoreProducts(defaultProducts);
         }
       } catch (error) {
-        console.error("Error in loadStoreProducts:", error);
-      } finally {
-        setProductsLoading(false);
+        console.error("Error loading products:", error);
       }
     };
     
@@ -149,11 +103,7 @@ const Storefront = () => {
   ];
   
   // Use stored products if available, otherwise use defaults
-  const displayProducts = storeProducts.length > 0 ? storeProducts : defaultProducts.map(p => ({
-    ...p,
-    store_id: storeId,
-    storeId: storeId
-  }));
+  const displayProducts = storeProducts.length > 0 ? storeProducts : defaultProducts;
 
   // Render page elements
   const renderPageElements = () => {

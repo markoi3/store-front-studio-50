@@ -129,8 +129,8 @@ const NoviPredracun = () => {
     setTimeout(() => {
       setIsSubmitting(false);
       
-      // Updated path with /admin prefix
-      navigate("/admin/fakture", { 
+      // Navigate to fakture page with success state
+      navigate("/fakture", { 
         state: { 
           success: true, 
           message: "Predračun je uspešno kreiran" 
@@ -400,7 +400,7 @@ const NoviPredracun = () => {
             <Button
               type="button"
               variant="outline"
-              onClick={() => navigate("/admin/fakture")}
+              onClick={() => navigate("/fakture")}
             >
               Otkaži
             </Button>

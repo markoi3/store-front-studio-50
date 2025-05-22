@@ -114,13 +114,11 @@ const NewProduct = () => {
         published: productData.published,
         seo_title: productData.seoTitle || productData.name,
         seo_description: productData.seoDescription || productData.description,
-        store_id: user.store.id, // Make sure store_id is properly set
+        store_id: user.store.id,
         image: images.length > 0 ? images[0] : null,
         images: images,
         variants: variants
       };
-      
-      console.log("Saving product with store_id:", user.store.id);
       
       // Save to Supabase
       const { data, error } = await supabase
@@ -137,21 +135,19 @@ const NewProduct = () => {
       
       toast.success("Product saved successfully!");
       
-      // Save to localStorage for offline access with the correct ID and store_id
+      // Save to localStorage for offline access
       try {
         const storedProducts = JSON.parse(localStorage.getItem("products") || "[]");
         localStorage.setItem("products", JSON.stringify([...storedProducts, {
           ...newProduct,
-          id: data.id,
-          store_id: user.store.id // Ensure store_id is saved to localStorage as well
+          id: data.id
         }]));
-        console.log("Product saved to localStorage with ID:", data.id, "and store_id:", user.store.id);
       } catch (e) {
         console.error("Error saving to localStorage:", e);
       }
       
-      // Redirect to product list using the correct admin path
-      navigate("/admin/products", { 
+      // Redirect to product list
+      navigate("/products", { 
         state: { 
           success: true, 
           message: "Product has been saved successfully" 
@@ -426,7 +422,7 @@ const NewProduct = () => {
             <Button
               type="button"
               variant="outline"
-              onClick={() => navigate("/admin/products")}
+              onClick={() => navigate("/products")}
             >
               Cancel
             </Button>
