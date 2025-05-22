@@ -33,7 +33,8 @@ const Login = () => {
       await login(formData.email, formData.password);
       navigate("/dashboard");
     } catch (err) {
-      setError("Invalid email or password. Please try again.");
+      const error = err as Error;
+      setError(error.message || "Failed to sign in. Please check your credentials.");
     } finally {
       setIsLoading(false);
     }
@@ -44,9 +45,9 @@ const Login = () => {
       <div className="container max-w-md mx-auto px-4 py-16">
         <div className="bg-card rounded-lg shadow-custom p-6">
           <div className="text-center mb-6">
-            <h1 className="text-2xl font-bold">Login to Your Account</h1>
+            <h1 className="text-2xl font-bold">Log In to Your Account</h1>
             <p className="text-muted-foreground mt-2">
-              Enter your credentials to access your store
+              Welcome back! Please enter your details
             </p>
           </div>
           
@@ -71,14 +72,14 @@ const Login = () => {
             </div>
             
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
+              <div className="flex justify-between items-center">
                 <Label htmlFor="password">Password</Label>
-                <a
-                  href="#"
-                  className="text-xs text-muted-foreground hover:text-foreground"
+                <Link
+                  to="/forgot-password"
+                  className="text-sm text-muted-foreground hover:underline"
                 >
                   Forgot password?
-                </a>
+                </Link>
               </div>
               <Input
                 id="password"
@@ -93,7 +94,7 @@ const Login = () => {
             
             <div className="pt-2">
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Logging in..." : "Login"}
+                {isLoading ? "Signing In..." : "Sign In"}
               </Button>
             </div>
           </form>
@@ -105,7 +106,7 @@ const Login = () => {
                 to="/register"
                 className="text-foreground hover:underline font-medium"
               >
-                Register
+                Create account
               </Link>
             </p>
           </div>

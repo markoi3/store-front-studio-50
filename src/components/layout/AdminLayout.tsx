@@ -1,8 +1,9 @@
 
-import { ReactNode } from "react";
+import { ReactNode, useEffect } from "react";
 import { AdminSidebar } from "./AdminSidebar";
 import { useAuth } from "@/contexts/AuthContext";
-import { Navigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 type AdminLayoutProps = {
   children: ReactNode;
@@ -10,6 +11,14 @@ type AdminLayoutProps = {
 
 export const AdminLayout = ({ children }: AdminLayoutProps) => {
   const { user, isLoading } = useAuth();
+  const navigate = useNavigate();
+  
+  useEffect(() => {
+    // Check if user has store information
+    if (user && !user.store) {
+      toast.error("No store found for your account. Please contact support.");
+    }
+  }, [user]);
   
   if (isLoading) {
     return (

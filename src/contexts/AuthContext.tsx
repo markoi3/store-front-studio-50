@@ -1,5 +1,8 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { User } from "@supabase/supabase-js";
+import { toast } from "sonner";
 
 type StoreInfo = {
   id: string;
@@ -13,7 +16,7 @@ type StoreInfo = {
   };
 };
 
-type User = {
+type AuthUser = {
   id: string;
   email: string;
   name: string;
@@ -22,52 +25,146 @@ type User = {
 };
 
 type AuthContextType = {
-  user: User | null;
+  user: AuthUser | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, name: string) => Promise<void>;
-  logout: () => void;
-  updateStoreSettings: (settings: any) => void;
+  logout: () => Promise<void>;
+  updateStoreSettings: (settings: any) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Helper function to clean up auth state
+const cleanupAuthState = () => {
+  // Remove standard auth tokens
+  localStorage.removeItem('supabase.auth.token');
+  // Remove all Supabase auth keys from localStorage
+  Object.keys(localStorage).forEach((key) => {
+    if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+      localStorage.removeItem(key);
+    }
+  });
+  // Remove from sessionStorage if in use
+  Object.keys(sessionStorage || {}).forEach((key) => {
+    if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+      sessionStorage.removeItem(key);
+    }
+  });
+};
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    // Check if user is already logged in
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
+  // Fetch user store data
+  const fetchUserStore = async (userId: string) => {
+    try {
+      const { data: storeData, error: storeError } = await supabase
+        .from('stores')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+
+      if (storeError) {
+        console.error("Error fetching store:", storeError);
+        return null;
+      }
+
+      return storeData;
+    } catch (error) {
+      console.error("Error in fetchUserStore:", error);
+      return null;
     }
-    setIsLoading(false);
+  };
+
+  // Transform Supabase user to our app user format
+  const transformUser = async (supabaseUser: User): Promise<AuthUser> => {
+    const storeData = await fetchUserStore(supabaseUser.id);
+    
+    return {
+      id: supabaseUser.id,
+      email: supabaseUser.email || '',
+      name: supabaseUser.user_metadata?.name || supabaseUser.email?.split('@')[0] || 'User',
+      role: "admin", // All registered users are admins of their own stores
+      store: storeData ? {
+        id: storeData.id,
+        name: storeData.name,
+        slug: storeData.slug,
+        settings: storeData.settings || {}
+      } : undefined
+    };
+  };
+
+  useEffect(() => {
+    // Check for existing session and setup auth listener
+    const initAuth = async () => {
+      setIsLoading(true);
+      
+      // Get current session
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session?.user) {
+        try {
+          const authUser = await transformUser(session.user);
+          setUser(authUser);
+        } catch (error) {
+          console.error("Error transforming user:", error);
+        }
+      }
+      
+      // Listen for auth changes
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(
+        async (event, session) => {
+          if (session?.user) {
+            try {
+              const authUser = await transformUser(session.user);
+              setUser(authUser);
+            } catch (error) {
+              console.error("Error transforming user:", error);
+              setUser(null);
+            }
+          } else {
+            setUser(null);
+          }
+        }
+      );
+      
+      setIsLoading(false);
+      
+      return () => {
+        subscription.unsubscribe();
+      };
+    };
+    
+    initAuth();
   }, []);
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      // Mock authentication - this would be replaced with a real API call
-      const mockUser: User = {
-        id: "1",
-        email,
-        name: "Shop Owner",
-        role: "admin",
-        store: {
-          id: "store-1",
-          name: "Demo Prodavnica",
-          slug: "demo-prodavnica",
-          settings: {
-            privacyPolicy: "Ovo je privacy policy text",
-            aboutUs: "Ovo je about us text",
-            contactInfo: "Ovo je contact info text"
-          }
-        }
-      };
+      // Clean up existing auth state
+      cleanupAuthState();
       
-      localStorage.setItem("user", JSON.stringify(mockUser));
-      setUser(mockUser);
+      // Attempt to sign out any existing session
+      try {
+        await supabase.auth.signOut({ scope: 'global' });
+      } catch (err) {
+        // Continue even if this fails
+      }
+      
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      
+      if (error) {
+        toast.error("Login failed: " + error.message);
+        throw error;
+      }
+      
+      if (data.user) {
+        const authUser = await transformUser(data.user);
+        setUser(authUser);
+        toast.success("Login successful!");
+      }
     } catch (error) {
       console.error("Login error:", error);
       throw error;
@@ -79,24 +176,39 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const register = async (email: string, password: string, name: string) => {
     setIsLoading(true);
     try {
-      // Mock registration - this would be replaced with a real API call
-      const storeSlug = email.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '-');
+      // Clean up existing auth state
+      cleanupAuthState();
       
-      const mockUser: User = {
-        id: "1",
-        email,
-        name,
-        role: "admin",
-        store: {
-          id: "store-" + Date.now(),
-          name: name + "'s Store",
-          slug: storeSlug,
-          settings: {}
+      // Attempt to sign out any existing session
+      try {
+        await supabase.auth.signOut({ scope: 'global' });
+      } catch (err) {
+        // Continue even if this fails
+      }
+      
+      const { data, error } = await supabase.auth.signUp({ 
+        email, 
+        password,
+        options: {
+          data: {
+            name: name
+          }
         }
-      };
+      });
       
-      localStorage.setItem("user", JSON.stringify(mockUser));
-      setUser(mockUser);
+      if (error) {
+        toast.error("Registration failed: " + error.message);
+        throw error;
+      }
+      
+      if (data.user) {
+        // Wait a moment for the trigger to create the store
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        const authUser = await transformUser(data.user);
+        setUser(authUser);
+        toast.success("Registration successful!");
+      }
     } catch (error) {
       console.error("Registration error:", error);
       throw error;
@@ -105,27 +217,59 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const updateStoreSettings = (settings: any) => {
-    if (!user || !user.store) return;
-    
-    const updatedUser = {
-      ...user,
-      store: {
-        ...user.store,
-        settings: {
-          ...user.store.settings,
-          ...settings
-        }
-      }
-    };
-    
-    localStorage.setItem("user", JSON.stringify(updatedUser));
-    setUser(updatedUser);
+  const logout = async () => {
+    try {
+      await supabase.auth.signOut({ scope: 'global' });
+      setUser(null);
+      cleanupAuthState();
+      toast.success("Logged out successfully");
+    } catch (error) {
+      console.error("Logout error:", error);
+      toast.error("Logout failed. Please try again.");
+    }
   };
 
-  const logout = () => {
-    localStorage.removeItem("user");
-    setUser(null);
+  const updateStoreSettings = async (settings: any) => {
+    if (!user || !user.store) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('stores')
+        .update({ 
+          settings: {
+            ...user.store.settings,
+            ...settings
+          }
+        })
+        .eq('id', user.store.id)
+        .select()
+        .single();
+        
+      if (error) {
+        toast.error("Failed to update settings: " + error.message);
+        throw error;
+      }
+      
+      setUser(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          store: {
+            ...prev.store!,
+            settings: {
+              ...prev.store!.settings,
+              ...settings
+            }
+          }
+        };
+      });
+      
+      toast.success("Settings updated successfully");
+      return data;
+    } catch (error) {
+      console.error("Update store settings error:", error);
+      throw error;
+    }
   };
 
   return (

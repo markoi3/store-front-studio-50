@@ -39,6 +39,7 @@ import NovaFaktura from "./pages/admin/NovaFaktura";
 import NoviPredracun from "./pages/admin/NoviPredracun";
 import NoviObracun from "./pages/admin/NoviObracun";
 import Transakcije from "./pages/admin/Transakcije";
+import Customers from "./pages/admin/Customers"; // New import
 
 // Store Pages
 import Storefront from "./pages/store/Storefront";
@@ -97,6 +98,7 @@ const App = () => (
               <Route path="/products/:id" element={<EditProduct />} />
               <Route path="/orders" element={<Orders />} />
               <Route path="/orders/:id" element={<Transakcije />} />
+              <Route path="/customers" element={<Customers />} /> {/* New route */}
               <Route path="/transakcije/:id" element={<Transakcije />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/design" element={<Design />} />

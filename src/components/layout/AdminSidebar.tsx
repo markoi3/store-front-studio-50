@@ -12,34 +12,24 @@ import {
   Globe,
   Calculator,
   Link as LinkIcon,
-  FileText
+  FileText,
+  Users
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
-
-interface ExtendedUser {
-  store?: {
-    slug?: string;
-    name?: string;
-  };
-  username?: string;
-  [key: string]: any;
-}
 
 export const AdminSidebar = () => {
   const { pathname } = useLocation();
   const { logout, user } = useAuth();
   
-  // Cast user-a u ExtendedUser tip
-  const extendedUser = user as unknown as ExtendedUser;
-  
-  // Generisanje slug-a iz imena prodavnice ili korisničkog imena
-  const storeSlug = extendedUser?.store?.slug || extendedUser?.username || "moja-prodavnica";
+  // Get store slug from user context
+  const storeSlug = user?.store?.slug || "demo-prodavnica";
   
   const navItems = [
     { path: "/dashboard", label: "Početna", icon: <LayoutDashboard className="h-5 w-5" /> },
     { path: "/products", label: "Proizvodi", icon: <Package className="h-5 w-5" /> },
     { path: "/orders", label: "Porudžbine", icon: <ShoppingCart className="h-5 w-5" /> },
+    { path: "/customers", label: "Kupci", icon: <Users className="h-5 w-5" /> },
     { path: "/racunovodstvo", label: "Računodstvo", icon: <Calculator className="h-5 w-5" /> },
     { path: "/brzi-link", label: "Brzi link", icon: <LinkIcon className="h-5 w-5" /> },
     { path: "/fakture", label: "Fakture", icon: <FileText className="h-5 w-5" /> },
@@ -88,7 +78,7 @@ export const AdminSidebar = () => {
         </nav>
         
         <button
-          onClick={logout}
+          onClick={() => logout()}
           className="flex items-center space-x-3 px-4 py-2.5 mt-6 border-t border-border/30 pt-6 rounded-lg text-sm text-destructive hover:bg-destructive/10 transition-colors w-full text-left"
         >
           <LogOut className="h-5 w-5" />

@@ -9,7 +9,277 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      customers: {
+        Row: {
+          address: Json | null
+          auth_id: string | null
+          created_at: string | null
+          email: string
+          id: string
+          name: string | null
+          phone: string | null
+          store_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          address?: Json | null
+          auth_id?: string | null
+          created_at?: string | null
+          email: string
+          id?: string
+          name?: string | null
+          phone?: string | null
+          store_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          address?: Json | null
+          auth_id?: string | null
+          created_at?: string | null
+          email?: string
+          id?: string
+          name?: string | null
+          phone?: string | null
+          store_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customers_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      documents: {
+        Row: {
+          created_at: string | null
+          data: Json
+          id: string
+          number: string | null
+          order_id: string | null
+          public_access_token: string | null
+          store_id: string
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          data?: Json
+          id?: string
+          number?: string | null
+          order_id?: string | null
+          public_access_token?: string | null
+          store_id: string
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          data?: Json
+          id?: string
+          number?: string | null
+          order_id?: string | null
+          public_access_token?: string | null
+          store_id?: string
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          amount: number
+          billing_info: Json | null
+          created_at: string | null
+          customer_id: string | null
+          id: string
+          items: Json
+          payment_intent_id: string | null
+          payment_status: string | null
+          shipping_info: Json | null
+          status: string
+          store_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          amount?: number
+          billing_info?: Json | null
+          created_at?: string | null
+          customer_id?: string | null
+          id?: string
+          items?: Json
+          payment_intent_id?: string | null
+          payment_status?: string | null
+          shipping_info?: Json | null
+          status?: string
+          store_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          billing_info?: Json | null
+          created_at?: string | null
+          customer_id?: string | null
+          id?: string
+          items?: Json
+          payment_intent_id?: string | null
+          payment_status?: string | null
+          shipping_info?: Json | null
+          status?: string
+          store_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          image: string | null
+          images: Json | null
+          name: string
+          price: number
+          published: boolean | null
+          seo_description: string | null
+          seo_title: string | null
+          slug: string
+          stock: number
+          store_id: string
+          updated_at: string | null
+          variants: Json | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image?: string | null
+          images?: Json | null
+          name: string
+          price?: number
+          published?: boolean | null
+          seo_description?: string | null
+          seo_title?: string | null
+          slug: string
+          stock?: number
+          store_id: string
+          updated_at?: string | null
+          variants?: Json | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image?: string | null
+          images?: Json | null
+          name?: string
+          price?: number
+          published?: boolean | null
+          seo_description?: string | null
+          seo_title?: string | null
+          slug?: string
+          stock?: number
+          store_id?: string
+          updated_at?: string | null
+          variants?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          id: string
+          name: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          id: string
+          name?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          id?: string
+          name?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      stores: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+          settings: Json | null
+          slug: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+          settings?: Json | null
+          slug: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+          settings?: Json | null
+          slug?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

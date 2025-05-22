@@ -5,91 +5,86 @@ import { ShopLayout } from "@/components/layout/ShopLayout";
 import { Button } from "@/components/ui/button";
 import { Product } from "@/components/shop/ProductCard";
 import { Link } from "react-router-dom";
-
-// Function to get stored products
-const getStoredProducts = () => {
-  try {
-    const products = localStorage.getItem("products");
-    console.log("Retrieved stored products:", products);
-    return products ? JSON.parse(products) : [];
-  } catch (error) {
-    console.error("Error loading products:", error);
-    return [];
-  }
-};
-
-// Function to get stored user data
-const getStoredUsers = () => {
-  try {
-    const currentUser = localStorage.getItem("user");
-    return currentUser ? [JSON.parse(currentUser)] : [];
-  } catch (error) {
-    console.error("Error loading user data:", error);
-    return [];
-  }
-};
-
-// Function to get menu items
-const getMenuItems = () => {
-  try {
-    const menuItems = localStorage.getItem("storeMenuItems");
-    return menuItems ? JSON.parse(menuItems) : [
-      { id: "1", label: "Početna", url: "/" },
-      { id: "2", label: "Proizvodi", url: "/shop" },
-      { id: "3", label: "O nama", url: "/about" },
-      { id: "4", label: "Kontakt", url: "/contact" }
-    ];
-  } catch (error) {
-    console.error("Error loading menu items:", error);
-    return [];
-  }
-};
+import { supabase } from "@/integrations/supabase/client";
 
 const Storefront = () => {
   const { storeId } = useParams();
   const [store, setStore] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [storeProducts, setStoreProducts] = useState<Product[]>([]);
-  const [menuItems, setMenuItems] = useState([]);
+  const [menuItems, setMenuItems] = useState([
+    { id: "1", label: "Početna", url: "/" },
+    { id: "2", label: "Proizvodi", url: "/shop" },
+    { id: "3", label: "O nama", url: "/about" },
+    { id: "4", label: "Kontakt", url: "/contact" }
+  ]);
   
   useEffect(() => {
-    // Load menu items
-    setMenuItems(getMenuItems());
-    
-    // Load all stored products
-    const allProducts = getStoredProducts();
-    console.log("All products:", allProducts);
-    
-    // Filter for published products
-    const publishedProducts = allProducts.filter((p: any) => p.published !== false);
-    console.log("Published products:", publishedProducts);
-    
-    // Add storeId to each product for correct routing
-    const productsWithStoreId = publishedProducts.map((product: any) => ({
-      ...product,
-      storeId: storeId
-    }));
-    
-    setStoreProducts(productsWithStoreId);
-    
-    // Load user data to find the matching store
-    const users = getStoredUsers();
-    let foundStore = null;
-    
-    // Look for the store matching the storeId slug
-    for (const user of users) {
-      if (user.store && user.store.slug === storeId) {
-        foundStore = {
-          id: user.store.id || storeId,
-          name: user.store.name || "Demo Prodavnica",
-          description: "Ovo je demo prodavnica",
-          settings: user.store.settings || {},
+    const loadStoreData = async () => {
+      try {
+        if (!storeId) return;
+        
+        // Fetch store by slug
+        const { data: storeData, error: storeError } = await supabase
+          .from('stores')
+          .select('*')
+          .eq('slug', storeId)
+          .single();
+          
+        if (storeError) {
+          console.error("Error fetching store:", storeError);
+          setLoading(false);
+          return;
+        }
+        
+        if (!storeData) {
+          setLoading(false);
+          return;
+        }
+        
+        // Fetch published products for this store
+        const { data: productsData, error: productsError } = await supabase
+          .from('products')
+          .select('*')
+          .eq('store_id', storeData.id)
+          .eq('published', true);
+          
+        if (productsError) {
+          console.error("Error fetching products:", productsError);
+        }
+        
+        // Get custom menu items from store settings if they exist
+        const customMenu = storeData.settings?.menuItems || null;
+        if (customMenu) {
+          setMenuItems(customMenu);
+        }
+        
+        // Transform products to match our Product type
+        const formattedProducts = productsData ? productsData.map((product: any) => ({
+          id: product.id,
+          name: product.name,
+          price: parseFloat(product.price),
+          image: product.image,
+          slug: product.slug,
+          storeId: storeId,
+          category: product.category
+        })) : [];
+        
+        setStoreProducts(formattedProducts);
+        
+        // Format store data
+        const formattedStore = {
+          id: storeData.id,
+          name: storeData.name,
+          slug: storeData.slug,
+          description: "Online prodavnica",
+          settings: storeData.settings || {},
           elements: [
             {
               id: '1',
               type: 'hero',
               settings: {
-                title: `Dobrodošli u ${user.store.name || "Demo Prodavnicu"}`,
+                title: `Dobrodošli u ${storeData.name}`,
                 subtitle: 'Otkrijte naše neverovatne proizvode',
                 buttonText: 'Kupuj odmah',
                 buttonLink: '/shop',
@@ -109,57 +104,22 @@ const Storefront = () => {
               id: '3',
               type: 'text',
               settings: {
-                content: user.store.settings?.aboutUs || 'Nudimo visokokvalitetne proizvode sa odličnom korisničkom podrškom.',
+                content: storeData.settings?.aboutUs || 'Nudimo visokokvalitetne proizvode sa odličnom korisničkom podrškom.',
                 alignment: 'center'
               }
             }
           ]
         };
-        break;
+        
+        setStore(formattedStore);
+      } catch (error) {
+        console.error("Error loading store data:", error);
+      } finally {
+        setLoading(false);
       }
-    }
+    };
     
-    // If no matching store is found, use a default store
-    if (!foundStore) {
-      foundStore = {
-        id: storeId,
-        name: "Demo Prodavnica",
-        description: "Ovo je demo prodavnica",
-        elements: [
-          {
-            id: '1',
-            type: 'hero',
-            settings: {
-              title: 'Dobrodošli u Demo Prodavnicu',
-              subtitle: 'Otkrijte naše neverovatne proizvode',
-              buttonText: 'Kupuj odmah',
-              buttonLink: '/shop',
-              backgroundImage: 'https://images.unsplash.com/photo-1588345921523-c2dcdb7f1dcd?w=800&auto=format&fit=crop'
-            }
-          },
-          {
-            id: '2',
-            type: 'products',
-            settings: {
-              title: 'Istaknuti proizvodi',
-              count: 4,
-              layout: 'grid'
-            }
-          },
-          {
-            id: '3',
-            type: 'text',
-            settings: {
-              content: 'Nudimo visokokvalitetne proizvode sa odličnom korisničkom podrškom.',
-              alignment: 'center'
-            }
-          }
-        ]
-      };
-    }
-    
-    setStore(foundStore);
-    setLoading(false);
+    loadStoreData();
   }, [storeId]);
   
   if (loading) {
@@ -237,7 +197,6 @@ const Storefront = () => {
   
   // Use stored products if available, otherwise use defaults
   const displayProducts = storeProducts.length > 0 ? storeProducts : defaultProducts;
-  console.log("Display products:", displayProducts);
 
   // Custom navigation for this store
   const renderCustomNavigation = () => {

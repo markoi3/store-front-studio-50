@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 const Register = () => {
   const navigate = useNavigate();
@@ -32,6 +33,7 @@ const Register = () => {
     
     if (formData.password !== formData.confirmPassword) {
       setError("Passwords do not match");
+      toast.error("Passwords do not match");
       return;
     }
     
@@ -41,7 +43,8 @@ const Register = () => {
       await register(formData.email, formData.password, formData.name);
       navigate("/dashboard");
     } catch (err) {
-      setError("Failed to create account. Please try again.");
+      const error = err as Error;
+      setError(error.message || "Failed to create account. Please try again.");
     } finally {
       setIsLoading(false);
     }
