@@ -1,16 +1,49 @@
 
 import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 import { withStoreLayout } from "@/components/layout/StorePageLayout";
-import { useStore } from "@/hooks/useStore";
+import { supabase } from "@/integrations/supabase/client";
+import { StoreSettings } from "@/hooks/useStore";
 
 const AboutPage = () => {
-  const { store, loading, getPageElements } = useStore();
+  const { storeId } = useParams<{ storeId?: string }>();
+  const [storeSettings, setStoreSettings] = useState<StoreSettings | null>(null);
+  const [loading, setLoading] = useState(true);
   
-  // Get page elements specific to the about page
-  const pageElements = getPageElements('about');
+  useEffect(() => {
+    const fetchStoreSettings = async () => {
+      if (!storeId) return;
+      
+      try {
+        setLoading(true);
+        
+        const { data, error } = await supabase
+          .from('stores')
+          .select('settings')
+          .eq('slug', storeId)
+          .maybeSingle();
+        
+        if (error) {
+          console.error("Error fetching store settings:", error);
+        } else if (data) {
+          // Ensure we're setting an object, even if data.settings is null
+          const settingsObj: StoreSettings = (typeof data.settings === 'object' && data.settings !== null) 
+            ? data.settings as StoreSettings 
+            : {};
+            
+          setStoreSettings(settingsObj);
+        }
+      } catch (error) {
+        console.error("Error in fetchStoreSettings:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchStoreSettings();
+  }, [storeId]);
   
-  // Get the about us content from store settings
-  const aboutContent = store?.settings?.aboutUs || "About Us content will be displayed here.";
+  const aboutContent = storeSettings?.aboutUs || "About Us content will be displayed here.";
   
   return (
     <div className="container mx-auto px-4 py-12">
@@ -25,31 +58,7 @@ const AboutPage = () => {
           </div>
         ) : (
           <div className="prose max-w-none">
-            {/* Display the about content */}
             {aboutContent}
-            
-            {/* Render any custom page elements for the about page */}
-            {pageElements && pageElements.length > 0 && (
-              <div className="mt-8 space-y-8">
-                {pageElements.map((element) => (
-                  <div key={element.id} className="page-element">
-                    {/* Render different element types */}
-                    {element.type === 'text' && (
-                      <div className={`text-${element.settings.alignment || 'left'}`}>
-                        <p>{element.settings.content}</p>
-                      </div>
-                    )}
-                    {element.type === 'image' && (
-                      <img 
-                        src={element.settings.src} 
-                        alt={element.settings.alt || ''} 
-                        className="max-w-full rounded-md mx-auto"
-                      />
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
         )}
       </div>

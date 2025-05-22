@@ -1,9 +1,9 @@
+
 import { ReactNode, useEffect, useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { StoreLayout } from "./StoreLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useStore } from "@/hooks/useStore"; // Added proper import
 
 type StorePageLayoutProps = {
   children: ReactNode;
@@ -88,44 +88,3 @@ export const withStoreLayout = (Component: React.ComponentType<any>) => {
     </StorePageLayout>
   );
 };
-
-// CustomPage component to render custom pages created in the builder
-export const CustomPage = withStoreLayout(() => {
-  const { slug } = useParams<{ slug?: string }>();
-  const { store, loading, getCustomPage } = useStore();
-  
-  const customPage = getCustomPage(slug || '');
-  
-  if (loading) {
-    return (
-      <div className="container mx-auto px-4 py-12">
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-accent/50 rounded w-1/3"></div>
-          <div className="h-4 bg-accent/50 rounded w-full"></div>
-          <div className="h-4 bg-accent/50 rounded w-5/6"></div>
-          <div className="h-4 bg-accent/50 rounded w-4/6"></div>
-        </div>
-      </div>
-    );
-  }
-  
-  if (!customPage) {
-    return (
-      <div className="container mx-auto px-4 py-12">
-        <h1 className="text-3xl font-bold mb-4">Page Not Found</h1>
-        <p>The page you are looking for could not be found.</p>
-      </div>
-    );
-  }
-  
-  return (
-    <div className="container mx-auto px-4 py-12">
-      <div className="max-w-3xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6">{customPage.title}</h1>
-        <div className="prose max-w-none">
-          {customPage.content}
-        </div>
-      </div>
-    </div>
-  );
-});
