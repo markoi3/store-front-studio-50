@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -52,6 +51,15 @@ import PublicDocument from "./pages/public/PublicDocument";
 
 import NotFound from "./pages/NotFound";
 
+// Import the withStoreLayout HOC
+import { withStoreLayout } from "@/components/layout/StorePageLayout";
+
+// Wrap relevant page components with withStoreLayout
+const WrappedAbout = withStoreLayout(About);
+const WrappedContact = withStoreLayout(Contact);
+const WrappedTerms = withStoreLayout(Terms);
+const WrappedPrivacy = withStoreLayout(Privacy);
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -72,10 +80,10 @@ const App = () => (
               <Route path="/store/:storeId/cart" element={<Cart />} />
               <Route path="/store/:storeId/checkout" element={<Checkout />} />
               <Route path="/store/:storeId/thank-you" element={<ThankYou />} />
-              <Route path="/store/:storeId/about" element={<About />} />
-              <Route path="/store/:storeId/contact" element={<Contact />} />
-              <Route path="/store/:storeId/terms" element={<Terms />} />
-              <Route path="/store/:storeId/privacy" element={<Privacy />} />
+              <Route path="/store/:storeId/about" element={<WrappedAbout />} />
+              <Route path="/store/:storeId/contact" element={<WrappedContact />} />
+              <Route path="/store/:storeId/terms" element={<WrappedTerms />} />
+              <Route path="/store/:storeId/privacy" element={<WrappedPrivacy />} />
               
               {/* Demo Store Routes (for testing) */}
               <Route path="/home" element={<Home />} />
@@ -84,10 +92,10 @@ const App = () => (
               <Route path="/cart" element={<Cart />} />
               <Route path="/checkout" element={<Checkout />} />
               <Route path="/thank-you" element={<ThankYou />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="/terms" element={<Terms />} />
-              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/about" element={<WrappedAbout />} /> {/* Use wrapped component */}
+              <Route path="/contact" element={<WrappedContact />} /> {/* Use wrapped component */}
+              <Route path="/terms" element={<WrappedTerms />} /> {/* Use wrapped component */}
+              <Route path="/privacy" element={<WrappedPrivacy />} /> {/* Use wrapped component */}
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               

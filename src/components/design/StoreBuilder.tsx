@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,7 +8,9 @@ import { Separator } from "@/components/ui/separator";
 import { DragDropContext, Draggable, Droppable } from '@hello-pangea/dnd';
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Minus, GripVertical, X, Save, Eye } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 type ElementType = 'hero' | 'products' | 'text' | 'image' | 'categories' | 'testimonials' | 'cta';
 
@@ -20,6 +21,7 @@ interface BuilderElement {
 }
 
 export const StoreBuilder = () => {
+  const { user, updateStoreSettings } = useAuth();
   const [activeSection, setActiveSection] = useState<string>("homepage");
   const [previewMode, setPreviewMode] = useState<boolean>(false);
   const [legalPages, setLegalPages] = useState({
@@ -37,36 +39,57 @@ export const StoreBuilder = () => {
     }
   });
   
-  const [elements, setElements] = useState<BuilderElement[]>([
-    {
-      id: '1',
-      type: 'hero',
-      settings: {
-        title: 'Welcome to My Store',
-        subtitle: 'Discover our amazing products',
-        buttonText: 'Shop Now',
-        buttonLink: '/shop',
-        backgroundImage: 'https://images.unsplash.com/photo-1588345921523-c2dcdb7f1dcd?w=800&auto=format&fit=crop'
+  const [elements, setElements] = useState<BuilderElement[]>([]);
+  
+  // Load existing store settings when component mounts
+  useEffect(() => {
+    if (user?.store?.settings) {
+      // Load page elements if they exist
+      if (user.store.settings.pageElements && Array.isArray(user.store.settings.pageElements)) {
+        setElements(user.store.settings.pageElements);
       }
-    },
-    {
-      id: '2',
-      type: 'products',
-      settings: {
-        title: 'Featured Products',
-        count: 4,
-        layout: 'grid'
+      
+      // Load legal pages if they exist
+      if (user.store.settings.legalPages) {
+        setLegalPages(prevPages => ({
+          ...prevPages,
+          ...user.store.settings.legalPages
+        }));
       }
-    },
-    {
-      id: '3',
-      type: 'text',
-      settings: {
-        content: 'We offer high quality products with great customer service.',
-        alignment: 'center'
-      }
+    } else {
+      // Set default elements if no saved elements exist
+      setElements([
+        {
+          id: '1',
+          type: 'hero',
+          settings: {
+            title: 'Welcome to My Store',
+            subtitle: 'Discover our amazing products',
+            buttonText: 'Shop Now',
+            buttonLink: '/shop',
+            backgroundImage: 'https://images.unsplash.com/photo-1588345921523-c2dcdb7f1dcd?w=800&auto=format&fit=crop'
+          }
+        },
+        {
+          id: '2',
+          type: 'products',
+          settings: {
+            title: 'Featured Products',
+            count: 4,
+            layout: 'grid'
+          }
+        },
+        {
+          id: '3',
+          type: 'text',
+          settings: {
+            content: 'We offer high quality products with great customer service.',
+            alignment: 'center'
+          }
+        }
+      ]);
     }
-  ]);
+  }, [user?.store?.settings]);
 
   const elementTemplates: Record<ElementType, Omit<BuilderElement, 'id'>> = {
     hero: {
@@ -158,15 +181,30 @@ export const StoreBuilder = () => {
     ));
   };
 
-  const saveChanges = () => {
-    // In a real application, save to backend
-    console.log("Saving elements:", elements);
-    console.log("Saving legal pages:", legalPages);
-    
-    toast({
-      title: "Changes saved",
-      description: "Your store design has been updated successfully."
-    });
+  const saveChanges = async () => {
+    try {
+      // Create updated settings object with updated elements and legal pages
+      const updatedSettings = {
+        ...(user?.store?.settings || {}),
+        pageElements: elements,
+        legalPages: legalPages,
+      };
+      
+      // Save to Supabase via AuthContext
+      await updateStoreSettings(updatedSettings);
+      
+      toast({
+        title: "Changes saved",
+        description: "Your store design has been updated successfully."
+      });
+    } catch (error) {
+      console.error("Error saving store design:", error);
+      toast({
+        title: "Error saving changes",
+        description: "There was a problem saving your store design. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   const updateLegalPage = (page: keyof typeof legalPages, field: string, value: string) => {

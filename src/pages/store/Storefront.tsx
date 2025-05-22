@@ -17,6 +17,7 @@ interface StoreSettings {
   aboutUs?: string;
   privacyPolicy?: string;
   contactInfo?: string;
+  pageElements?: any[];
   [key: string]: any;
 }
 
@@ -125,7 +126,7 @@ const Storefront = () => {
           name: storeData.name,
           slug: storeData.slug,
           settings: storeSettings,
-          elements: [
+          elements: storeSettings.pageElements || [
             {
               id: '1',
               type: 'hero',
