@@ -342,14 +342,20 @@ const CustomPagesEditor = () => {
   useEffect(() => {
     // Initialize with custom pages from user store settings
     if (user?.store?.settings?.customPages && Array.isArray(user.store.settings.customPages)) {
+      console.log("Loading custom pages:", user.store.settings.customPages.length);
       setCustomPages(user.store.settings.customPages);
     }
   }, [user]);
   
   const handleSavePages = async () => {
     try {
+      if (!user?.store?.settings) {
+        toast.error("Store settings not found");
+        return;
+      }
+      
       await updateStoreSettings({
-        ...user?.store?.settings,
+        ...user.store.settings,
         customPages: customPages
       });
       
@@ -361,9 +367,10 @@ const CustomPagesEditor = () => {
   };
   
   const handleAddPage = () => {
+    const newId = `page-${Date.now()}`;
     setIsEditing(true);
     setCurrentPage({
-      id: `page-${Date.now()}`,
+      id: newId,
       title: "New Page",
       slug: `page-${customPages.length + 1}`,
       content: "Content goes here..."
@@ -371,31 +378,72 @@ const CustomPagesEditor = () => {
   };
   
   const handleEditPage = (page: typeof currentPage) => {
+    if (!page) return;
+    console.log("Editing page:", page);
     setIsEditing(true);
     setCurrentPage(page);
   };
   
-  const handleDeletePage = (id: string) => {
-    setCustomPages(customPages.filter(page => page.id !== id));
+  const handleDeletePage = async (id: string) => {
+    const updatedPages = customPages.filter(page => page.id !== id);
+    setCustomPages(updatedPages);
+    
+    // Also save to database immediately
+    if (user?.store?.settings) {
+      try {
+        await updateStoreSettings({
+          ...user.store.settings,
+          customPages: updatedPages
+        });
+        toast.success("Page deleted successfully");
+      } catch (error) {
+        console.error("Error deleting page:", error);
+        toast.error("Failed to delete page");
+      }
+    }
+    
     if (currentPage?.id === id) {
       setCurrentPage(null);
       setIsEditing(false);
     }
   };
   
-  const handleSavePage = () => {
+  const handleSavePage = async () => {
     if (!currentPage) return;
     
-    const pageIndex = customPages.findIndex(page => page.id === currentPage.id);
+    // Ensure slug is URL-friendly
+    const sanitizedSlug = generateSlug(currentPage.slug || currentPage.title);
+    const pageToSave = {
+      ...currentPage,
+      slug: sanitizedSlug
+    };
+    
+    let updatedPages: typeof customPages = [];
+    const pageIndex = customPages.findIndex(page => page.id === pageToSave.id);
     
     if (pageIndex >= 0) {
       // Update existing page
-      const updatedPages = [...customPages];
-      updatedPages[pageIndex] = currentPage;
-      setCustomPages(updatedPages);
+      updatedPages = [...customPages];
+      updatedPages[pageIndex] = pageToSave;
     } else {
       // Add new page
-      setCustomPages([...customPages, currentPage]);
+      updatedPages = [...customPages, pageToSave];
+    }
+    
+    setCustomPages(updatedPages);
+    
+    // Save to database immediately
+    if (user?.store?.settings) {
+      try {
+        await updateStoreSettings({
+          ...user.store.settings,
+          customPages: updatedPages
+        });
+        toast.success("Page saved successfully");
+      } catch (error) {
+        console.error("Error saving page:", error);
+        toast.error("Failed to save page");
+      }
     }
     
     setIsEditing(false);
@@ -404,6 +452,8 @@ const CustomPagesEditor = () => {
   
   const handleUpdatePageField = (field: string, value: string) => {
     if (!currentPage) return;
+    
+    console.log(`Updating field ${field} with value: ${value}`);
     
     setCurrentPage({
       ...currentPage,
@@ -444,7 +494,7 @@ const CustomPagesEditor = () => {
                     <div key={page.id} className="flex justify-between items-center p-4 border rounded-md">
                       <div>
                         <h4 className="font-medium">{page.title}</h4>
-                        <p className="text-sm text-muted-foreground">/page/{page.slug}</p>
+                        <p className="text-sm text-muted-foreground">URL: /store/[store-id]/page/{page.slug}</p>
                       </div>
                       <div className="flex gap-2">
                         <Button variant="outline" size="sm" onClick={() => handleEditPage(page)}>
@@ -473,8 +523,10 @@ const CustomPagesEditor = () => {
                       onChange={(e) => {
                         const newTitle = e.target.value;
                         handleUpdatePageField('title', newTitle);
-                        // Auto-generate slug if title changes
-                        handleUpdatePageField('slug', generateSlug(newTitle));
+                        // Only auto-generate slug if slug is empty or matches previous auto-generated slug
+                        if (!currentPage.slug || currentPage.slug === generateSlug(currentPage.title)) {
+                          handleUpdatePageField('slug', generateSlug(newTitle));
+                        }
                       }}
                       className="mb-1"
                     />
@@ -492,7 +544,7 @@ const CustomPagesEditor = () => {
                       className="mb-1"
                     />
                     <p className="text-xs text-muted-foreground">
-                      The URL of your page will be: /page/{currentPage.slug}
+                      The URL of your page will be: /store/[store-id]/page/{currentPage.slug}
                     </p>
                   </div>
                   

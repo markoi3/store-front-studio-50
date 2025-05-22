@@ -1,5 +1,5 @@
-
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,30 +23,18 @@ interface BuilderElement {
 }
 
 type PageType = 'homepage' | 'about' | 'contact' | 'legal' | 'custom';
+type LegalPageType = 'privacy' | 'terms' | 'shipping';
 
 export const StoreBuilder = () => {
   const { user, updateStoreSettings } = useAuth();
+  const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState<string>("homepage");
   const [previewMode, setPreviewMode] = useState<boolean>(false);
   const [selectedPageType, setSelectedPageType] = useState<PageType>('homepage');
   const [selectedCustomPage, setSelectedCustomPage] = useState<string>('');
-  const [selectedLegalPage, setSelectedLegalPage] = useState<string>('privacy');
+  const [selectedLegalPage, setSelectedLegalPage] = useState<LegalPageType>('privacy');
   const [elements, setElements] = useState<BuilderElement[]>([]);
   const [customPages, setCustomPages] = useState<Array<{id: string; title: string; slug: string; content: string; elements?: BuilderElement[]}>>([]);
-  const [legalPages, setLegalPages] = useState({
-    privacy: {
-      title: "Privacy Policy",
-      content: "Your privacy policy content here..."
-    },
-    terms: {
-      title: "Terms of Service",
-      content: "Your terms of service content here..."
-    },
-    shipping: {
-      title: "Shipping Policy",
-      content: "Your shipping policy content here..."
-    }
-  });
   
   // Load existing store settings when component mounts
   useEffect(() => {
@@ -290,7 +278,7 @@ export const StoreBuilder = () => {
     }
   };
 
-  const updateLegalPage = (page: keyof typeof legalPages, field: string, value: string) => {
+  const updateLegalPage = (page: LegalPageType, field: string, value: string) => {
     try {
       setLegalPages({
         ...legalPages,

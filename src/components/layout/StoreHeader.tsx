@@ -1,7 +1,7 @@
 
 import { Link } from "react-router-dom";
 import { ShoppingCart, Menu, X } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useCart } from "@/contexts/CartContext";
 import { useStore } from "@/hooks/useStore";
 
@@ -17,6 +17,18 @@ export const StoreHeader = () => {
 
   // Get logo from store settings
   const logo = store?.settings?.logo || null;
+  
+  // Get custom pages for navigation
+  const customPages = store?.settings?.customPages && Array.isArray(store.settings.customPages)
+    ? store.settings.customPages
+    : [];
+    
+  // Add custom pages to menu items if they don't already exist
+  useEffect(() => {
+    if (store?.settings && customPages.length > 0) {
+      console.log("Custom pages found:", customPages.length);
+    }
+  }, [store, customPages]);
   
   const storeName = store?.name || "Store";
 
@@ -46,6 +58,29 @@ export const StoreHeader = () => {
               {item.label}
             </Link>
           ))}
+          
+          {/* Add custom pages to navigation */}
+          {customPages.map((page) => {
+            // Check if this page is already in menuItems
+            const alreadyInMenu = menuItems.some(item => 
+              item.url === `/page/${page.slug}` || 
+              item.url === `page/${page.slug}`
+            );
+            
+            // Only show if not already in menu
+            if (!alreadyInMenu) {
+              return (
+                <Link 
+                  key={page.id} 
+                  to={getStoreUrl(`/page/${page.slug}`)} 
+                  className="text-foreground hover:text-primary px-2 py-1"
+                >
+                  {page.title}
+                </Link>
+              );
+            }
+            return null;
+          })}
         </nav>
 
         <div className="flex items-center space-x-4">
@@ -82,6 +117,29 @@ export const StoreHeader = () => {
                 {item.label}
               </Link>
             ))}
+            
+            {/* Add custom pages to mobile navigation */}
+            {customPages.map((page) => {
+              // Check if already in menu
+              const alreadyInMenu = menuItems.some(item => 
+                item.url === `/page/${page.slug}` || 
+                item.url === `page/${page.slug}`
+              );
+              
+              if (!alreadyInMenu) {
+                return (
+                  <Link
+                    key={page.id}
+                    to={getStoreUrl(`/page/${page.slug}`)}
+                    className="py-2 block"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    {page.title}
+                  </Link>
+                );
+              }
+              return null;
+            })}
           </div>
         </div>
       )}

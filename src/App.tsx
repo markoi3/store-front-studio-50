@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -21,6 +20,7 @@ import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import CustomPage from "./pages/CustomPage";
 
 // Admin Pages
 import Dashboard from "./pages/admin/Dashboard";
@@ -76,6 +76,7 @@ const App = () => (
               <Route path="/store/:storeId/contact" element={<Contact />} />
               <Route path="/store/:storeId/terms" element={<Terms />} />
               <Route path="/store/:storeId/privacy" element={<Privacy />} />
+              <Route path="/store/:storeId/page/:pageSlug" element={<CustomPage />} />
               
               {/* Demo Store Routes (for testing) - Redirect to proper store URLs */}
               <Route path="/home" element={<Navigate to="/store" replace />} />
