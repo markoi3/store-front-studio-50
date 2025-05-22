@@ -136,8 +136,8 @@ const NovaFaktura = () => {
     setTimeout(() => {
       setIsSubmitting(false);
       
-      // Navigate to fakture page with success state
-      navigate("/fakture", { 
+      // Updated path with /admin prefix
+      navigate("/admin/fakture", { 
         state: { 
           success: true, 
           message: "Faktura je uspešno kreirana" 
@@ -438,7 +438,7 @@ const NovaFaktura = () => {
             <Button
               type="button"
               variant="outline"
-              onClick={() => navigate("/fakture")}
+              onClick={() => navigate("/admin/fakture")}
             >
               Otkaži
             </Button>

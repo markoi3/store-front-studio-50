@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -23,6 +22,7 @@ const Storefront = () => {
       
       try {
         setProductsLoading(true);
+        console.log("Loading products for store ID:", store.id);
         
         // Fetch the current store's products from Supabase
         const { data: products, error } = await supabase
@@ -32,23 +32,41 @@ const Storefront = () => {
           .eq('published', true);
         
         if (error) {
-          console.error("Error loading products:", error);
+          console.error("Error loading products from Supabase:", error);
           return;
         }
         
         if (products && products.length > 0) {
+          console.log("Found products in Supabase:", products.length);
           setStoreProducts(products);
         } else {
-          console.log("No products found for store, loading from localStorage");
+          console.log("No products found in Supabase for store", store.id);
+          
           // Try to fetch from localStorage as backup
           const storedProducts = JSON.parse(localStorage.getItem("products") || "[]");
-          const storeProducts = storedProducts.filter((p: any) => p.store_id === store.id);
+          console.log("All stored products:", storedProducts);
+          
+          // Make sure we're using the correct store ID format for comparison
+          const storeProducts = storedProducts.filter((p: any) => {
+            const productStoreId = typeof p.store_id === 'string' ? p.store_id : p.storeId;
+            const currentStoreId = typeof store.id === 'string' ? store.id : storeId;
+            
+            console.log(`Comparing product store ID: ${productStoreId} with current store ID: ${currentStoreId}`);
+            return productStoreId === currentStoreId || p.storeId === storeId;
+          });
           
           if (storeProducts.length > 0) {
+            console.log("Found products in localStorage:", storeProducts.length);
             setStoreProducts(storeProducts);
           } else {
             console.log("Using default products as fallback");
-            setStoreProducts(defaultProducts);
+            // Use default products but set their store ID to the current store ID
+            const productsWithCorrectStoreId = defaultProducts.map(p => ({
+              ...p,
+              store_id: store.id,
+              storeId: store.id
+            }));
+            setStoreProducts(productsWithCorrectStoreId);
           }
         }
       } catch (error) {
@@ -131,7 +149,11 @@ const Storefront = () => {
   ];
   
   // Use stored products if available, otherwise use defaults
-  const displayProducts = storeProducts.length > 0 ? storeProducts : defaultProducts;
+  const displayProducts = storeProducts.length > 0 ? storeProducts : defaultProducts.map(p => ({
+    ...p,
+    store_id: storeId,
+    storeId: storeId
+  }));
 
   // Render page elements
   const renderPageElements = () => {

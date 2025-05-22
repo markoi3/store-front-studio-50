@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -168,8 +167,8 @@ const NoviObracun = () => {
     setTimeout(() => {
       setIsSubmitting(false);
       
-      // Navigate to racunovodstvo page with success state
-      navigate("/racunovodstvo", { 
+      // Updated path with /admin prefix
+      navigate("/admin/racunovodstvo", { 
         state: { 
           success: true, 
           message: "Obračun je uspešno kreiran" 
@@ -357,7 +356,7 @@ const NoviObracun = () => {
             <Button
               type="button"
               variant="outline"
-              onClick={() => navigate("/racunovodstvo")}
+              onClick={() => navigate("/admin/racunovodstvo")}
             >
               Otkaži
             </Button>

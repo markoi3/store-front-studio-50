@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -115,11 +114,13 @@ const NewProduct = () => {
         published: productData.published,
         seo_title: productData.seoTitle || productData.name,
         seo_description: productData.seoDescription || productData.description,
-        store_id: user.store.id,
+        store_id: user.store.id, // Make sure store_id is properly set
         image: images.length > 0 ? images[0] : null,
         images: images,
         variants: variants
       };
+      
+      console.log("Saving product with store_id:", user.store.id);
       
       // Save to Supabase
       const { data, error } = await supabase
@@ -136,13 +137,15 @@ const NewProduct = () => {
       
       toast.success("Product saved successfully!");
       
-      // Save to localStorage for offline access
+      // Save to localStorage for offline access with the correct ID and store_id
       try {
         const storedProducts = JSON.parse(localStorage.getItem("products") || "[]");
         localStorage.setItem("products", JSON.stringify([...storedProducts, {
           ...newProduct,
-          id: data.id
+          id: data.id,
+          store_id: user.store.id // Ensure store_id is saved to localStorage as well
         }]));
+        console.log("Product saved to localStorage with ID:", data.id, "and store_id:", user.store.id);
       } catch (e) {
         console.error("Error saving to localStorage:", e);
       }
