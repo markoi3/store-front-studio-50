@@ -1,8 +1,9 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { CartProvider } from "@/contexts/CartContext";
 
@@ -38,7 +39,7 @@ import NovaFaktura from "./pages/admin/NovaFaktura";
 import NoviPredracun from "./pages/admin/NoviPredracun";
 import NoviObracun from "./pages/admin/NoviObracun";
 import Transakcije from "./pages/admin/Transakcije";
-import Customers from "./pages/admin/Customers"; // New import
+import Customers from "./pages/admin/Customers";
 
 // Store Pages
 import Storefront from "./pages/store/Storefront";
@@ -50,15 +51,6 @@ import PaymentLink from "./pages/payment/PaymentLink";
 import PublicDocument from "./pages/public/PublicDocument";
 
 import NotFound from "./pages/NotFound";
-
-// Import the withStoreLayout HOC
-import { withStoreLayout } from "@/components/layout/StorePageLayout";
-
-// Wrap relevant page components with withStoreLayout
-const WrappedAbout = withStoreLayout(About);
-const WrappedContact = withStoreLayout(Contact);
-const WrappedTerms = withStoreLayout(Terms);
-const WrappedPrivacy = withStoreLayout(Privacy);
 
 const queryClient = new QueryClient();
 
@@ -80,22 +72,22 @@ const App = () => (
               <Route path="/store/:storeId/cart" element={<Cart />} />
               <Route path="/store/:storeId/checkout" element={<Checkout />} />
               <Route path="/store/:storeId/thank-you" element={<ThankYou />} />
-              <Route path="/store/:storeId/about" element={<WrappedAbout />} />
-              <Route path="/store/:storeId/contact" element={<WrappedContact />} />
-              <Route path="/store/:storeId/terms" element={<WrappedTerms />} />
-              <Route path="/store/:storeId/privacy" element={<WrappedPrivacy />} />
+              <Route path="/store/:storeId/about" element={<About />} />
+              <Route path="/store/:storeId/contact" element={<Contact />} />
+              <Route path="/store/:storeId/terms" element={<Terms />} />
+              <Route path="/store/:storeId/privacy" element={<Privacy />} />
               
-              {/* Demo Store Routes (for testing) */}
-              <Route path="/home" element={<Home />} />
-              <Route path="/shop" element={<Shop />} />
-              <Route path="/product/:slug" element={<ProductDetail />} />
-              <Route path="/cart" element={<Cart />} />
-              <Route path="/checkout" element={<Checkout />} />
-              <Route path="/thank-you" element={<ThankYou />} />
-              <Route path="/about" element={<WrappedAbout />} /> {/* Use wrapped component */}
-              <Route path="/contact" element={<WrappedContact />} /> {/* Use wrapped component */}
-              <Route path="/terms" element={<WrappedTerms />} /> {/* Use wrapped component */}
-              <Route path="/privacy" element={<WrappedPrivacy />} /> {/* Use wrapped component */}
+              {/* Demo Store Routes (for testing) - Redirect to proper store URLs */}
+              <Route path="/home" element={<Navigate to="/store" replace />} />
+              <Route path="/shop" element={<Navigate to="/store" replace />} />
+              <Route path="/product/:slug" element={<Navigate to="/store" replace />} />
+              <Route path="/cart" element={<Navigate to="/store" replace />} />
+              <Route path="/checkout" element={<Navigate to="/store" replace />} />
+              <Route path="/thank-you" element={<Navigate to="/store" replace />} />
+              <Route path="/about" element={<Navigate to="/store" replace />} />
+              <Route path="/contact" element={<Navigate to="/store" replace />} />
+              <Route path="/terms" element={<Navigate to="/store" replace />} />
+              <Route path="/privacy" element={<Navigate to="/store" replace />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               
@@ -106,7 +98,7 @@ const App = () => (
               <Route path="/products/:id" element={<EditProduct />} />
               <Route path="/orders" element={<Orders />} />
               <Route path="/orders/:id" element={<Transakcije />} />
-              <Route path="/customers" element={<Customers />} /> {/* New route */}
+              <Route path="/customers" element={<Customers />} />
               <Route path="/transakcije/:id" element={<Transakcije />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/design" element={<Design />} />

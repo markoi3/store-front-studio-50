@@ -3,6 +3,7 @@ import { ReactNode, useEffect, useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { ShopLayout } from "./ShopLayout";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 type StorePageLayoutProps = {
   children: ReactNode;
@@ -18,7 +19,7 @@ export const StorePageLayout = ({ children }: StorePageLayoutProps) => {
   // try to redirect to the first store we find
   useEffect(() => {
     const redirectToStoreRoute = async () => {
-      if (!storeId) {
+      if (!storeId && !location.pathname.startsWith('/store/')) {
         try {
           setLoading(true);
           
@@ -34,16 +35,26 @@ export const StorePageLayout = ({ children }: StorePageLayoutProps) => {
             
           if (error) {
             console.error("Error fetching store:", error);
+            toast("Navigation error", {
+              description: "Could not load store information. Please try again.",
+            });
             setLoading(false);
             return;
           }
           
           if (storeData && storeData.slug) {
+            // Construct the proper store-specific URL
+            const storeUrl = `/store/${storeData.slug}${currentPath ? `/${currentPath}` : ''}`;
+            console.log(`Redirecting to store route: ${storeUrl}`);
+            
             // Redirect to the store-specific route
-            navigate(`/store/${storeData.slug}/${currentPath}`);
+            navigate(storeUrl);
           }
         } catch (error) {
           console.error("Error redirecting to store route:", error);
+          toast("Navigation error", {
+            description: "Could not redirect to store route. Please try again.",
+          });
         } finally {
           setLoading(false);
         }

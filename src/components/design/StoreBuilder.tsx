@@ -47,6 +47,38 @@ export const StoreBuilder = () => {
       // Load page elements if they exist
       if (user.store.settings.pageElements && Array.isArray(user.store.settings.pageElements)) {
         setElements(user.store.settings.pageElements);
+      } else {
+        // Set default elements if no saved elements exist
+        setElements([
+          {
+            id: '1',
+            type: 'hero',
+            settings: {
+              title: 'Welcome to My Store',
+              subtitle: 'Discover our amazing products',
+              buttonText: 'Shop Now',
+              buttonLink: '/shop',
+              backgroundImage: 'https://images.unsplash.com/photo-1588345921523-c2dcdb7f1dcd?w=800&auto=format&fit=crop'
+            }
+          },
+          {
+            id: '2',
+            type: 'products',
+            settings: {
+              title: 'Featured Products',
+              count: 4,
+              layout: 'grid'
+            }
+          },
+          {
+            id: '3',
+            type: 'text',
+            settings: {
+              content: 'We offer high quality products with great customer service.',
+              alignment: 'center'
+            }
+          }
+        ]);
       }
       
       // Load legal pages if they exist
@@ -56,38 +88,6 @@ export const StoreBuilder = () => {
           ...user.store.settings.legalPages
         }));
       }
-    } else {
-      // Set default elements if no saved elements exist
-      setElements([
-        {
-          id: '1',
-          type: 'hero',
-          settings: {
-            title: 'Welcome to My Store',
-            subtitle: 'Discover our amazing products',
-            buttonText: 'Shop Now',
-            buttonLink: '/shop',
-            backgroundImage: 'https://images.unsplash.com/photo-1588345921523-c2dcdb7f1dcd?w=800&auto=format&fit=crop'
-          }
-        },
-        {
-          id: '2',
-          type: 'products',
-          settings: {
-            title: 'Featured Products',
-            count: 4,
-            layout: 'grid'
-          }
-        },
-        {
-          id: '3',
-          type: 'text',
-          settings: {
-            content: 'We offer high quality products with great customer service.',
-            alignment: 'center'
-          }
-        }
-      ]);
     }
   }, [user?.store?.settings]);
 
@@ -155,8 +155,7 @@ export const StoreBuilder = () => {
     };
     
     setElements([...elements, newElement]);
-    toast({
-      title: "Element added",
+    toast("Element added", {
       description: `Added new ${type} element to your page.`
     });
   };
@@ -193,14 +192,12 @@ export const StoreBuilder = () => {
       // Save to Supabase via AuthContext
       await updateStoreSettings(updatedSettings);
       
-      toast({
-        title: "Changes saved",
+      toast("Changes saved", {
         description: "Your store design has been updated successfully."
       });
     } catch (error) {
       console.error("Error saving store design:", error);
-      toast({
-        title: "Error saving changes",
+      toast("Error saving changes", {
         description: "There was a problem saving your store design. Please try again.",
         variant: "destructive"
       });

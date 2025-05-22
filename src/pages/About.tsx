@@ -30,7 +30,8 @@ const AboutPage = () => {
         if (error) {
           console.error("Error fetching store settings:", error);
         } else if (data) {
-          setStoreSettings(data.settings);
+          // Ensure we're setting an object, even if data.settings is null
+          setStoreSettings(data.settings || {});
         }
       } catch (error) {
         console.error("Error in fetchStoreSettings:", error);
