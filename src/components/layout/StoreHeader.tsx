@@ -14,6 +14,30 @@ export const StoreHeader = () => {
   const menuItems = store?.settings?.menuItems && Array.isArray(store.settings.menuItems) 
     ? store.settings.menuItems 
     : [];
+  
+  // Get custom pages from store settings
+  const customPages = store?.settings?.customPages && Array.isArray(store.settings.customPages)
+    ? store.settings.customPages
+    : [];
+    
+  // Add custom pages to menu items if they aren't already included
+  const combinedMenuItems = [...menuItems];
+  
+  // Add any custom pages that aren't already in the menu
+  customPages.forEach(page => {
+    const pageUrl = `/page/${page.slug}`;
+    // Check if this page is already in the menu
+    const existingMenuItem = menuItems.find(item => item.url === pageUrl);
+    
+    if (!existingMenuItem) {
+      // Add the custom page to the menu
+      combinedMenuItems.push({
+        id: `custom-page-${page.id}`,
+        label: page.title,
+        url: pageUrl
+      });
+    }
+  });
 
   // Get logo from store settings
   const logo = store?.settings?.logo || null;
@@ -37,7 +61,7 @@ export const StoreHeader = () => {
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex space-x-4">
-          {menuItems.map((item) => (
+          {combinedMenuItems.map((item) => (
             <Link 
               key={item.id} 
               to={getStoreUrl(item.url)} 
@@ -72,7 +96,7 @@ export const StoreHeader = () => {
       {mobileMenuOpen && (
         <div className="md:hidden bg-background border-b border-border">
           <div className="container mx-auto px-4 py-2 flex flex-col space-y-2">
-            {menuItems.map((item) => (
+            {combinedMenuItems.map((item) => (
               <Link
                 key={item.id}
                 to={getStoreUrl(item.url)}

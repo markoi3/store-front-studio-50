@@ -1,5 +1,5 @@
-
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -24,8 +24,22 @@ interface BuilderElement {
 
 type PageType = 'homepage' | 'about' | 'contact' | 'legal' | 'custom';
 
+// Define a type for legal pages
+interface LegalPageType {
+  title: string;
+  content: string;
+}
+
+interface LegalPagesType {
+  privacy: LegalPageType;
+  terms: LegalPageType;
+  shipping: LegalPageType;
+  [key: string]: LegalPageType;
+}
+
 export const StoreBuilder = () => {
   const { user, updateStoreSettings } = useAuth();
+  const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState<string>("homepage");
   const [previewMode, setPreviewMode] = useState<boolean>(false);
   const [selectedPageType, setSelectedPageType] = useState<PageType>('homepage');
@@ -33,7 +47,7 @@ export const StoreBuilder = () => {
   const [selectedLegalPage, setSelectedLegalPage] = useState<string>('privacy');
   const [elements, setElements] = useState<BuilderElement[]>([]);
   const [customPages, setCustomPages] = useState<Array<{id: string; title: string; slug: string; content: string; elements?: BuilderElement[]}>>([]);
-  const [legalPages, setLegalPages] = useState({
+  const [legalPages, setLegalPages] = useState<LegalPagesType>({
     privacy: {
       title: "Privacy Policy",
       content: "Your privacy policy content here..."
@@ -47,6 +61,18 @@ export const StoreBuilder = () => {
       content: "Your shipping policy content here..."
     }
   });
+  
+  // Get page type and ID from URL params
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const pageType = searchParams.get('pageType');
+    const pageId = searchParams.get('pageId');
+    
+    if (pageType === 'custom' && pageId) {
+      setSelectedPageType('custom');
+      setSelectedCustomPage(pageId);
+    }
+  }, []);
   
   // Load existing store settings when component mounts
   useEffect(() => {
@@ -354,7 +380,7 @@ export const StoreBuilder = () => {
             <Label htmlFor="legalPageSelect">Legal Page</Label>
             <Select
               value={selectedLegalPage}
-              onValueChange={setSelectedLegalPage}
+              onValueChange={(value) => setSelectedLegalPage(value)}
             >
               <SelectTrigger id="legalPageSelect">
                 <SelectValue placeholder="Select a legal page" />
@@ -430,7 +456,6 @@ export const StoreBuilder = () => {
           <Button
             variant="outline"
             onClick={() => {
-              setActiveSection("custom");
               navigate("/design?tab=custom");
             }}
           >

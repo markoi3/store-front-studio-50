@@ -1,3 +1,4 @@
+
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { StoreBuilder } from "@/components/design/StoreBuilder";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -10,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
-import { Trash2, Plus } from "lucide-react";
+import { Trash2, Plus, ExternalLink } from "lucide-react";
 
 const Design = () => {
   const navigate = useNavigate();
@@ -325,19 +326,23 @@ const LogoEditor = () => {
 // Custom Pages editor component
 const CustomPagesEditor = () => {
   const { user, updateStoreSettings } = useAuth();
+  const navigate = useNavigate();
   const [customPages, setCustomPages] = useState<Array<{
     id: string;
     title: string;
     slug: string;
     content: string;
+    elements?: any[];
   }>>([]);
   const [currentPage, setCurrentPage] = useState<{
     id: string;
     title: string;
     slug: string;
     content: string;
+    elements?: any[];
   } | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [formChanged, setFormChanged] = useState(false);
   
   useEffect(() => {
     // Initialize with custom pages from user store settings
@@ -354,6 +359,7 @@ const CustomPagesEditor = () => {
       });
       
       toast.success("Custom pages saved successfully");
+      setFormChanged(false);
     } catch (error) {
       console.error("Error saving custom pages:", error);
       toast.error("Failed to save custom pages");
@@ -366,8 +372,10 @@ const CustomPagesEditor = () => {
       id: `page-${Date.now()}`,
       title: "New Page",
       slug: `page-${customPages.length + 1}`,
-      content: "Content goes here..."
+      content: "Content goes here...",
+      elements: []
     });
+    setFormChanged(true);
   };
   
   const handleEditPage = (page: typeof currentPage) => {
@@ -376,30 +384,63 @@ const CustomPagesEditor = () => {
   };
   
   const handleDeletePage = (id: string) => {
-    setCustomPages(customPages.filter(page => page.id !== id));
+    const updatedPages = customPages.filter(page => page.id !== id);
+    setCustomPages(updatedPages);
+    
     if (currentPage?.id === id) {
       setCurrentPage(null);
       setIsEditing(false);
     }
+    
+    // Auto-save after deletion
+    updateStoreSettings({
+      ...user?.store?.settings,
+      customPages: updatedPages
+    }).then(() => {
+      toast.success("Page deleted successfully");
+    }).catch(error => {
+      console.error("Error saving custom pages after deletion:", error);
+      toast.error("Failed to delete page");
+    });
   };
   
   const handleSavePage = () => {
     if (!currentPage) return;
     
+    // Ensure the slug is URL-friendly
+    const safeSlug = generateSlug(currentPage.title);
+    const pageToSave = {
+      ...currentPage,
+      slug: safeSlug
+    };
+    
     const pageIndex = customPages.findIndex(page => page.id === currentPage.id);
     
+    let updatedPages: typeof customPages;
     if (pageIndex >= 0) {
       // Update existing page
-      const updatedPages = [...customPages];
-      updatedPages[pageIndex] = currentPage;
-      setCustomPages(updatedPages);
+      updatedPages = [...customPages];
+      updatedPages[pageIndex] = pageToSave;
     } else {
       // Add new page
-      setCustomPages([...customPages, currentPage]);
+      updatedPages = [...customPages, pageToSave];
     }
     
+    setCustomPages(updatedPages);
     setIsEditing(false);
     setCurrentPage(null);
+    
+    // Auto-save changes
+    updateStoreSettings({
+      ...user?.store?.settings,
+      customPages: updatedPages
+    }).then(() => {
+      toast.success("Page saved successfully");
+      setFormChanged(false);
+    }).catch(error => {
+      console.error("Error auto-saving page:", error);
+      toast.error("Failed to save page");
+    });
   };
   
   const handleUpdatePageField = (field: string, value: string) => {
@@ -409,6 +450,8 @@ const CustomPagesEditor = () => {
       ...currentPage,
       [field]: value
     });
+    
+    setFormChanged(true);
   };
   
   const generateSlug = (title: string) => {
@@ -416,6 +459,17 @@ const CustomPagesEditor = () => {
       .toLowerCase()
       .replace(/[^a-z0-9\s-]/g, '')
       .replace(/\s+/g, '-');
+  };
+  
+  const navigateToPageDesign = (page: typeof currentPage) => {
+    if (!page) return;
+    
+    navigate(`/design?tab=builder&pageType=custom&pageId=${page.id}`);
+  };
+  
+  const getPagePreviewUrl = (slug: string) => {
+    if (!user?.store?.slug) return '';
+    return `/store/${user.store.slug}/page/${slug}`;
   };
   
   return (
@@ -428,7 +482,9 @@ const CustomPagesEditor = () => {
               <Button variant="outline" onClick={handleAddPage} className="flex items-center gap-1">
                 <Plus className="h-4 w-4" /> Add Page
               </Button>
-              <Button onClick={handleSavePages}>Save All Pages</Button>
+              {formChanged && (
+                <Button onClick={handleSavePages}>Save All Pages</Button>
+              )}
             </div>
           </div>
           
@@ -447,7 +503,27 @@ const CustomPagesEditor = () => {
                         <p className="text-sm text-muted-foreground">/page/{page.slug}</p>
                       </div>
                       <div className="flex gap-2">
-                        <Button variant="outline" size="sm" onClick={() => handleEditPage(page)}>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => window.open(getPagePreviewUrl(page.slug), '_blank')}
+                          className="flex items-center gap-1"
+                        >
+                          <ExternalLink className="h-3 w-3" />
+                          Preview
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => navigateToPageDesign(page)}
+                        >
+                          Design
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => handleEditPage(page)}
+                        >
                           Edit
                         </Button>
                         <Button 
@@ -473,8 +549,8 @@ const CustomPagesEditor = () => {
                       onChange={(e) => {
                         const newTitle = e.target.value;
                         handleUpdatePageField('title', newTitle);
-                        // Auto-generate slug if title changes
-                        handleUpdatePageField('slug', generateSlug(newTitle));
+                        // Display how the slug will look but don't update it yet
+                        // Will be set on save
                       }}
                       className="mb-1"
                     />
@@ -484,15 +560,14 @@ const CustomPagesEditor = () => {
                   </div>
                   
                   <div>
-                    <Label htmlFor="page-slug">URL Slug</Label>
-                    <Input
-                      id="page-slug"
-                      value={currentPage.slug}
-                      onChange={(e) => handleUpdatePageField('slug', e.target.value)}
-                      className="mb-1"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      The URL of your page will be: /page/{currentPage.slug}
+                    <Label htmlFor="page-slug">URL Slug (Auto-generated)</Label>
+                    <div className="flex items-center gap-2">
+                      <div className="text-muted-foreground text-sm bg-muted px-3 py-2 rounded-md flex-grow">
+                        /page/{generateSlug(currentPage.title)}
+                      </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      The URL slug is automatically generated from the page title
                     </p>
                   </div>
                   
@@ -504,12 +579,16 @@ const CustomPagesEditor = () => {
                       onChange={(e) => handleUpdatePageField('content', e.target.value)}
                       rows={10}
                     />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      This is the main content of your page. You can also add visual elements using the Design button after saving.
+                    </p>
                   </div>
                   
                   <div className="flex justify-end gap-2">
                     <Button variant="outline" onClick={() => {
                       setIsEditing(false);
                       setCurrentPage(null);
+                      setFormChanged(false);
                     }}>
                       Cancel
                     </Button>
