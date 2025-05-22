@@ -4,12 +4,12 @@ import { ShopLayout } from "@/components/layout/ShopLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 const Login = () => {
-  const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, isLoading: authLoading } = useAuth();
   
   const [formData, setFormData] = useState({
     email: "",
@@ -27,14 +27,23 @@ const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    
+    if (!formData.email || !formData.password) {
+      setError("Email and password are required");
+      return;
+    }
+    
     setIsLoading(true);
     
     try {
+      console.log("Starting login process");
       await login(formData.email, formData.password);
-      navigate("/dashboard");
+      // No need for navigation here - AuthContext will handle the redirect with window.location
     } catch (err) {
       const error = err as Error;
+      console.error("Login error in component:", error);
       setError(error.message || "Failed to sign in. Please check your credentials.");
+      toast.error("Login failed: " + error.message);
     } finally {
       setIsLoading(false);
     }
@@ -89,12 +98,13 @@ const Login = () => {
                 required
                 value={formData.password}
                 onChange={handleChange}
+                autoComplete="current-password"
               />
             </div>
             
             <div className="pt-2">
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Signing In..." : "Sign In"}
+              <Button type="submit" className="w-full" disabled={isLoading || authLoading}>
+                {isLoading || authLoading ? "Signing In..." : "Sign In"}
               </Button>
             </div>
           </form>

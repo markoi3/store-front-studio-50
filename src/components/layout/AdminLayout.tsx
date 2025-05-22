@@ -2,7 +2,7 @@
 import { ReactNode, useEffect, useState } from "react";
 import { AdminSidebar } from "./AdminSidebar";
 import { useAuth } from "@/contexts/AuthContext";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -11,14 +11,14 @@ type AdminLayoutProps = {
 };
 
 export const AdminLayout = ({ children }: AdminLayoutProps) => {
-  const { user, isLoading } = useAuth();
-  const navigate = useNavigate();
+  const { user, session, isLoading } = useAuth();
   const [storeLoading, setStoreLoading] = useState(false);
   
   useEffect(() => {
     // Check if user has store information
     if (user && !user.store) {
-      toast.error("No store found for your account. Attempting to create one...");
+      console.log("No store found for user, creating one...");
+      toast.error("No store found for your account. Creating one...");
       createStoreForUser();
     }
   }, [user]);
@@ -85,7 +85,9 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
     );
   }
   
-  if (!user) {
+  // Check both user and session to ensure we're properly authenticated
+  if (!user || !session) {
+    console.log("Not authenticated, redirecting to login");
     return <Navigate to="/login" />;
   }
   

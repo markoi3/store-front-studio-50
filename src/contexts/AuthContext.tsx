@@ -1,7 +1,7 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { User } from "@supabase/supabase-js";
+import { User, Session } from "@supabase/supabase-js";
 import { toast } from "sonner";
 
 type StoreInfo = {
@@ -27,6 +27,7 @@ type AuthUser = {
 
 type AuthContextType = {
   user: AuthUser | null;
+  session: Session | null; // Add session to the context
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, name: string) => Promise<void>;
@@ -56,6 +57,7 @@ const cleanupAuthState = () => {
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
+  const [session, setSession] = useState<Session | null>(null); // Track session state
   const [isLoading, setIsLoading] = useState(true);
 
   // Fetch user store data
@@ -115,35 +117,48 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Check for existing session and setup auth listener
     const initAuth = async () => {
       setIsLoading(true);
+      console.log("Initializing auth...");
       
-      // Get current session
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session?.user) {
-        try {
-          const authUser = await transformUser(session.user);
-          setUser(authUser);
-        } catch (error) {
-          console.error("Error transforming user:", error);
-        }
-      }
-      
-      // Listen for auth changes
+      // Set up auth state listener FIRST
       const { data: { subscription } } = supabase.auth.onAuthStateChange(
-        async (event, session) => {
-          if (session?.user) {
+        async (event, currentSession) => {
+          console.log("Auth state changed:", event);
+          
+          // Update session state synchronously
+          setSession(currentSession);
+          
+          if (currentSession?.user) {
             try {
-              const authUser = await transformUser(session.user);
-              setUser(authUser);
+              console.log("User authenticated, transforming user data");
+              // Using setTimeout to avoid potential deadlocks
+              setTimeout(async () => {
+                const authUser = await transformUser(currentSession.user);
+                setUser(authUser);
+              }, 0);
             } catch (error) {
               console.error("Error transforming user:", error);
               setUser(null);
             }
           } else {
+            console.log("No active session, clearing user");
             setUser(null);
           }
         }
       );
+      
+      // THEN check for existing session
+      const { data: { session: existingSession } } = await supabase.auth.getSession();
+      
+      if (existingSession?.user) {
+        try {
+          console.log("Found existing session, setting user");
+          setSession(existingSession);
+          const authUser = await transformUser(existingSession.user);
+          setUser(authUser);
+        } catch (error) {
+          console.error("Error transforming existing user:", error);
+        }
+      }
       
       setIsLoading(false);
       
@@ -158,6 +173,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
+      console.log("Attempting login for:", email);
+      
       // Clean up existing auth state
       cleanupAuthState();
       
@@ -165,20 +182,35 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       try {
         await supabase.auth.signOut({ scope: 'global' });
       } catch (err) {
-        // Continue even if this fails
+        console.log("Pre-login sign out failed, continuing anyway:", err);
       }
       
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await supabase.auth.signInWithPassword({ 
+        email, 
+        password 
+      });
       
       if (error) {
+        console.error("Login error:", error.message);
         toast.error("Login failed: " + error.message);
         throw error;
       }
       
       if (data.user) {
+        console.log("Login successful for:", data.user.email);
+        // Set session first
+        setSession(data.session);
+        
+        // Then transform and set user data
         const authUser = await transformUser(data.user);
         setUser(authUser);
+        
         toast.success("Login successful!");
+        
+        // Force page reload to ensure clean state
+        setTimeout(() => {
+          window.location.href = '/dashboard';
+        }, 100);
       }
     } catch (error) {
       console.error("Login error:", error);
@@ -191,6 +223,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const register = async (email: string, password: string, name: string) => {
     setIsLoading(true);
     try {
+      console.log("Attempting registration for:", email);
+      
       // Clean up existing auth state
       cleanupAuthState();
       
@@ -198,7 +232,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       try {
         await supabase.auth.signOut({ scope: 'global' });
       } catch (err) {
-        // Continue even if this fails
+        console.log("Pre-registration sign out failed, continuing anyway:", err);
       }
       
       const { data, error } = await supabase.auth.signUp({ 
@@ -212,17 +246,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       });
       
       if (error) {
+        console.error("Registration error:", error.message);
         toast.error("Registration failed: " + error.message);
         throw error;
       }
       
       if (data.user) {
+        console.log("Registration successful for:", data.user.email);
+        
+        // Set session first
+        setSession(data.session);
+        
         // Wait a moment for the trigger to create the store
         await new Promise(resolve => setTimeout(resolve, 500));
         
         const authUser = await transformUser(data.user);
         setUser(authUser);
+        
         toast.success("Registration successful!");
+        
+        // Force page reload to ensure clean state
+        setTimeout(() => {
+          window.location.href = '/dashboard';
+        }, 100);
       }
     } catch (error) {
       console.error("Registration error:", error);
@@ -234,10 +280,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = async () => {
     try {
-      await supabase.auth.signOut({ scope: 'global' });
-      setUser(null);
+      console.log("Logging out user");
+      
+      // Clean up auth state first
       cleanupAuthState();
+      
+      // Then sign out
+      await supabase.auth.signOut({ scope: 'global' });
+      
+      // Clear state
+      setUser(null);
+      setSession(null);
+      
       toast.success("Logged out successfully");
+      
+      // Force page reload to ensure clean state
+      window.location.href = '/';
     } catch (error) {
       console.error("Logout error:", error);
       toast.error("Logout failed. Please try again.");
@@ -248,6 +306,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (!user || !user.store) return;
     
     try {
+      console.log("Updating store settings");
+      
       const { data, error } = await supabase
         .from('stores')
         .update({ 
@@ -261,6 +321,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         .single();
         
       if (error) {
+        console.error("Update settings error:", error);
         toast.error("Failed to update settings: " + error.message);
         throw error;
       }
@@ -287,7 +348,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, register, logout, updateStoreSettings }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      session,
+      isLoading, 
+      login, 
+      register, 
+      logout, 
+      updateStoreSettings 
+    }}>
       {children}
     </AuthContext.Provider>
   );
