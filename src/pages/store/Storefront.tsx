@@ -75,10 +75,28 @@ const Storefront = () => {
           console.error("Error fetching products:", productsError);
         }
         
-        // Get custom menu items from store settings if they exist
-        const settings = storeData.settings || {};
-        if (settings && typeof settings === 'object' && settings.menuItems && Array.isArray(settings.menuItems)) {
-          setMenuItems(settings.menuItems);
+        // Parse settings safely
+        const defaultSettings: StoreSettings = {
+          menuItems: [
+            { id: "1", label: "Početna", url: "/" },
+            { id: "2", label: "Proizvodi", url: "/shop" },
+            { id: "3", label: "O nama", url: "/about" },
+            { id: "4", label: "Kontakt", url: "/contact" }
+          ],
+          aboutUs: "",
+          privacyPolicy: "",
+          contactInfo: ""
+        };
+        
+        // Process store settings
+        const storeSettings: StoreSettings = 
+          (typeof storeData.settings === 'object' && storeData.settings !== null) 
+            ? { ...defaultSettings, ...storeData.settings }
+            : defaultSettings;
+            
+        // Set menu items from settings
+        if (storeSettings.menuItems && Array.isArray(storeSettings.menuItems)) {
+          setMenuItems(storeSettings.menuItems);
         }
         
         // Transform products to match our Product type
@@ -95,13 +113,11 @@ const Storefront = () => {
         setStoreProducts(formattedProducts);
         
         // Format store data
-        const formattedSettings: StoreSettings = typeof settings === 'object' ? settings : {};
-        
         const formattedStore: StoreData = {
           id: storeData.id,
           name: storeData.name,
           slug: storeData.slug,
-          settings: formattedSettings,
+          settings: storeSettings,
           elements: [
             {
               id: '1',
@@ -127,7 +143,7 @@ const Storefront = () => {
               id: '3',
               type: 'text',
               settings: {
-                content: formattedSettings.aboutUs || 'Nudimo visokokvalitetne proizvode sa odličnom korisničkom podrškom.',
+                content: storeSettings.aboutUs || 'Nudimo visokokvalitetne proizvode sa odličnom korisničkom podrškom.',
                 alignment: 'center'
               }
             }

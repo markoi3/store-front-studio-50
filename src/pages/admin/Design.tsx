@@ -60,8 +60,8 @@ const MenuEditor = () => {
   const [newUrl, setNewUrl] = useState("");
   
   useEffect(() => {
-    // Initialize with menu items from user store
-    if (user?.store?.settings?.menuItems) {
+    // Initialize with menu items from user store settings
+    if (user?.store?.settings?.menuItems && Array.isArray(user.store.settings.menuItems)) {
       setMenuItems(user.store.settings.menuItems);
     } else {
       // Default menu items

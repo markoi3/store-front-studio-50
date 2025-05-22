@@ -83,6 +83,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const transformUser = async (supabaseUser: User): Promise<AuthUser> => {
     const storeData = await fetchUserStore(supabaseUser.id);
     
+    const defaultSettings = {
+      privacyPolicy: "",
+      aboutUs: "",
+      contactInfo: "",
+      menuItems: [
+        { id: "1", label: "Početna", url: "/" },
+        { id: "2", label: "Proizvodi", url: "/shop" },
+        { id: "3", label: "O nama", url: "/about" },
+        { id: "4", label: "Kontakt", url: "/contact" }
+      ]
+    };
+    
     return {
       id: supabaseUser.id,
       email: supabaseUser.email || '',
@@ -92,12 +104,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         id: storeData.id,
         name: storeData.name,
         slug: storeData.slug,
-        settings: storeData.settings || {
-          privacyPolicy: "",
-          aboutUs: "",
-          contactInfo: "",
-          menuItems: []
-        }
+        settings: typeof storeData.settings === 'object' && storeData.settings !== null
+          ? { ...defaultSettings, ...storeData.settings }
+          : defaultSettings
       } : undefined
     };
   };
