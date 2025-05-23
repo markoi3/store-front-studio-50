@@ -30,24 +30,19 @@ const PublicDocument = () => {
       }
 
       try {
-        // Set the access token in the header if available
-        if (token) {
-          // Set the access token in the header for anonymous access
-          supabase.headers['x-access-token'] = token;
-        }
-        
-        // Query the documents table
-        const { data: documents, error: queryError } = await supabase
+        let query = supabase
           .from('documents')
           .select('*')
-          .eq('type', docType)
-          .eq(token ? 'public_access_token' : 'id', token ? token : docId)
-          .limit(1);
-        
-        // Reset the header after use
+          .eq('type', docType);
+          
+        // If we have a token, query by token, otherwise by ID
         if (token) {
-          delete supabase.headers['x-access-token'];
+          query = query.eq('public_access_token', token);
+        } else {
+          query = query.eq('id', docId);
         }
+        
+        const { data: documents, error: queryError } = await query.limit(1);
         
         if (queryError) {
           console.error("Error fetching document:", queryError);
@@ -67,11 +62,17 @@ const PublicDocument = () => {
         
         if (documents && documents.length > 0) {
           console.log("Document found:", documents[0]);
+          const documentData = documents[0];
+          
           // Combine the document metadata with its data
-          setDocument({
-            ...documents[0],
-            ...documents[0].data
-          });
+          if (documentData.data && typeof documentData.data === 'object') {
+            setDocument({
+              ...documentData,
+              ...documentData.data
+            });
+          } else {
+            setDocument(documentData);
+          }
         } else {
           console.log("Document not found");
           setError(`Requested ${docType} with ID ${docId} could not be found.`);

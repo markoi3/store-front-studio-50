@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -69,7 +68,7 @@ const Products = () => {
             price: parseFloat(product.price || 0),
             image: product.image || "https://via.placeholder.com/300",
             slug: product.slug,
-            storeId: String(user.store?.id || ""),  // Fixed: Ensure storeId is a string
+            storeId: String(user.store?.id || ""),  // Ensure storeId is a string
             category: product.category || "general",
             stock: product.stock || 0,
             published: product.published || false
