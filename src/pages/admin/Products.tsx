@@ -28,8 +28,9 @@ import { Link } from "react-router-dom";
 import { Package, Plus, Search, Pencil, Trash2, MoreHorizontal } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
-// Initial products data
+// Initial products data for fallback
 const initialProducts = [
   {
     id: "1",
@@ -75,25 +76,65 @@ const Products = () => {
 
   useEffect(() => {
     const loadProducts = async () => {
-      // Check localStorage for products
       try {
+        setLoading(true);
+        
+        // First try loading from Supabase if we have a store ID
+        if (user?.store?.id) {
+          const { data: supabaseProducts, error } = await supabase
+            .from("products")
+            .select("*")
+            .eq("store_id", user.store.id);
+            
+          if (error) {
+            console.error("Error loading products from Supabase:", error);
+            throw error;
+          }
+          
+          if (supabaseProducts && supabaseProducts.length > 0) {
+            console.log("Products loaded from Supabase:", supabaseProducts);
+            setProducts(supabaseProducts);
+            // Also update localStorage for offline access
+            localStorage.setItem("products", JSON.stringify(supabaseProducts));
+            setLoading(false);
+            return;
+          }
+        }
+        
+        // Fallback to localStorage if Supabase fetch failed or returned no products
         const storedProducts = localStorage.getItem("products");
         if (storedProducts) {
           const parsedProducts = JSON.parse(storedProducts);
           setProducts(parsedProducts);
         } else {
           // If no products in localStorage, use initialProducts
-          // In a real app, we'd fetch from an API here
           const transformedProducts = user?.store?.id
             ? initialProducts.map(product => ({
                 ...product,
-                storeId: String(user.store?.id || "") // Convert store_id to string
+                store_id: String(user.store?.id || "") // Use store_id to match Supabase column
               }))
             : initialProducts;
           setProducts(transformedProducts);
           
           // Save to localStorage
           localStorage.setItem("products", JSON.stringify(transformedProducts));
+          
+          // If store_id is available, also save to Supabase
+          if (user?.store?.id) {
+            // We add the products one by one to Supabase
+            for (const product of transformedProducts) {
+              const { error } = await supabase
+                .from("products")
+                .insert({
+                  ...product,
+                  store_id: user.store.id
+                });
+                
+              if (error) {
+                console.error("Error saving product to Supabase:", error);
+              }
+            }
+          }
         }
       } catch (error) {
         console.error("Error loading products:", error);
@@ -107,11 +148,24 @@ const Products = () => {
   }, [user?.store?.id]);
 
   // Function to delete a product
-  const handleDeleteProduct = (productId: string) => {
+  const handleDeleteProduct = async (productId: string) => {
     // Confirm before deleting
     if (window.confirm("Da li ste sigurni da želite da obrišete ovaj proizvod?")) {
       try {
-        // Filter out the product to delete
+        // Delete from Supabase first if store_id is available
+        if (user?.store?.id) {
+          const { error } = await supabase
+            .from("products")
+            .delete()
+            .eq("id", productId);
+            
+          if (error) {
+            console.error("Error deleting product from Supabase:", error);
+            throw error;
+          }
+        }
+        
+        // Filter out the product to delete from local state
         const updatedProducts = products.filter(product => product.id !== productId);
         
         // Update state
@@ -123,7 +177,7 @@ const Products = () => {
         // Show success toast
         toast({
           title: "Proizvod obrisan",
-          description: "Proizvod je uspešno obrisan.",
+          description: "Proizvod je uspešno obrisan iz Supabase i lokalne memorije.",
         });
       } catch (error) {
         console.error("Error deleting product:", error);
@@ -262,13 +316,17 @@ const Products = () => {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem asChild>
-                                <Link to={`/products/${product.id}`} className="flex items-center">
+                                <Link 
+                                  to={`/store/${user?.store?.slug || user?.store?.id}/product/${product.slug || product.id}`}
+                                  className="flex items-center"
+                                  target="_blank"
+                                >
                                   <Package className="h-4 w-4 mr-2" />
                                   Prikaži proizvod
                                 </Link>
                               </DropdownMenuItem>
                               <DropdownMenuItem asChild>
-                                <Link to={`/proizvod/${product.id}`} className="flex items-center">
+                                <Link to={`/products/${product.id}`} className="flex items-center">
                                   <Pencil className="h-4 w-4 mr-2" />
                                   Modifikuj proizvod
                                 </Link>
