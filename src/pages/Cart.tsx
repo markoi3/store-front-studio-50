@@ -1,4 +1,3 @@
-
 import { withStoreLayout } from "@/components/layout/StorePageLayout";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/contexts/CartContext";
@@ -25,7 +24,7 @@ const Cart = () => {
           <p className="text-muted-foreground mb-6">
             Looks like you haven't added any products to your cart yet.
           </p>
-          <Link to={getStoreUrl("/shop")}>
+          <Link to={getStoreUrl("/")}>
             <Button>Continue Shopping</Button>
           </Link>
         </div>

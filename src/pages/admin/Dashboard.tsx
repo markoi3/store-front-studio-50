@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -452,4 +451,3 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
-
