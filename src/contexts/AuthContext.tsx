@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from "@supabase/supabase-js";
@@ -203,7 +202,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       if (error) {
         console.error("Login error:", error.message);
-        toast.error("Login failed: " + error.message);
+        
+        // Show more user-friendly error message for email not confirmed
+        if (error.message.includes('Email not confirmed')) {
+          toast.error("Vaša email adresa nije potvrđena. Molimo proverite svoju email adresu i potvrdite registraciju.");
+        } else {
+          toast.error("Login failed: " + error.message);
+        }
         throw error;
       }
       
@@ -252,7 +257,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         options: {
           data: {
             name: name
-          }
+          },
+          emailRedirectTo: window.location.origin + '/login'
         }
       });
       
@@ -260,6 +266,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         console.error("Registration error:", error.message);
         toast.error("Registration failed: " + error.message);
         throw error;
+      }
+      
+      // Check if email confirmation is required
+      if (data.user && !data.session) {
+        console.log("Registration successful, email confirmation required");
+        toast.success("Registracija uspešna! Proverite svoj email za verifikacioni link.");
+        return data;
       }
       
       if (data.user) {
@@ -281,6 +294,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           window.location.href = '/dashboard';
         }, 100);
       }
+      
+      return data;
     } catch (error) {
       console.error("Registration error:", error);
       throw error;
