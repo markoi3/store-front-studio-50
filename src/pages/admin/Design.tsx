@@ -1,4 +1,3 @@
-
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { StoreBuilder } from "@/components/design/StoreBuilder";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -446,11 +445,14 @@ const CustomPagesEditor = () => {
   const handleUpdatePageField = (field: string, value: string) => {
     if (!currentPage) return;
     
-    setCurrentPage({
+    const updatedPage = {
       ...currentPage,
       [field]: value
-    });
+    };
     
+    // If title is updated, preview the slug but don't update it yet
+    // It will be updated on save
+    setCurrentPage(updatedPage);
     setFormChanged(true);
   };
   
@@ -546,12 +548,7 @@ const CustomPagesEditor = () => {
                     <Input
                       id="page-title"
                       value={currentPage.title}
-                      onChange={(e) => {
-                        const newTitle = e.target.value;
-                        handleUpdatePageField('title', newTitle);
-                        // Display how the slug will look but don't update it yet
-                        // Will be set on save
-                      }}
+                      onChange={(e) => handleUpdatePageField('title', e.target.value)}
                       className="mb-1"
                     />
                     <p className="text-xs text-muted-foreground">

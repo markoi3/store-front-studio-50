@@ -57,7 +57,7 @@ const CustomPage = () => {
             setPageData({
               title: customPage.title,
               content: customPage.content,
-              elements: customPage.elements
+              elements: customPage.elements || []
             });
           } else {
             console.log(`No custom page found with slug: ${pageSlug}`);
@@ -124,12 +124,18 @@ const CustomPage = () => {
                     <div 
                       className="absolute inset-0 flex flex-col items-center justify-center text-center p-6"
                       style={{
-                        backgroundColor: `${element.settings.backgroundColor || '#000000'}80`,
+                        backgroundColor: element.settings.backgroundColor ? 
+                          `${element.settings.backgroundColor}${element.settings.backgroundOpacity || '80'}` : 
+                          'rgba(0,0,0,0.5)',
                         color: element.settings.textColor || '#ffffff'
                       }}
                     >
-                      <h2 className="text-2xl md:text-3xl font-bold mb-2">{element.settings.title}</h2>
-                      <p className="mb-4">{element.settings.subtitle}</p>
+                      <h2 className="text-2xl md:text-3xl font-bold mb-2" style={{color: element.settings.titleColor || element.settings.textColor || '#ffffff'}}>
+                        {element.settings.title}
+                      </h2>
+                      <p className="mb-4" style={{color: element.settings.subtitleColor || element.settings.textColor || '#ffffff'}}>
+                        {element.settings.subtitle}
+                      </p>
                       {element.settings.buttonText && (
                         <Button
                           style={{
@@ -146,7 +152,7 @@ const CustomPage = () => {
                 
                 {element.type === 'text' && (
                   <div 
-                    className={`text-${element.settings.alignment || 'left'}`}
+                    className={`text-${element.settings.alignment || 'left'} p-4 rounded-md`}
                     style={{
                       color: element.settings.textColor || 'inherit',
                       backgroundColor: element.settings.backgroundColor || 'transparent'
@@ -161,16 +167,23 @@ const CustomPage = () => {
                 )}
                 
                 {element.type === 'image' && (
-                  <img 
-                    src={element.settings.src} 
-                    alt={element.settings.alt || ''} 
-                    className="mx-auto"
-                    style={{
-                      maxWidth: '100%',
-                      borderRadius: element.settings.borderRadius || '4px',
-                      width: element.settings.width || '100%'
-                    }}
-                  />
+                  <div className="text-center">
+                    <img 
+                      src={element.settings.src} 
+                      alt={element.settings.alt || ''} 
+                      className="mx-auto"
+                      style={{
+                        maxWidth: '100%',
+                        borderRadius: element.settings.borderRadius || '4px',
+                        width: element.settings.width || '100%'
+                      }}
+                    />
+                    {element.settings.caption && (
+                      <p className="text-sm text-muted-foreground mt-2">
+                        {element.settings.caption}
+                      </p>
+                    )}
+                  </div>
                 )}
                 
                 {element.type === 'cta' && (
@@ -181,7 +194,12 @@ const CustomPage = () => {
                       color: element.settings.textColor || '#000000'
                     }}
                   >
-                    <h3 className="text-xl md:text-2xl font-semibold mb-4">{element.settings.title}</h3>
+                    <h3 
+                      className="text-xl md:text-2xl font-semibold mb-4"
+                      style={{color: element.settings.titleColor || element.settings.textColor || '#000000'}}
+                    >
+                      {element.settings.title}
+                    </h3>
                     <Button
                       style={{
                         backgroundColor: element.settings.buttonColor || '#3b82f6',

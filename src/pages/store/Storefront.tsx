@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ShopLayout } from "@/components/layout/ShopLayout";
+import { StoreLayout } from "@/components/layout/StoreLayout";
 import { Button } from "@/components/ui/button";
 import { Product } from "@/components/shop/ProductCard";
 import { Link } from "react-router-dom";
@@ -158,6 +158,7 @@ const Storefront = () => {
           ]
         };
         
+        console.log("Page elements:", formattedStore.elements);
         setStore(formattedStore);
       } catch (error) {
         console.error("Error loading store data:", error);
@@ -171,7 +172,7 @@ const Storefront = () => {
   
   if (loading) {
     return (
-      <ShopLayout>
+      <StoreLayout>
         <div className="container mx-auto px-4 py-12">
           <div className="flex justify-center items-center min-h-[60vh]">
             <div className="animate-pulse flex flex-col items-center">
@@ -180,13 +181,13 @@ const Storefront = () => {
             </div>
           </div>
         </div>
-      </ShopLayout>
+      </StoreLayout>
     );
   }
   
   if (!store) {
     return (
-      <ShopLayout>
+      <StoreLayout>
         <div className="container mx-auto px-4 py-12">
           <div className="flex justify-center items-center min-h-[60vh]">
             <div className="text-center">
@@ -198,7 +199,7 @@ const Storefront = () => {
             </div>
           </div>
         </div>
-      </ShopLayout>
+      </StoreLayout>
     );
   }
   
@@ -256,104 +257,146 @@ const Storefront = () => {
     }
   };
 
-  // Custom navigation for this store
-  const renderCustomNavigation = () => {
+  // Render page elements
+  const renderPageElements = () => {
+    if (!store.elements || !Array.isArray(store.elements) || store.elements.length === 0) {
+      console.log("No page elements to render");
+      return null;
+    }
+
+    console.log("Rendering page elements:", store.elements);
+    
     return (
-      <div className="flex justify-center space-x-6 mb-8">
-        {menuItems.map((item) => (
-          <Button
-            key={item.id}
-            variant="ghost"
-            className="text-foreground hover:text-primary font-medium"
-            onClick={() => handleNavigate(item.url)}
-          >
-            {item.label}
-          </Button>
+      <div className="space-y-12">
+        {store.elements.map((element) => (
+          <div key={element.id}>
+            {/* Hero Element */}
+            {element.type === 'hero' && (
+              <div className="relative h-[70vh] bg-accent">
+                <img 
+                  src={element.settings?.backgroundImage || ''} 
+                  alt="Hero" 
+                  className="absolute inset-0 w-full h-full object-cover" 
+                />
+                <div 
+                  className="absolute inset-0 flex flex-col items-center justify-center text-white px-4"
+                  style={{
+                    backgroundColor: element.settings?.backgroundColor ? `${element.settings.backgroundColor}40` : "rgba(0,0,0,0.4)"
+                  }}
+                >
+                  <h1 
+                    className="text-4xl md:text-5xl font-bold mb-4 text-center"
+                    style={{color: element.settings?.textColor || "white"}}
+                  >
+                    {element.settings?.title || "Welcome"}
+                  </h1>
+                  <p 
+                    className="text-xl md:text-2xl mb-6 max-w-2xl text-center"
+                    style={{color: element.settings?.subtitleColor || element.settings?.textColor || "white"}}
+                  >
+                    {element.settings?.subtitle || "Discover our amazing products"}
+                  </p>
+                  {element.settings?.buttonText && (
+                    <Button 
+                      size="lg" 
+                      className="text-lg px-6"
+                      onClick={() => handleNavigate(element.settings?.buttonLink || '/shop')}
+                      style={{
+                        backgroundColor: element.settings?.buttonColor || "",
+                        color: element.settings?.buttonTextColor || ""
+                      }}
+                    >
+                      {element.settings.buttonText}
+                    </Button>
+                  )}
+                </div>
+              </div>
+            )}
+            
+            {/* Products Element */}
+            {element.type === 'products' && (
+              <div className="container mx-auto px-4 py-12">
+                <h2 
+                  className="text-3xl font-bold mb-6 text-center"
+                  style={{color: element.settings?.titleColor || ""}}
+                >
+                  {element.settings?.title || "Featured Products"}
+                </h2>
+                <div 
+                  className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+                  style={{
+                    backgroundColor: element.settings?.backgroundColor || ""
+                  }}
+                >
+                  {displayProducts.slice(0, element.settings?.count || 4).map((product: Product) => (
+                    <div key={product.id} className="product-card">
+                      <div className="aspect-square bg-accent mb-3 rounded-md overflow-hidden">
+                        {product.image ? (
+                          <img 
+                            src={product.image} 
+                            alt={product.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-muted"></div>
+                        )}
+                      </div>
+                      <h3 className="font-medium">{product.name}</h3>
+                      <p className="text-muted-foreground mb-3 font-numeric">
+                        {typeof product.price === 'number' 
+                          ? product.price.toLocaleString("sr-RS") 
+                          : parseFloat(String(product.price || 0)).toLocaleString("sr-RS")} RSD
+                      </p>
+                      <Button 
+                        className="w-full"
+                        onClick={() => navigate(`/store/${storeId}/product/${product.slug || product.id}`)}
+                        style={{
+                          backgroundColor: element.settings?.buttonColor || "",
+                          color: element.settings?.buttonTextColor || ""
+                        }}
+                      >
+                        Detaljnije
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {/* Text Element */}
+            {element.type === 'text' && (
+              <div 
+                className="container mx-auto px-4 py-12"
+                style={{
+                  backgroundColor: element.settings?.backgroundColor || ""
+                }}
+              >
+                <div className="max-w-3xl mx-auto text-center">
+                  <p 
+                    className="text-lg"
+                    style={{
+                      color: element.settings?.textColor || "",
+                      textAlign: element.settings?.alignment || "center"
+                    }}
+                  >
+                    {element.settings?.content || ""}
+                  </p>
+                </div>
+              </div>
+            )}
+            
+            {/* Add more element types as needed */}
+          </div>
         ))}
       </div>
     );
   };
   
   return (
-    <ShopLayout>
+    <StoreLayout>
       <div className="space-y-12">
-        {/* Navigation */}
-        {renderCustomNavigation()}
-        
-        {/* Hero Section */}
-        {store?.elements.find((el) => el.type === 'hero') && (
-          <div className="relative h-[70vh] bg-accent">
-            <img 
-              src={store.elements.find((el) => el.type === 'hero')?.settings.backgroundImage} 
-              alt="Hero" 
-              className="absolute inset-0 w-full h-full object-cover" 
-            />
-            <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center text-white px-4">
-              <h1 className="text-4xl md:text-5xl font-bold mb-4 text-center">
-                {store.elements.find((el) => el.type === 'hero')?.settings.title}
-              </h1>
-              <p className="text-xl md:text-2xl mb-6 max-w-2xl text-center">
-                {store.elements.find((el) => el.type === 'hero')?.settings.subtitle}
-              </p>
-              <Button 
-                size="lg" 
-                className="text-lg px-6"
-                onClick={() => handleNavigate('/shop')}
-              >
-                {store.elements.find((el) => el.type === 'hero')?.settings.buttonText}
-              </Button>
-            </div>
-          </div>
-        )}
-        
-        {/* Featured Products */}
-        {store?.elements.find((el) => el.type === 'products') && (
-          <div className="container mx-auto px-4 py-12">
-            <h2 className="text-3xl font-bold mb-6 text-center">
-              {store.elements.find((el) => el.type === 'products')?.settings.title}
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {displayProducts.slice(0, 4).map((product: Product) => (
-                <div key={product.id} className="product-card">
-                  <div className="aspect-square bg-accent mb-3 rounded-md overflow-hidden">
-                    {product.image ? (
-                      <img 
-                        src={product.image} 
-                        alt={product.name}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-muted"></div>
-                    )}
-                  </div>
-                  <h3 className="font-medium">{product.name}</h3>
-                  <p className="text-muted-foreground mb-3 font-numeric">
-                    {typeof product.price === 'number' 
-                      ? product.price.toLocaleString("sr-RS") 
-                      : parseFloat(String(product.price || 0)).toLocaleString("sr-RS")} RSD
-                  </p>
-                  <Button 
-                    className="w-full"
-                    onClick={() => navigate(`/store/${storeId}/product/${product.slug || product.id}`)}
-                  >
-                    Detaljnije
-                  </Button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-        
-        {/* Text Section */}
-        {store?.elements.find((el) => el.type === 'text') && (
-          <div className="container mx-auto px-4 py-12">
-            <div className="max-w-3xl mx-auto text-center">
-              <p className="text-lg">
-                {store.elements.find((el) => el.type === 'text')?.settings.content}
-              </p>
-            </div>
-          </div>
-        )}
+        {/* Page Content */}
+        {renderPageElements()}
         
         {/* Privacy Policy Section (if exists) */}
         {store?.settings.privacyPolicy && (
@@ -367,7 +410,7 @@ const Storefront = () => {
           </div>
         )}
       </div>
-    </ShopLayout>
+    </StoreLayout>
   );
 };
 
