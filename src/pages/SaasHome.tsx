@@ -43,7 +43,7 @@ const SaasHome = () => {
               <div className="relative">
                 <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-accent rounded-xl blur-lg"></div>
                 <div className="relative bg-white p-4 rounded-xl shadow-lg">
-                  <img alt="E-Shop Builder Dashboard" src="/lovable-uploads/6fef5303-c8e2-46fe-a327-ac622c209816.png" className="rounded-lg shadow-sm object-scale-down" />
+                  <img src="https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=800&auto=format&fit=crop" alt="E-Shop Builder Dashboard" className="rounded-lg shadow-sm" />
                 </div>
               </div>
             </div>
@@ -85,8 +85,10 @@ const SaasHome = () => {
                   <line x1="2" x2="22" y1="10" y2="10" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold mb-2">Sigurna online plaćanja</h3>
-              <p className="text-muted-foreground">Prihvati kartice - bez odlaska u banku</p>
+              <h3 className="text-xl font-bold mb-2">Sigurne online u</h3>
+              <p className="text-muted-foreground">
+                Accept payments from customers around the world with our secure payment gateways.
+              </p>
             </div>
             
             {/* Feature 3 */}
