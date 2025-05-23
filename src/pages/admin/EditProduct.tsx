@@ -16,37 +16,16 @@ import { Switch } from "@/components/ui/switch";
 import { useNavigate, useParams } from "react-router-dom";
 import { Plus, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-
-// Sample products data to simulate API
-const allProducts = [
-  {
-    id: "1",
-    name: "Minimalist Coffee Table",
-    description: "Elegantan minimalistički sto za kafu sa drvenim nogama i staklenom pločom.",
-    price: "199.99",
-    image: "https://images.unsplash.com/photo-1595428774223-ef52624120d2?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1974&q=80",
-    slug: "minimalist-coffee-table",
-    stock: "15",
-    category: "furniture",
-    published: true,
-    seoTitle: "Minimalistički sto za kafu | Axia nameštaj",
-    seoDescription: "Kupite elegantan minimalistički sto za kafu sa drvenim nogama i staklenom pločom.",
-    variants: [
-      { id: 1, name: "Boja", price: "199.99" }
-    ],
-    images: [
-      "https://images.unsplash.com/photo-1595428774223-ef52624120d2?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1974&q=80",
-      "https://images.unsplash.com/photo-1596079890744-c1a0462d0975?ixlib=rb-4.0.3&auto=format&fit=crop&w=1886&q=80"
-    ]
-  },
-  // Add other products as needed
-];
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 const EditProduct = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const { toast } = useToast();
+  const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [productData, setProductData] = useState({
     name: "",
     price: "",
@@ -67,31 +46,80 @@ const EditProduct = () => {
   const [newImage, setNewImage] = useState("");
   
   useEffect(() => {
-    // Simulacija učitavanja proizvoda
-    const product = allProducts.find(p => p.id === id);
-    if (product) {
-      setProductData({
-        name: product.name,
-        price: product.price,
-        description: product.description,
-        category: product.category,
-        stock: product.stock,
-        seoTitle: product.seoTitle || "",
-        seoDescription: product.seoDescription || "",
-        slug: product.slug,
-        published: product.published,
-      });
-      setVariants(product.variants || []);
-      setImages(product.images || []);
-    } else {
-      toast({
-        title: "Greška",
-        description: "Proizvod nije pronađen",
-        variant: "destructive",
-      });
-      navigate("/products");
-    }
-  }, [id, navigate, toast]);
+    const loadProduct = async () => {
+      if (!id || !user?.store?.id) {
+        toast({
+          title: "Greška",
+          description: "Nedostaju podaci za učitavanje proizvoda",
+          variant: "destructive",
+        });
+        navigate("/products");
+        return;
+      }
+
+      try {
+        setLoading(true);
+        
+        // Fetch product from Supabase
+        const { data: product, error } = await supabase
+          .from("products")
+          .select("*")
+          .eq("id", id)
+          .eq("store_id", user.store.id)
+          .single();
+          
+        if (error) {
+          console.error("Error loading product from Supabase:", error);
+          throw error;
+        }
+        
+        if (!product) {
+          throw new Error("Proizvod nije pronađen");
+        }
+        
+        setProductData({
+          name: product.name || "",
+          price: product.price ? String(product.price) : "",
+          description: product.description || "",
+          category: product.category || "",
+          stock: product.stock ? String(product.stock) : "",
+          seoTitle: product.seo_title || "",
+          seoDescription: product.seo_description || "",
+          slug: product.slug || "",
+          published: product.published || false,
+        });
+        
+        // Set variants if they exist
+        if (product.variants && Array.isArray(product.variants)) {
+          setVariants(product.variants.map((variant: any, index: number) => ({
+            id: index + 1,
+            name: variant.name || "",
+            price: variant.price ? String(variant.price) : ""
+          })));
+        }
+        
+        // Set images if they exist
+        if (product.images && Array.isArray(product.images)) {
+          setImages(product.images);
+        } else if (product.image) {
+          setImages([product.image]);
+        }
+        
+      } catch (error) {
+        console.error("Error loading product:", error);
+        toast({
+          title: "Greška",
+          description: "Proizvod nije pronađen",
+          variant: "destructive",
+        });
+        navigate("/products");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadProduct();
+  }, [id, navigate, toast, user?.store?.id]);
   
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -143,32 +171,84 @@ const EditProduct = () => {
     setImages(images.filter((img) => img !== image));
   };
   
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!id || !user?.store?.id) {
+      toast({
+        title: "Greška",
+        description: "Nedostaju podaci za ažuriranje proizvoda",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setIsSubmitting(true);
     
-    // Simulacija slanja podataka na server
-    setTimeout(() => {
-      console.log("Ažuriran proizvod:", {
-        ...productData,
-        id,
-        variants,
-        images,
-      });
-      setIsSubmitting(false);
+    try {
+      // Prepare the data for update
+      const productUpdateData = {
+        name: productData.name,
+        description: productData.description,
+        price: parseFloat(productData.price),
+        category: productData.category,
+        stock: parseInt(productData.stock || "0"),
+        seo_title: productData.seoTitle,
+        seo_description: productData.seoDescription,
+        slug: productData.slug,
+        published: productData.published,
+        images: images,
+        image: images.length > 0 ? images[0] : null,
+        variants: variants,
+        store_id: user.store.id,
+      };
+      
+      // Update product in Supabase
+      const { error } = await supabase
+        .from("products")
+        .update(productUpdateData)
+        .eq("id", id)
+        .eq("store_id", user.store.id);
+        
+      if (error) {
+        throw error;
+      }
+      
       toast({
         title: "Uspešno",
         description: "Proizvod je ažuriran",
       });
+      
       navigate("/products");
-    }, 1000);
+    } catch (error) {
+      console.error("Error updating product:", error);
+      toast({
+        title: "Greška",
+        description: "Došlo je do greške prilikom ažuriranja proizvoda",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
   
   const categories = [
     { id: "furniture", name: "Nameštaj" },
     { id: "kitchen", name: "Kuhinja" },
     { id: "lighting", name: "Osvetljenje" },
+    { id: "web-design", name: "Web Dizajn" },
+    { id: "e-commerce", name: "E-Commerce" },
   ];
+  
+  if (loading) {
+    return (
+      <AdminLayout>
+        <div className="flex items-center justify-center h-full">
+          <p>Učitavanje proizvoda...</p>
+        </div>
+      </AdminLayout>
+    );
+  }
   
   return (
     <AdminLayout>
