@@ -39,7 +39,7 @@ export const useStoreData = (storeId: string | undefined) => {
         
         if (!storeData) {
           console.error("No store found with slug:", storeId);
-          setError(`Prodavnica nije pronađena: ${storeId}`);
+          setError(`Prodavnica nije pronađena ili nije javno dostupna: ${storeId}`);
           setLoading(false);
           return;
         }
