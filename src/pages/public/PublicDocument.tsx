@@ -1,78 +1,105 @@
 
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Download, CreditCard } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
-
-// Function to load documents from localStorage
-const loadDocuments = (docType: string) => {
-  try {
-    let data: any[] = [];
-    
-    if (docType === "faktura") {
-      data = JSON.parse(localStorage.getItem("fakture") || "[]");
-    } else if (docType === "predracun") {
-      data = JSON.parse(localStorage.getItem("predracuni") || "[]");
-    } else if (docType === "obracun") {
-      data = JSON.parse(localStorage.getItem("obracuni") || "[]");
-    }
-    
-    console.log(`Loaded ${docType} documents:`, data);
-    return data;
-  } catch (error) {
-    console.error(`Error loading ${docType} documents:`, error);
-    return [];
-  }
-};
+import { supabase } from "@/integrations/supabase/client";
 
 const PublicDocument = () => {
   const { docType, docId } = useParams();
+  const [searchParams] = useSearchParams();
+  const token = searchParams.get('token');
   const [document, setDocument] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   
   useEffect(() => {
-    // Function to load document data
-    const fetchDocument = () => {
-      console.log(`Loading ${docType} with ID: ${docId}`);
+    // Function to load document data from Supabase
+    const fetchDocument = async () => {
+      console.log(`Loading ${docType} with ID: ${docId}, Token: ${token ? 'provided' : 'not provided'}`);
       
       if (!docType || !docId) {
         setLoading(false);
         setError("Missing document type or ID");
         return;
       }
-      
-      // Load documents of the specified type
-      const documents = loadDocuments(docType);
-      console.log("Found documents:", documents);
-      
-      // Find the specific document by ID
-      const foundDocument = documents.find((doc) => doc.id === docId);
-      
-      if (foundDocument) {
-        console.log("Document found:", foundDocument);
-        setDocument(foundDocument);
-      } else {
-        console.log("Document not found");
-        setError(`Requested ${docType} with ID ${docId} could not be found.`);
+
+      try {
+        // Set the access token in the header if available
+        if (token) {
+          // Set the access token in the header for anonymous access
+          supabase.headers['x-access-token'] = token;
+        }
+        
+        // Query the documents table
+        const { data: documents, error: queryError } = await supabase
+          .from('documents')
+          .select('*')
+          .eq('type', docType)
+          .eq(token ? 'public_access_token' : 'id', token ? token : docId)
+          .limit(1);
+        
+        // Reset the header after use
+        if (token) {
+          delete supabase.headers['x-access-token'];
+        }
+        
+        if (queryError) {
+          console.error("Error fetching document:", queryError);
+          setError(`Error fetching document: ${queryError.message}`);
+          
+          toast({
+            title: "Greška pri učitavanju",
+            description: "Nije moguće učitati traženi dokument.",
+            variant: "destructive",
+          });
+          
+          setLoading(false);
+          return;
+        }
+        
+        console.log("Query results:", documents);
+        
+        if (documents && documents.length > 0) {
+          console.log("Document found:", documents[0]);
+          // Combine the document metadata with its data
+          setDocument({
+            ...documents[0],
+            ...documents[0].data
+          });
+        } else {
+          console.log("Document not found");
+          setError(`Requested ${docType} with ID ${docId} could not be found.`);
+          
+          toast({
+            title: "Dokument nije pronađen",
+            description: "Traženi dokument ne postoji ili je obrisan.",
+            variant: "destructive",
+          });
+        }
+        
+        setLoading(false);
+      } catch (err) {
+        console.error("Error in fetchDocument:", err);
+        setError("An unexpected error occurred while fetching the document.");
         
         toast({
-          title: "Dokument nije pronađen",
-          description: "Traženi dokument ne postoji ili je obrisan.",
+          title: "Greška",
+          description: "Došlo je do neočekivane greške prilikom učitavanja dokumenta.",
           variant: "destructive",
         });
+        
+        setLoading(false);
       }
-      
-      setLoading(false);
     };
     
     fetchDocument();
-  }, [docType, docId, toast]);
+  }, [docType, docId, token, toast]);
   
   // Function to convert docType to Serbian
   const getDocTypeText = () => {
@@ -128,10 +155,6 @@ const PublicDocument = () => {
             {error || "Dokument koji pokušavate da otvorite nije pronađen ili je obrisan."}
           </p>
           <div className="space-y-4">
-            <p className="text-sm text-muted-foreground mb-4">
-              Ovaj dokument je trenutno sačuvan samo lokalno u pregledaču.<br />
-              Za trajno čuvanje dokumenata, preporučujemo migraciju na bazu podataka.
-            </p>
             <Button asChild>
               <a href="/">Nazad na početnu</a>
             </Button>
@@ -142,7 +165,7 @@ const PublicDocument = () => {
   }
   
   // Generate payment link if it's a predracun
-  const paymentLink = docType === "predracun" ? `/pay/${document.paymentLinkId || document.id}` : null;
+  const paymentLink = docType === "predracun" ? `/pay/${document.id}` : null;
 
   return (
     <div className="min-h-screen bg-slate-50 py-12 px-4">
@@ -152,11 +175,11 @@ const PublicDocument = () => {
             <div className="flex justify-between items-center">
               <div>
                 <p className="text-sm text-muted-foreground">{getDocTypeText()}</p>
-                <CardTitle className="text-2xl">{document.broj || document.id}</CardTitle>
+                <CardTitle className="text-2xl">{document.number || document.broj || document.id}</CardTitle>
               </div>
               <div className="text-right">
                 <p className="text-sm text-muted-foreground">Datum izdavanja</p>
-                <p className="font-medium">{formatDate(document.datum || document.date)}</p>
+                <p className="font-medium">{formatDate(document.datum || document.date || document.created_at)}</p>
               </div>
             </div>
           </CardHeader>
@@ -166,23 +189,23 @@ const PublicDocument = () => {
               <div>
                 <h3 className="font-semibold mb-2">Izdavalac</h3>
                 <div className="space-y-1">
-                  <p>{document.izdavalac?.naziv || document.izdavalacNaziv || "Vaša Firma d.o.o."}</p>
-                  <p>{document.izdavalac?.adresa || document.izdavalacAdresa || "Glavna ulica 123, Beograd"}</p>
-                  <p>PIB: {document.izdavalac?.pib || document.izdavalacPib || "123456789"}</p>
-                  <p>MB: {document.izdavalac?.mb || document.izdavalacMb || "12345678"}</p>
+                  <p>{document.izdavalac?.naziv || "Vaša Firma d.o.o."}</p>
+                  <p>{document.izdavalac?.adresa || "Glavna ulica 123, Beograd"}</p>
+                  <p>PIB: {document.izdavalac?.pib || "123456789"}</p>
+                  <p>MB: {document.izdavalac?.mb || "12345678"}</p>
                 </div>
               </div>
               
               <div>
                 <h3 className="font-semibold mb-2">Primalac</h3>
                 <div className="space-y-1">
-                  <p>{document.primalac?.naziv || document.primalacNaziv || document.klijent}</p>
-                  <p>{document.primalac?.adresa || document.primalacAdresa || ""}</p>
-                  {(document.primalac?.pib || document.primalacPib) && 
-                    <p>PIB: {document.primalac?.pib || document.primalacPib}</p>
+                  <p>{document.primalac?.naziv || document.klijent || ""}</p>
+                  <p>{document.primalac?.adresa || document.adresa || ""}</p>
+                  {(document.primalac?.pib || document.pib) && 
+                    <p>PIB: {document.primalac?.pib || document.pib}</p>
                   }
-                  {(document.primalac?.mb || document.primalacMb) && 
-                    <p>MB: {document.primalac?.mb || document.primalacMb}</p>
+                  {(document.primalac?.mb || document.maticniBroj) && 
+                    <p>MB: {document.primalac?.mb || document.maticniBroj}</p>
                   }
                 </div>
               </div>
@@ -211,8 +234,8 @@ const PublicDocument = () => {
                             : Number(stavka.cena || stavka.price || 0).toLocaleString("sr-RS")} RSD
                         </TableCell>
                         <TableCell className="text-right font-numeric">
-                          {typeof stavka.iznos === "number" 
-                            ? stavka.iznos.toLocaleString("sr-RS") 
+                          {typeof stavka.ukupno === "number" 
+                            ? stavka.ukupno.toLocaleString("sr-RS") 
                             : (Number(stavka.cena || stavka.price || 0) * Number(stavka.kolicina || stavka.quantity || 1)).toLocaleString("sr-RS")} RSD
                         </TableCell>
                       </TableRow>
@@ -283,7 +306,6 @@ const PublicDocument = () => {
         
         <div className="text-center text-sm text-muted-foreground">
           <p>Ovaj dokument je automatski generisan i važeći je bez pečata i potpisa.</p>
-          <p className="mt-2">Napomena: Trenutno se dokumenti čuvaju samo lokalno u pregledaču.</p>
         </div>
       </div>
     </div>

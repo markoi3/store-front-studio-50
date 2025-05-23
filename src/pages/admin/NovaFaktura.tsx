@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -20,10 +21,13 @@ import {
 import { useNavigate } from "react-router-dom";
 import { Plus, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 const NovaFaktura = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [fakturaData, setFakturaData] = useState({
@@ -95,46 +99,69 @@ const NovaFaktura = () => {
   );
   const ukupnoSaPDV = ukupnoBezPDV + ukupanPDV;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!user?.store?.id) {
+      toast({
+        title: "Greška",
+        description: "Nije pronađen ID prodavnice. Molimo vas da pokušate ponovo kasnije.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setIsSubmitting(true);
 
-    // Generate a unique ID for the new invoice
-    const newId = `FAK-${new Date().getFullYear()}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
-    
-    // Create the complete faktura object
-    const newFaktura = {
-      id: fakturaData.broj || newId,
-      tip: "faktura",
-      datum: fakturaData.datum,
-      rokPlacanja: fakturaData.rokPlacanja,
-      klijent: fakturaData.klijent,
-      iznos: ukupnoSaPDV,
-      pdv: ukupanPDV,
-      status: "čeka uplatu",
-      // Add other fields needed
-      adresa: fakturaData.adresa,
-      pib: fakturaData.pib,
-      maticniBroj: fakturaData.maticniBroj,
-      napomena: fakturaData.napomena,
-      nacinPlacanja: fakturaData.nacinPlacanja,
-      stavke: [...stavke],
-    };
+    try {
+      // Generate a unique ID for the new invoice if not provided
+      const fakturaId = fakturaData.broj || `FAK-${new Date().getFullYear()}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
+      
+      // Create the complete faktura object to store in Supabase
+      const newFaktura = {
+        number: fakturaId,
+        type: "faktura",
+        store_id: user.store.id,
+        due_date: new Date(fakturaData.rokPlacanja).toISOString(),
+        status: "čeka uplatu",
+        data: {
+          datum: fakturaData.datum,
+          datumPrometa: fakturaData.datumPrometa,
+          klijent: fakturaData.klijent,
+          iznos: ukupnoSaPDV,
+          pdv: ukupanPDV,
+          osnovica: ukupnoBezPDV,
+          adresa: fakturaData.adresa,
+          pib: fakturaData.pib,
+          maticniBroj: fakturaData.maticniBroj,
+          napomena: fakturaData.napomena,
+          nacinPlacanja: fakturaData.nacinPlacanja,
+          izdavalac: {
+            naziv: user.store?.name || "Vaša Firma",
+            // Additional issuer info could be added from user profile/settings
+          },
+          primalac: {
+            naziv: fakturaData.klijent,
+            adresa: fakturaData.adresa,
+            pib: fakturaData.pib,
+            maticniBroj: fakturaData.maticniBroj,
+          },
+          stavke: [...stavke],
+        }
+      };
 
-    // Get existing fakture from localStorage or initialize empty array
-    const existingFakture = JSON.parse(localStorage.getItem('fakture') || '[]');
-    
-    // Add the new faktura
-    const updatedFakture = [...existingFakture, newFaktura];
-    
-    // Save back to localStorage
-    localStorage.setItem('fakture', JSON.stringify(updatedFakture));
-
-    // Log for debugging
-    console.info("Kreirana faktura:", newFaktura);
-    
-    setTimeout(() => {
-      setIsSubmitting(false);
+      // Save to Supabase documents table
+      const { data, error } = await supabase
+        .from('documents')
+        .insert(newFaktura)
+        .select();
+        
+      if (error) {
+        console.error("Error saving invoice:", error);
+        throw new Error(error.message);
+      }
+      
+      console.log("Invoice saved to Supabase:", data);
       
       // Navigate to fakture page with success state
       navigate("/fakture", { 
@@ -143,7 +170,16 @@ const NovaFaktura = () => {
           message: "Faktura je uspešno kreirana" 
         } 
       });
-    }, 500);
+    } catch (error) {
+      console.error("Error in handleSubmit:", error);
+      toast({
+        title: "Greška",
+        description: error instanceof Error ? error.message : "Došlo je do greške prilikom čuvanja fakture",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (

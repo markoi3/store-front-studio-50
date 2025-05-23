@@ -57,10 +57,13 @@ export type Database = {
         Row: {
           created_at: string | null
           data: Json
+          due_date: string | null
           id: string
           number: string | null
           order_id: string | null
           public_access_token: string | null
+          public_url: string | null
+          status: string | null
           store_id: string
           type: string
           updated_at: string | null
@@ -68,10 +71,13 @@ export type Database = {
         Insert: {
           created_at?: string | null
           data?: Json
+          due_date?: string | null
           id?: string
           number?: string | null
           order_id?: string | null
           public_access_token?: string | null
+          public_url?: string | null
+          status?: string | null
           store_id: string
           type: string
           updated_at?: string | null
@@ -79,10 +85,13 @@ export type Database = {
         Update: {
           created_at?: string | null
           data?: Json
+          due_date?: string | null
           id?: string
           number?: string | null
           order_id?: string | null
           public_access_token?: string | null
+          public_url?: string | null
+          status?: string | null
           store_id?: string
           type?: string
           updated_at?: string | null

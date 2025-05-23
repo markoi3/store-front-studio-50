@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -20,10 +21,13 @@ import {
 import { useNavigate } from "react-router-dom";
 import { Plus, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 
 const NoviPredracun = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [predracunData, setPredracunData] = useState({
@@ -89,45 +93,68 @@ const NoviPredracun = () => {
   );
   const ukupnoSaPDV = ukupnoBezPDV + ukupanPDV;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!user?.store?.id) {
+      toast({
+        title: "Greška",
+        description: "Nije pronađen ID prodavnice. Molimo vas da pokušate ponovo kasnije.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setIsSubmitting(true);
 
-    // Generate a unique ID for the new predračun
-    const newId = `PR-${new Date().getFullYear()}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
-    
-    // Create the complete predračun object
-    const newPredracun = {
-      id: predracunData.broj || newId,
-      tip: "predračun",
-      datum: predracunData.datum,
-      rokPlacanja: predracunData.vaziDo,
-      klijent: predracunData.klijent,
-      iznos: ukupnoSaPDV,
-      pdv: ukupanPDV,
-      status: "poslato",
-      // Add other fields needed
-      adresa: predracunData.adresa,
-      pib: predracunData.pib,
-      maticniBroj: predracunData.maticniBroj,
-      napomena: predracunData.napomena,
-      stavke: [...stavke],
-    };
+    try {
+      // Generate a unique ID for the new predračun if not provided
+      const predracunId = predracunData.broj || `PR-${new Date().getFullYear()}-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
+      
+      // Create the complete predračun object to store in Supabase
+      const newPredracun = {
+        number: predracunId,
+        type: "predracun",
+        store_id: user.store.id,
+        due_date: new Date(predracunData.vaziDo).toISOString(),
+        status: "poslato",
+        data: {
+          datum: predracunData.datum,
+          rokPlacanja: predracunData.vaziDo,
+          klijent: predracunData.klijent,
+          iznos: ukupnoSaPDV,
+          pdv: ukupanPDV,
+          osnovica: ukupnoBezPDV,
+          adresa: predracunData.adresa,
+          pib: predracunData.pib,
+          maticniBroj: predracunData.maticniBroj,
+          napomena: predracunData.napomena,
+          izdavalac: {
+            naziv: user.store?.name || "Vaša Firma",
+            // Additional issuer info could be added from user profile/settings
+          },
+          primalac: {
+            naziv: predracunData.klijent,
+            adresa: predracunData.adresa,
+            pib: predracunData.pib,
+            maticniBroj: predracunData.maticniBroj,
+          },
+          stavke: [...stavke],
+        }
+      };
 
-    // Get existing predračuni from localStorage or initialize empty array
-    const existingPredracuni = JSON.parse(localStorage.getItem('predracuni') || '[]');
-    
-    // Add the new predračun
-    const updatedPredracuni = [...existingPredracuni, newPredracun];
-    
-    // Save back to localStorage
-    localStorage.setItem('predracuni', JSON.stringify(updatedPredracuni));
-
-    // Log for debugging
-    console.info("Kreiran predračun:", newPredracun);
-    
-    setTimeout(() => {
-      setIsSubmitting(false);
+      // Save to Supabase documents table
+      const { data, error } = await supabase
+        .from('documents')
+        .insert(newPredracun)
+        .select();
+        
+      if (error) {
+        console.error("Error saving predračun:", error);
+        throw new Error(error.message);
+      }
+      
+      console.log("Predračun saved to Supabase:", data);
       
       // Navigate to fakture page with success state
       navigate("/fakture", { 
@@ -136,7 +163,16 @@ const NoviPredracun = () => {
           message: "Predračun je uspešno kreiran" 
         } 
       });
-    }, 500);
+    } catch (error) {
+      console.error("Error in handleSubmit:", error);
+      toast({
+        title: "Greška",
+        description: error instanceof Error ? error.message : "Došlo je do greške prilikom čuvanja predračuna",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
