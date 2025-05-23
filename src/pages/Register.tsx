@@ -41,6 +41,13 @@ const Register = () => {
     
     try {
       await register(formData.email, formData.password, formData.name);
+      
+      // Show email verification popup
+      toast.info("📧 Verifikujte vaš email", {
+        description: "Proverite vaš email i kliknite na link za verifikaciju naloga.",
+        duration: 8000,
+      });
+      
       navigate("/dashboard");
     } catch (err) {
       const error = err as Error;
