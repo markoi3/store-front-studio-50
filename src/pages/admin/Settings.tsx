@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -34,6 +35,8 @@ const Settings = () => {
     weightUnit: "kg",
     timezone: "America/New_York",
   });
+  
+  const [storeVisibility, setStoreVisibility] = useState(false);
   
   const [paymentSettings, setPaymentSettings] = useState({
     stripeEnabled: false,
@@ -88,8 +91,11 @@ const Settings = () => {
         slug: user.store.slug || ""
       });
 
-      // Load content settings from store
+      // Load store visibility status
       if (user.store.settings) {
+        setStoreVisibility(user.store.settings.is_public === true);
+        
+        // Load content settings from store
         setContentSettings({
           aboutUs: user.store.settings.aboutUs || "",
           privacyPolicy: user.store.settings.privacyPolicy || "",
@@ -243,6 +249,7 @@ const Settings = () => {
         aboutUs: contentSettings.aboutUs,
         privacyPolicy: contentSettings.privacyPolicy,
         contactInfo: contentSettings.contactInfo,
+        is_public: storeVisibility, // Add store visibility setting
         storeSettings,
         paymentSettings,
         shippingSettings,
@@ -288,7 +295,7 @@ const Settings = () => {
     } finally {
       setIsSavingSettings(false);
     }
-  }, [user, contentSettings, storeSettings, paymentSettings, shippingSettings, taxSettings, updateStoreSettings]);
+  }, [user, contentSettings, storeSettings, paymentSettings, shippingSettings, taxSettings, updateStoreSettings, storeVisibility]);
   
   return (
     <AdminLayout>
@@ -336,6 +343,21 @@ const Settings = () => {
               </p>
             </div>
           </div>
+          
+          {/* Store Visibility */}
+          <div className="flex items-center space-x-2 pt-2">
+            <Switch
+              id="storeVisibility"
+              checked={storeVisibility}
+              onCheckedChange={setStoreVisibility}
+            />
+            <Label htmlFor="storeVisibility">
+              Public store (visible to anyone)
+            </Label>
+          </div>
+          <p className="text-xs text-muted-foreground pl-7">
+            When enabled, anyone can view your store without logging in. When disabled, only you can view it.
+          </p>
           
           <Button 
             onClick={handleUpdateStoreInfo}

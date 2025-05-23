@@ -16,6 +16,7 @@ interface StoreSettings {
   privacyPolicy?: string;
   contactInfo?: string;
   pageElements?: any[];
+  is_public?: boolean;
   [key: string]: any;
 }
 
@@ -45,7 +46,7 @@ export const useStoreData = (storeId: string | undefined) => {
         
         console.log("Loading store data for slug:", storeId);
         
-        // Fetch store by slug
+        // Fetch store by slug - now works with public stores due to RLS policy
         const { data: storeData, error: storeError } = await supabase
           .from('stores')
           .select('*')
@@ -67,6 +68,7 @@ export const useStoreData = (storeId: string | undefined) => {
         }
         
         console.log("Found store:", storeData);
+        console.log("Store is public:", storeData.settings?.is_public);
         
         // Fetch published products for this store
         const { data: productsData, error: productsError } = await supabase
@@ -91,7 +93,8 @@ export const useStoreData = (storeId: string | undefined) => {
           ],
           aboutUs: "",
           privacyPolicy: "",
-          contactInfo: ""
+          contactInfo: "",
+          is_public: false
         };
         
         // Process store settings

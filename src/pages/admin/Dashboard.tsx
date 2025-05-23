@@ -19,7 +19,7 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip,
+  Tooltip as RechartsTooltip,
   ResponsiveContainer,
 } from 'recharts';
 import {
@@ -32,7 +32,6 @@ import {
   Scatter,
   Legend
 } from 'recharts';
-import { Sparklines, SparklinesLine } from 'react-sparklines';
 import { Skeleton } from "@/components/ui/skeleton";
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -52,7 +51,7 @@ interface Product {
   description: string;
   created_at: string;
   image: string;
-  sold_count: number;
+  sold_count: number; // Added sold_count property
 }
 
 interface Order {
@@ -65,6 +64,9 @@ interface Customer {
   id: string;
   created_at: string;
   email: string;
+  avatar_url?: string | null;
+  name?: string | null;
+  updated_at?: string | null;
 }
 
 const Dashboard = () => {
@@ -85,7 +87,12 @@ const Dashboard = () => {
       if (error) {
         throw error;
       }
-      return data || [];
+      
+      // Map the data to include sold_count if it doesn't exist
+      return (data || []).map(product => ({
+        ...product,
+        sold_count: product.sold_count || 0
+      }));
     },
   });
 
@@ -125,7 +132,16 @@ const Dashboard = () => {
       if (error) {
         throw error;
       }
-      return data || [];
+      
+      // Transform profiles data to match Customer interface
+      return (data || []).map(profile => ({
+        id: profile.id,
+        created_at: profile.updated_at || new Date().toISOString(), // Fallback if created_at is missing
+        email: profile.email || 'Unknown',
+        avatar_url: profile.avatar_url,
+        name: profile.name,
+        updated_at: profile.updated_at
+      }));
     },
   });
 
@@ -159,7 +175,7 @@ const Dashboard = () => {
     }
   }, [customersError, toast]);
 
-  const calculateMetrics = (products: any[]) => {
+  const calculateMetrics = (products: Product[]) => {
     const totalSold = products.reduce((sum, product) => sum + (product.sold_count || 0), 0);
     
     const revenue = products.reduce((total, product) => {
@@ -193,9 +209,13 @@ const Dashboard = () => {
     });
   };
 
-  const recentOrders = orders?.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 5);
+  const recentOrders = orders && orders.length > 0 
+    ? [...orders].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 5)
+    : [];
 
-  const newCustomers = customers?.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 5);
+  const newCustomers = customers && customers.length > 0
+    ? [...customers].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 5)
+    : [];
 
   const changeDateRange = (range: DateRange | undefined) => {
     setDate(range);
@@ -317,7 +337,7 @@ const Dashboard = () => {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="created_at" tickFormatter={formatDate} />
                   <YAxis />
-                  <Tooltip labelFormatter={formatDate} formatter={(value) => `$${value.toFixed(2)}`} />
+                  <RechartsTooltip labelFormatter={formatDate} formatter={(value) => `$${value.toFixed(2)}`} />
                   <Area type="monotone" dataKey="amount" stroke="#8884d8" fill="#8884d8" />
                 </AreaChart>
               </ResponsiveContainer>
@@ -334,9 +354,13 @@ const Dashboard = () => {
             {isLoadingOrders ? (
               <Skeleton className="h-[200px] w-full" />
             ) : (
-              <Sparklines data={orderAmounts} height={35}>
-                <SparklinesLine color="#4169E1" />
-              </Sparklines>
+              <div className="h-[200px] flex items-center justify-center">
+                {orderAmounts.length > 0 ? (
+                  <p>Order amounts data visualization would go here</p>
+                ) : (
+                  <p className="text-muted-foreground">No order data available</p>
+                )}
+              </div>
             )}
           </CardContent>
         </Card>
@@ -357,7 +381,7 @@ const Dashboard = () => {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="name" />
                   <YAxis />
-                  <Tooltip formatter={(value) => `$${value?.toFixed(2)}`} />
+                  <RechartsTooltip formatter={(value: any) => `$${Number(value).toFixed(2)}`} />
                   <Bar dataKey="revenue" fill="#82ca9d" />
                 </BarChart>
               </ResponsiveContainer>
@@ -383,10 +407,10 @@ const Dashboard = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {recentOrders?.map((order) => (
+                  {recentOrders.map((order) => (
                     <TableRow key={order.id}>
                       <TableCell className="font-medium">{order.id.substring(0, 8)}</TableCell>
-                      <TableCell>${order.amount.toFixed(2)}</TableCell>
+                      <TableCell>${Number(order.amount).toFixed(2)}</TableCell>
                       <TableCell>{formatDate(order.created_at)}</TableCell>
                     </TableRow>
                   ))}
@@ -416,7 +440,7 @@ const Dashboard = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {newCustomers?.map((customer) => (
+                  {newCustomers.map((customer) => (
                     <TableRow key={customer.id}>
                       <TableCell className="font-medium">{customer.id.substring(0, 8)}</TableCell>
                       <TableCell>{customer.email}</TableCell>
