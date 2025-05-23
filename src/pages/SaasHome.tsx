@@ -7,7 +7,7 @@ const SaasHome = () => {
         <div className="container mx-auto px-4">
           <div className="flex h-16 items-center justify-between">
             <div className="flex items-center space-x-4">
-              <Link to="/" className="font-bold text-xl">Axia</Link>
+              <Link to="/" className="font-bold text-xl">AXIA</Link>
               <nav className="hidden md:flex items-center space-x-6">
                 <Link to="#features" className="text-sm font-medium text-muted-foreground hover:text-foreground">Funkcionalnosti</Link>
                 <Link to="#pricing" className="text-sm font-medium text-muted-foreground hover:text-foreground">Cene</Link>
