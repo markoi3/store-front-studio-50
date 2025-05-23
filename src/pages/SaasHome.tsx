@@ -85,10 +85,8 @@ const SaasHome = () => {
                   <line x1="2" x2="22" y1="10" y2="10" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold mb-2">Sigurne online u</h3>
-              <p className="text-muted-foreground">
-                Accept payments from customers around the world with our secure payment gateways.
-              </p>
+              <h3 className="text-xl font-bold mb-2">Sigurna online plaćanja</h3>
+              <p className="text-muted-foreground">Prihvati kartice - bez odlaska u banku</p>
             </div>
             
             {/* Feature 3 */}
