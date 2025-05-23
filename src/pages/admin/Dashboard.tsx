@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -52,7 +51,7 @@ interface Product {
   description?: string;
   created_at?: string;
   image?: string;
-  sold_count: number; // Now required to match the database
+  sold_count: number;
 }
 
 interface Order {
@@ -64,7 +63,7 @@ interface Order {
 interface Customer {
   id: string;
   created_at: string;
-  email?: string; // Updated to match the database
+  email?: string;
   avatar_url?: string | null;
   name?: string | null;
   updated_at?: string | null;
@@ -89,7 +88,6 @@ const Dashboard = () => {
         throw error;
       }
       
-      // Map the data to include sold_count if it doesn't exist
       return (data || []).map(product => ({
         ...product,
         sold_count: product.sold_count || 0
@@ -134,7 +132,6 @@ const Dashboard = () => {
         throw error;
       }
       
-      // Transform profiles data to match Customer interface
       return (data || []).map(profile => ({
         id: profile.id,
         created_at: profile.updated_at || new Date().toISOString(), 
@@ -209,6 +206,16 @@ const Dashboard = () => {
       return `$${Number(value).toFixed(2)}`;
     }
     return 'N/A';
+  };
+
+  // Fixed chart tooltip formatter to handle ValueType properly
+  const formatChartValue = (value: any): string => {
+    if (typeof value === 'number') {
+      return `$${value.toFixed(2)}`;
+    } else if (typeof value === 'string' && !isNaN(Number(value))) {
+      return `$${Number(value).toFixed(2)}`;
+    }
+    return String(value);
   };
 
   const formatDate = (dateString: string): string => {
@@ -348,7 +355,7 @@ const Dashboard = () => {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="created_at" tickFormatter={formatDate} />
                   <YAxis />
-                  <RechartsTooltip labelFormatter={formatDate} formatter={(value) => `$${value.toFixed(2)}`} />
+                  <RechartsTooltip labelFormatter={formatDate} formatter={(value) => formatChartValue(value)} />
                   <Area type="monotone" dataKey="amount" stroke="#8884d8" fill="#8884d8" />
                 </AreaChart>
               </ResponsiveContainer>
@@ -392,7 +399,7 @@ const Dashboard = () => {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="name" />
                   <YAxis />
-                  <RechartsTooltip formatter={(value: any) => `$${Number(value).toFixed(2)}`} />
+                  <RechartsTooltip formatter={(value: any) => formatChartValue(value)} />
                   <Bar dataKey="revenue" fill="#82ca9d" />
                 </BarChart>
               </ResponsiveContainer>
