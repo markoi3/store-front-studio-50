@@ -28,7 +28,7 @@ const SaasHome = () => {
       </header>
       
       {/* Hero Section */}
-      <section className="bg-gradient-to-b from-white to-accent/30 py-24">
+      <section className="bg-gradient-to-b from-white to-accent/40 py-24 bg-slate-100">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
