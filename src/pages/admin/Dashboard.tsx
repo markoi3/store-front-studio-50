@@ -1,196 +1,259 @@
 
-import React, { useEffect, useState } from 'react';
-import { AdminLayout } from '@/components/layout/AdminLayout';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
+import { AdminLayout } from "@/components/layout/AdminLayout";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
+import {
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 
-// Update the currency formatter to accept both string and number
-const formatCurrency = (value: string | number) => {
-  const numValue = typeof value === 'string' ? parseFloat(value) : value;
-  return new Intl.NumberFormat('sr-RS', {
-    style: 'currency',
-    currency: 'RSD',
-  }).format(numValue);
-};
+// Sample chart data
+const salesData = [
+  { name: "Jan", sales: 4000 },
+  { name: "Feb", sales: 3000 },
+  { name: "Mar", sales: 5000 },
+  { name: "Apr", sales: 2780 },
+  { name: "Maj", sales: 1890 },
+  { name: "Jun", sales: 2390 },
+  { name: "Jul", sales: 3490 },
+];
+
+const productSalesData = [
+  { name: "Klub sto", sales: 12 },
+  { name: "Kancelarijska stolica", sales: 19 },
+  { name: "Set šolja", sales: 32 },
+  { name: "Podna lampa", sales: 14 },
+  { name: "Trpezarijska stolica", sales: 10 },
+];
+
+// Sample recent orders
+const recentOrders = [
+  {
+    id: "123456",
+    customer: "Marko Marković",
+    date: "2023-06-10",
+    amount: 24999,
+    status: "completed",
+  },
+  {
+    id: "123457",
+    customer: "Ana Jovanović",
+    date: "2023-06-09",
+    amount: 12999,
+    status: "processing",
+  },
+  {
+    id: "123458",
+    customer: "Milan Petrović",
+    date: "2023-06-08",
+    amount: 34998,
+    status: "completed",
+  },
+  {
+    id: "123459",
+    customer: "Sara Nikolić",
+    date: "2023-06-07",
+    amount: 19999,
+    status: "shipped",
+  },
+  {
+    id: "123460",
+    customer: "Aleksandar Simić",
+    date: "2023-06-06",
+    amount: 7999,
+    status: "completed",
+  },
+];
 
 const Dashboard = () => {
-  const { user } = useAuth();
-  const [statistics, setStatistics] = useState({
-    totalOrders: 0,
-    totalRevenue: 0,
-    totalProducts: 0,
-    totalCustomers: 0
-  });
-  const [recentOrders, setRecentOrders] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  // Load real data from database
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      if (!user?.id) return;
-      
-      setLoading(true);
-      
-      try {
-        // Fetch orders for this store
-        const { data: orders, error: ordersError } = await supabase
-          .from('orders')
-          .select('*')
-          .eq('store_id', user.store?.id)
-          .order('created_at', { ascending: false });
-          
-        if (ordersError) throw ordersError;
-        
-        // Fetch products for this store
-        const { data: products, error: productsError } = await supabase
-          .from('products')
-          .select('*')
-          .eq('store_id', user.store?.id);
-          
-        if (productsError) throw productsError;
-        
-        // Fetch customers for this store
-        const { data: customers, error: customersError } = await supabase
-          .from('customers')
-          .select('*')
-          .eq('store_id', user.store?.id);
-          
-        if (customersError) throw customersError;
-        
-        // Calculate statistics
-        const totalRevenue = orders?.reduce((sum, order) => sum + (parseFloat(order.amount.toString()) || 0), 0) || 0;
-        
-        setStatistics({
-          totalOrders: orders?.length || 0,
-          totalRevenue,
-          totalProducts: products?.length || 0,
-          totalCustomers: customers?.length || 0
-        });
-        
-        // Set recent orders (limit to 5)
-        setRecentOrders(orders?.slice(0, 5) || []);
-      } catch (error) {
-        console.error("Error fetching dashboard data:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchDashboardData();
-  }, [user]);
-
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">Dashboard</h1>
-          <p className="text-muted-foreground">
-            Pregled Vašeg poslovanja
-          </p>
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold">Kontrolna tabla</h1>
+          <Link to="/products/new">
+            <Button>Dodaj novi proizvod</Button>
+          </Link>
         </div>
-
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Ukupno porudžbina
-              </CardTitle>
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-shopping-cart text-muted-foreground"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{statistics.totalOrders}</div>
-              <p className="text-xs text-muted-foreground">
-                {loading ? 'Učitavanje...' : 'Broj porudžbina'}
-              </p>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
                 Ukupan prihod
               </CardTitle>
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-credit-card text-muted-foreground"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
-                {formatCurrency(statistics.totalRevenue)}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {loading ? 'Učitavanje...' : 'Ukupan prihod'}
+              <div className="text-2xl font-bold font-numeric">15.236,89 RSD</div>
+              <p className="text-xs text-muted-foreground mt-1">
+                +12,5% u odnosu na prošli mesec
               </p>
             </CardContent>
           </Card>
           
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Ukupno proizvoda
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Porudžbine
               </CardTitle>
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-package text-muted-foreground"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{statistics.totalProducts}</div>
-              <p className="text-xs text-muted-foreground">
-                {loading ? 'Učitavanje...' : 'Broj proizvoda'}
+              <div className="text-2xl font-bold font-numeric">142</div>
+              <p className="text-xs text-muted-foreground mt-1">
+                +8,2% u odnosu na prošli mesec
               </p>
             </CardContent>
           </Card>
           
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                Ukupno kupaca
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Kupci
               </CardTitle>
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-users text-muted-foreground"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{statistics.totalCustomers}</div>
-              <p className="text-xs text-muted-foreground">
-                {loading ? 'Učitavanje...' : 'Broj kupaca'}
+              <div className="text-2xl font-bold font-numeric">78</div>
+              <p className="text-xs text-muted-foreground mt-1">
+                +5,7% u odnosu na prošli mesec
+              </p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Stopa konverzije
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold font-numeric">3,2%</div>
+              <p className="text-xs text-muted-foreground mt-1">
+                +0,5% u odnosu na prošli mesec
               </p>
             </CardContent>
           </Card>
         </div>
-          
+        
+        {/* Charts */}
+        <Tabs defaultValue="sales">
+          <TabsList>
+            <TabsTrigger value="sales">Pregled prodaje</TabsTrigger>
+            <TabsTrigger value="products">Performanse proizvoda</TabsTrigger>
+          </TabsList>
+          <TabsContent value="sales">
+            <Card>
+              <CardHeader>
+                <CardTitle>Pregled prodaje</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={salesData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip />
+                      <Line
+                        type="monotone"
+                        dataKey="sales"
+                        stroke="#8884d8"
+                        strokeWidth={2}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          <TabsContent value="products">
+            <Card>
+              <CardHeader>
+                <CardTitle>Performanse proizvoda</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[300px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={productSalesData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip />
+                      <Bar dataKey="sales" fill="#8884d8" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+        
+        {/* Recent Orders */}
         <Card>
           <CardHeader>
             <CardTitle>Nedavne porudžbine</CardTitle>
-            <CardDescription>
-              Poslednje primljene porudžbine
-            </CardDescription>
           </CardHeader>
           <CardContent>
-            {loading ? (
-              <div className="space-y-2">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="flex items-center justify-between p-2 border rounded">
-                    <div className="w-1/4 h-4 bg-gray-200 rounded animate-pulse"></div>
-                    <div className="w-1/4 h-4 bg-gray-200 rounded animate-pulse"></div>
-                    <div className="w-1/4 h-4 bg-gray-200 rounded animate-pulse"></div>
-                  </div>
-                ))}
-              </div>
-            ) : recentOrders.length > 0 ? (
-              <div className="divide-y">
-                {recentOrders.map((order) => (
-                  <div key={order.id} className="flex items-center justify-between py-2">
-                    <div className="font-medium">#{order.id.substring(0, 8)}</div>
-                    <div className="text-muted-foreground">{order.customer_name || 'Gost'}</div>
-                    <div>{formatCurrency(order.amount)}</div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="py-8 text-center text-muted-foreground">
-                Nema porudžbina za prikaz
-              </div>
-            )}
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="text-left text-xs text-muted-foreground">
+                    <th className="pb-2">ID porudžbine</th>
+                    <th className="pb-2">Kupac</th>
+                    <th className="pb-2">Datum</th>
+                    <th className="pb-2">Iznos</th>
+                    <th className="pb-2">Status</th>
+                    <th className="pb-2">Akcije</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recentOrders.map((order) => (
+                    <tr key={order.id} className="border-t border-border">
+                      <td className="py-3">{order.id}</td>
+                      <td className="py-3">{order.customer}</td>
+                      <td className="py-3">{order.date}</td>
+                      <td className="py-3 font-numeric">{order.amount.toLocaleString('sr-RS')} RSD</td>
+                      <td className="py-3">
+                        <span
+                          className={`inline-block px-2 py-1 text-xs rounded-full ${
+                            order.status === "completed"
+                              ? "bg-green-100 text-green-800"
+                              : order.status === "processing"
+                              ? "bg-blue-100 text-blue-800"
+                              : "bg-yellow-100 text-yellow-800"
+                          }`}
+                        >
+                          {order.status === "completed" ? "završeno" : 
+                           order.status === "processing" ? "u obradi" : "poslato"}
+                        </span>
+                      </td>
+                      <td className="py-3">
+                        <Link to={`/orders/${order.id}`}>
+                          <Button variant="ghost" size="sm">
+                            Pregled
+                          </Button>
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="mt-4 text-center">
+              <Link to="/orders">
+                <Button variant="outline">Prikaži sve porudžbine</Button>
+              </Link>
+            </div>
           </CardContent>
-          <CardFooter className="flex justify-end">
-            <a href="/orders" className="text-sm text-blue-600 hover:underline">Prikaži sve porudžbine</a>
-          </CardFooter>
         </Card>
       </div>
     </AdminLayout>
