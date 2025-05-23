@@ -134,7 +134,7 @@ const Storefront = () => {
         {currentPageElements.map((element) => (
           <PageElementRenderer 
             key={element.id} 
-            element={element} 
+            elements={[element]} 
             products={storeProducts} 
           />
         ))}

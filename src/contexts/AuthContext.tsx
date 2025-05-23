@@ -28,6 +28,7 @@ interface AuthContextType {
   logout: () => Promise<void>;
   register: (email: string, password: string, name: string) => Promise<{ user: User | null; session: Session | null; } | { user: null; session: null; }>;
   refreshUserProfile: () => Promise<void>;
+  updateStoreSettings: (settings: Record<string, any>) => Promise<void>;
 }
 
 // Create the context with a default value
@@ -39,6 +40,7 @@ const AuthContext = createContext<AuthContextType>({
   logout: async () => {},
   register: async () => ({ user: null, session: null }),
   refreshUserProfile: async () => {},
+  updateStoreSettings: async () => {},
 });
 
 // Create a provider component
@@ -72,11 +74,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.error("Error fetching store data:", storeError);
       }
       
+      // Parse store settings if needed
+      let storeSettings = {};
+      if (storeData?.settings) {
+        if (typeof storeData.settings === 'string') {
+          try {
+            storeSettings = JSON.parse(storeData.settings);
+          } catch (e) {
+            console.error("Error parsing store settings:", e);
+          }
+        } else {
+          storeSettings = storeData.settings;
+        }
+      }
+      
       // Combine user data with profile data
       const userProfile: UserProfile = {
         id: userId,
         ...(profileData || {}),
-        store: storeData || undefined
+        store: storeData ? {
+          id: storeData.id,
+          name: storeData.name,
+          slug: storeData.slug,
+          settings: storeSettings
+        } : undefined
       };
       
       setUser(userProfile);
@@ -87,6 +108,47 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error) {
       console.error("Error in fetchUserProfile:", error);
       return null;
+    }
+  };
+  
+  // Function to update store settings
+  const updateStoreSettings = async (settings: Record<string, any>) => {
+    if (!user?.store?.id) {
+      toast.error("No store found for your account");
+      return;
+    }
+    
+    try {
+      const { error } = await supabase
+        .from('stores')
+        .update({
+          settings,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user.store.id);
+      
+      if (error) {
+        toast.error("Failed to update store settings: " + error.message);
+        throw error;
+      }
+      
+      // Update the local user state with new settings
+      setUser(prev => {
+        if (!prev) return prev;
+        
+        return {
+          ...prev,
+          store: {
+            ...prev.store!,
+            settings
+          }
+        };
+      });
+      
+      toast.success("Store settings updated successfully");
+    } catch (error) {
+      console.error("Error updating store settings:", error);
+      throw error;
     }
   };
   
@@ -250,7 +312,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         login, 
         logout, 
         register, 
-        refreshUserProfile 
+        refreshUserProfile,
+        updateStoreSettings
       }}
     >
       {children}
