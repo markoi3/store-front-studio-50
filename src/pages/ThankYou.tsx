@@ -20,7 +20,7 @@ const ThankYou = () => {
         console.log("Fetching order with ID:", orderId);
         const { data, error } = await supabase
           .from('orders')
-          .select('id, amount, created_at, items')
+          .select('id, amount, created_at, items, billing_info, shipping_info, payment_status')
           .eq('id', orderId)
           .maybeSingle();
         
@@ -65,38 +65,65 @@ const ThankYou = () => {
             </div>
           </div>
           
-          <h1 className="text-3xl font-bold mb-4">Thank You for Your Order!</h1>
+          <h1 className="text-3xl font-bold mb-4">Hvala na vašoj porudžbini!</h1>
           
           <p className="text-muted-foreground mb-6">
-            Your order has been placed and is being processed. You will receive an
-            email confirmation shortly.
+            Vaša porudžbina je primljena i biće obrađena u najkraćem roku. 
+            Uskoro ćete dobiti email sa potvrdom porudžbine.
           </p>
           
-          <div className="bg-accent p-4 rounded-md mb-6">
-            <h2 className="font-medium mb-2">Order Details</h2>
+          <div className="bg-accent p-6 rounded-md mb-6">
+            <h2 className="font-medium text-lg mb-4">Detalji porudžbine</h2>
             {isLoading ? (
-              <Skeleton className="h-6 w-32 mx-auto" />
+              <div className="space-y-2">
+                <Skeleton className="h-6 w-32 mx-auto" />
+                <Skeleton className="h-6 w-40 mx-auto" />
+                <Skeleton className="h-6 w-24 mx-auto" />
+              </div>
             ) : (
               <>
                 {orderDetails ? (
-                  <div className="space-y-2">
-                    <p className="text-muted-foreground">
-                      Order Number: #{orderDetails.id.substring(0, 8)}
-                    </p>
+                  <div className="space-y-4 text-left">
+                    <div className="grid grid-cols-2 gap-2">
+                      <p className="text-muted-foreground">Broj porudžbine:</p>
+                      <p className="font-medium">#{orderDetails.id.substring(0, 8)}</p>
+                    </div>
+                    
                     {orderDetails.amount && (
-                      <p className="text-muted-foreground">
-                        Total: {orderDetails.amount.toLocaleString('sr-RS')} RSD
-                      </p>
+                      <div className="grid grid-cols-2 gap-2">
+                        <p className="text-muted-foreground">Ukupan iznos:</p>
+                        <p className="font-medium">{orderDetails.amount.toLocaleString('sr-RS')} RSD</p>
+                      </div>
                     )}
-                    {orderDetails.items && Array.isArray(orderDetails.items) && (
-                      <p className="text-muted-foreground">
-                        Items: {orderDetails.items.length}
+                    
+                    <div className="grid grid-cols-2 gap-2">
+                      <p className="text-muted-foreground">Status plaćanja:</p>
+                      <p className="font-medium">
+                        {orderDetails.payment_status === "paid" 
+                          ? "Plaćeno" 
+                          : orderDetails.payment_status === "processing" 
+                          ? "U obradi" 
+                          : "Na čekanju"}
                       </p>
+                    </div>
+                    
+                    {orderDetails.items && Array.isArray(orderDetails.items) && (
+                      <div className="grid grid-cols-2 gap-2">
+                        <p className="text-muted-foreground">Broj artikala:</p>
+                        <p className="font-medium">{orderDetails.items.reduce((sum: number, item: any) => sum + (item.quantity || 1), 0)}</p>
+                      </div>
+                    )}
+                    
+                    {orderDetails.created_at && (
+                      <div className="grid grid-cols-2 gap-2">
+                        <p className="text-muted-foreground">Datum:</p>
+                        <p className="font-medium">{new Date(orderDetails.created_at).toLocaleDateString('sr-RS')}</p>
+                      </div>
                     )}
                   </div>
                 ) : (
                   <p className="text-muted-foreground">
-                    Order processed successfully.
+                    Porudžbina je uspešno obrađena.
                   </p>
                 )}
               </>
@@ -105,11 +132,11 @@ const ThankYou = () => {
           
           <div className="space-y-4">
             <Link to="/">
-              <Button>Return to Home</Button>
+              <Button>Povratak na početnu</Button>
             </Link>
             
             <p className="text-sm text-muted-foreground">
-              If you have any questions, please contact our customer support.
+              Ukoliko imate pitanja, kontaktirajte našu korisničku podršku.
             </p>
           </div>
         </div>

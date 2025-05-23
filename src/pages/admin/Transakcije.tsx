@@ -7,7 +7,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -27,123 +26,91 @@ import {
   Truck, 
   CalendarDays,
   Receipt,
-  Download
+  Download,
+  Loader2
 } from "lucide-react";
-
-// Mock data for transactions
-const mockTransakcije = [
-  {
-    id: "TRX-2023-001",
-    datum: "2023-11-15",
-    iznos: 12500,
-    status: "završeno",
-    metoda: "kartica",
-    tip: "kupovina",
-    kupac: {
-      ime: "Marko Petrović",
-      email: "marko@example.com",
-      telefon: "064-1234-567",
-      adresa: "Bulevar kralja Aleksandra 73, Beograd"
-    },
-    proizvodi: [
-      { naziv: "Smartphone XYZ", kolicina: 1, cena: 12500, ukupno: 12500 }
-    ],
-    napomena: "Standardna isporuka u roku od 3 radna dana",
-    faktura: "FAK-2023-002",
-    datumIsporuke: "2023-11-18"
-  },
-  {
-    id: "TRX-2023-002",
-    datum: "2023-11-20",
-    iznos: 8300,
-    status: "u obradi",
-    metoda: "tekući račun",
-    tip: "kupovina",
-    kupac: {
-      ime: "Jovana Nikolić",
-      email: "jovana@example.com",
-      telefon: "061-7654-321",
-      adresa: "Tržni centar BB, Novi Sad"
-    },
-    proizvodi: [
-      { naziv: "Bežične slušalice", kolicina: 1, cena: 5800, ukupno: 5800 },
-      { naziv: "USB kabl", kolicina: 2, cena: 1250, ukupno: 2500 }
-    ],
-    napomena: "Hitna isporuka",
-    faktura: "FAK-2023-003",
-    datumIsporuke: "2023-11-22"
-  }
-];
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const Transakcije = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [transakcija, setTransakcija] = useState<any>(null);
+  const [order, setOrder] = useState<any>(null);
+  const [customer, setCustomer] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate API call or data fetch with a delay
-    const fetchTransakcija = async () => {
+    if (!id) return;
+    
+    const fetchOrderDetails = async () => {
       setLoading(true);
       
       try {
-        // In a real application, this would be an API call
-        // For now, we'll just search the mock data or create a placeholder
-        setTimeout(() => {
-          const found = mockTransakcije.find(t => t.id === id);
-          
-          if (found) {
-            setTransakcija(found);
-          } else {
-            // Create a placeholder if not found
-            setTransakcija({
-              id: id || "UNKNOWN-ID",
-              datum: new Date().toISOString().split('T')[0],
-              iznos: 0,
-              status: "nepoznato",
-              metoda: "nepoznato",
-              tip: "kupovina",
-              kupac: {
-                ime: "Korisnik",
-                email: "info@example.com",
-                telefon: "N/A",
-                adresa: "N/A"
-              },
-              proizvodi: [],
-              napomena: "Podaci o transakciji nisu pronađeni",
-              faktura: "N/A",
-              datumIsporuke: "N/A"
-            });
-          }
-          
+        console.log("Fetching order with ID:", id);
+        // Fetch order data
+        const { data: orderData, error: orderError } = await supabase
+          .from('orders')
+          .select('*')
+          .eq('id', id)
+          .maybeSingle();
+        
+        if (orderError) {
+          throw orderError;
+        }
+        
+        if (!orderData) {
+          console.log("Order not found");
           setLoading(false);
-        }, 800);
+          return;
+        }
+        
+        console.log("Found order:", orderData);
+        setOrder(orderData);
+        
+        // If customer_id exists, fetch customer data
+        if (orderData.customer_id) {
+          const { data: customerData, error: customerError } = await supabase
+            .from('customers')
+            .select('*')
+            .eq('id', orderData.customer_id)
+            .maybeSingle();
+            
+          if (customerError) {
+            console.error("Error fetching customer:", customerError);
+          } else if (customerData) {
+            console.log("Found customer:", customerData);
+            setCustomer(customerData);
+          }
+        }
       } catch (error) {
-        console.error("Greška pri učitavanju transakcije:", error);
+        console.error("Error fetching order details:", error);
+        toast.error("Greška pri učitavanju detalja porudžbine");
+      } finally {
         setLoading(false);
       }
     };
 
-    fetchTransakcija();
+    fetchOrderDetails();
   }, [id]);
 
   if (loading) {
     return (
       <AdminLayout>
         <div className="flex items-center justify-center h-[50vh]">
-          <div className="animate-pulse text-center">
-            <p className="text-muted-foreground">Učitavanje transakcije...</p>
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
+            <p className="text-muted-foreground">Učitavanje detalja porudžbine...</p>
           </div>
         </div>
       </AdminLayout>
     );
   }
 
-  if (!transakcija) {
+  if (!order) {
     return (
       <AdminLayout>
         <div className="flex flex-col items-center justify-center h-[50vh] text-center">
-          <p className="text-xl text-muted-foreground mb-4">Transakcija nije pronađena</p>
+          <p className="text-xl text-muted-foreground mb-4">Porudžbina nije pronađena</p>
           <Button onClick={() => navigate("/orders")}>
             Nazad na sve porudžbine
           </Button>
@@ -154,16 +121,41 @@ const Transakcije = () => {
 
   const getStatusBadgeClass = (status: string) => {
     switch (status.toLowerCase()) {
-      case "završeno":
+      case "completed":
         return "bg-green-100 text-green-800";
-      case "u obradi":
+      case "processing":
         return "bg-blue-100 text-blue-800";
-      case "otkazano":
+      case "shipped":
+        return "bg-purple-100 text-purple-800";
+      case "cancelled":
+      case "canceled":
         return "bg-red-100 text-red-800";
-      case "na čekanju":
-        return "bg-amber-100 text-amber-800";
       default:
         return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    if (!dateString) return "N/A";
+    return new Date(dateString).toLocaleDateString('sr-RS');
+  };
+
+  // Extract billing information
+  const billingInfo = order.billing_info || {};
+  const shippingInfo = order.shipping_info || {};
+  const items = Array.isArray(order.items) ? order.items : [];
+  
+  // Format payment method
+  const getPaymentMethodName = (method: string) => {
+    switch (method) {
+      case "card":
+        return "Kreditna kartica";
+      case "bank_transfer":
+        return "Bankovni prenos";
+      case "cash_on_delivery":
+        return "Plaćanje pouzećem";
+      default:
+        return method || "Nije navedeno";
     }
   };
 
@@ -172,13 +164,13 @@ const Transakcije = () => {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold">Transakcija {transakcija.id}</h1>
+            <h1 className="text-2xl font-bold">Porudžbina {order.id.substring(0, 8)}</h1>
             <p className="text-muted-foreground">
-              Datum: {transakcija.datum} · Status: 
+              Datum: {formatDate(order.created_at)} · Status: 
               <span 
-                className={`ml-2 py-1 px-2 rounded-full text-xs ${getStatusBadgeClass(transakcija.status)}`}
+                className={`ml-2 py-1 px-2 rounded-full text-xs ${getStatusBadgeClass(order.status)}`}
               >
-                {transakcija.status}
+                {order.status}
               </span>
             </p>
           </div>
@@ -202,15 +194,27 @@ const Transakcije = () => {
             <CardContent className="space-y-2">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Iznos:</span>
-                <span className="font-medium">{transakcija.iznos.toLocaleString("sr-RS")} RSD</span>
+                <span className="font-medium">{order.amount.toLocaleString("sr-RS")} RSD</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Metoda plaćanja:</span>
-                <span className="capitalize">{transakcija.metoda}</span>
+                <span className="capitalize">{getPaymentMethodName(billingInfo.payment_method)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Faktura:</span>
-                <span>{transakcija.faktura}</span>
+                <span className="text-muted-foreground">Status plaćanja:</span>
+                <span className={`${
+                  order.payment_status === "paid" 
+                    ? "text-green-600" 
+                    : order.payment_status === "processing" 
+                    ? "text-amber-600" 
+                    : "text-red-600"
+                }`}>
+                  {order.payment_status === "paid" 
+                    ? "Plaćeno" 
+                    : order.payment_status === "processing" 
+                    ? "U obradi" 
+                    : "Nije plaćeno"}
+                </span>
               </div>
             </CardContent>
           </Card>
@@ -223,12 +227,12 @@ const Transakcije = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                {transakcija.proizvodi.length > 0 ? (
-                  transakcija.proizvodi.map((proizvod: any, index: number) => (
+                {items.length > 0 ? (
+                  items.map((item: any, index: number) => (
                     <div key={index} className="border-b pb-2 last:border-0 last:pb-0">
                       <div className="flex justify-between">
-                        <span>{proizvod.naziv}</span>
-                        <span>{proizvod.kolicina} x {proizvod.cena.toLocaleString("sr-RS")} RSD</span>
+                        <span>{item.name}</span>
+                        <span>{item.quantity} x {item.price.toLocaleString("sr-RS")} RSD</span>
                       </div>
                     </div>
                   ))
@@ -247,17 +251,19 @@ const Transakcije = () => {
             </CardHeader>
             <CardContent className="space-y-2">
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Datum isporuke:</span>
-                <span>{transakcija.datumIsporuke}</span>
+                <span className="text-muted-foreground">Način isporuke:</span>
+                <span>{shippingInfo.shipping_method || "Standardna dostava"}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Adresa:</span>
-                <span className="text-right">{transakcija.kupac.adresa}</span>
+                <span className="text-right">{shippingInfo.address || billingInfo.address || "Nije unesena"}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Napomena:</span>
-                <span className="text-right max-w-[70%]">{transakcija.napomena}</span>
-              </div>
+              {shippingInfo.notes && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Napomena:</span>
+                  <span className="text-right max-w-[70%]">{shippingInfo.notes}</span>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -270,19 +276,29 @@ const Transakcije = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <p className="text-muted-foreground text-sm mb-1">Ime i prezime</p>
-                <p className="font-medium">{transakcija.kupac.ime}</p>
+                <p className="font-medium">
+                  {customer?.name || billingInfo.full_name || "Nepoznat kupac"}
+                </p>
               </div>
               <div>
                 <p className="text-muted-foreground text-sm mb-1">E-mail adresa</p>
-                <p className="font-medium">{transakcija.kupac.email}</p>
+                <p className="font-medium">
+                  {customer?.email || billingInfo.email || "Nije dostupna"}
+                </p>
               </div>
               <div>
                 <p className="text-muted-foreground text-sm mb-1">Telefon</p>
-                <p className="font-medium">{transakcija.kupac.telefon}</p>
+                <p className="font-medium">
+                  {customer?.phone || billingInfo.phone || "Nije dostupan"}
+                </p>
               </div>
               <div>
                 <p className="text-muted-foreground text-sm mb-1">Adresa</p>
-                <p className="font-medium">{transakcija.kupac.adresa}</p>
+                <p className="font-medium">
+                  {customer?.address?.street 
+                    ? `${customer.address.street}, ${customer.address.city}, ${customer.address.postal_code}`
+                    : billingInfo.address || "Nije dostupna"}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -303,13 +319,13 @@ const Transakcije = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {transakcija.proizvodi.length > 0 ? (
-                  transakcija.proizvodi.map((proizvod: any, index: number) => (
+                {items.length > 0 ? (
+                  items.map((item: any, index: number) => (
                     <TableRow key={index}>
-                      <TableCell className="font-medium">{proizvod.naziv}</TableCell>
-                      <TableCell className="text-right">{proizvod.kolicina}</TableCell>
-                      <TableCell className="text-right">{proizvod.cena.toLocaleString("sr-RS")} RSD</TableCell>
-                      <TableCell className="text-right">{proizvod.ukupno.toLocaleString("sr-RS")} RSD</TableCell>
+                      <TableCell className="font-medium">{item.name}</TableCell>
+                      <TableCell className="text-right">{item.quantity}</TableCell>
+                      <TableCell className="text-right">{item.price.toLocaleString("sr-RS")} RSD</TableCell>
+                      <TableCell className="text-right">{(item.price * item.quantity).toLocaleString("sr-RS")} RSD</TableCell>
                     </TableRow>
                   ))
                 ) : (
@@ -326,11 +342,22 @@ const Transakcije = () => {
               <Separator />
               <div className="flex justify-between pt-4">
                 <span>Ukupno:</span>
-                <span className="font-bold">{transakcija.iznos.toLocaleString("sr-RS")} RSD</span>
+                <span className="font-bold">{order.amount.toLocaleString("sr-RS")} RSD</span>
               </div>
             </div>
           </CardContent>
         </Card>
+
+        {billingInfo.additional_info && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Dodatne informacije</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p>{billingInfo.additional_info}</p>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </AdminLayout>
   );

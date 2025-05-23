@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -70,7 +71,8 @@ const Dashboard = () => {
           // Convert to numbers explicitly before division
           const orderCountNum = Number(orderCount);
           const customerCountNum = Number(customerCount);
-          conversionRate = parseFloat(((orderCountNum / Math.max(customerCountNum, 1)) * 100).toFixed(1));
+          // Fix: Ensure we're dividing numbers, and format the result to 1 decimal place
+          conversionRate = Number(((orderCountNum / Math.max(customerCountNum, 1)) * 100).toFixed(1));
         }
 
         setStats({
@@ -450,3 +452,4 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
+
