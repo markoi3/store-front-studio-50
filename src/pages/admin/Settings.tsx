@@ -37,6 +37,7 @@ const Settings = () => {
   });
   
   const [storeVisibility, setStoreVisibility] = useState(false);
+  const [isToggleSaving, setIsToggleSaving] = useState(false);
   
   const [paymentSettings, setPaymentSettings] = useState({
     stripeEnabled: false,
@@ -82,23 +83,22 @@ const Settings = () => {
   const [isSavingSettings, setIsSavingSettings] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
-  // Load store information when component mounts
+  // Load store information when component mounts - ONLY ONCE
   useEffect(() => {
     if (user?.store && isInitialLoad) {
-      console.log("Loading store settings from user context", user.store);
+      console.log("INITIAL LOAD: Loading store settings from user context", user.store);
       setStoreInfo({
         name: user.store.name || "",
         slug: user.store.slug || ""
       });
 
-      // Load store visibility status with improved type checking
+      // Load store visibility status with improved type checking - ONLY ON INITIAL LOAD
       if (user.store.settings) {
-        // Explicitly check for boolean true
         const isPublic = typeof user.store.settings.is_public === 'boolean' 
           ? user.store.settings.is_public 
           : false;
           
-        console.log("Loading store visibility from user context:");
+        console.log("INITIAL LOAD: Setting store visibility:");
         console.log("- Raw is_public value:", user.store.settings.is_public);
         console.log("- Type:", typeof user.store.settings.is_public);
         console.log("- Parsed to boolean:", isPublic);
@@ -132,21 +132,50 @@ const Settings = () => {
       setIsInitialLoad(false);
     }
   }, [user, isInitialLoad]);
-  
-  // Update store visibility when user context changes
-  useEffect(() => {
-    if (user?.store?.settings && !isInitialLoad) {
-      const isPublic = typeof user.store.settings.is_public === 'boolean' 
-        ? user.store.settings.is_public 
-        : false;
-      
-      console.log("User context changed, updating store visibility:");
-      console.log("- New is_public value:", user.store.settings.is_public);
-      console.log("- Parsed to boolean:", isPublic);
-      
-      setStoreVisibility(isPublic);
+
+  // Optimistic toggle handler with immediate save
+  const handleStoreVisibilityToggle = async (checked: boolean) => {
+    if (!user?.store) {
+      toast.error("No store found for your account");
+      return;
     }
-  }, [user?.store?.settings?.is_public, isInitialLoad]);
+
+    console.log("=== TOGGLE CLICKED ===");
+    console.log("New value:", checked);
+    console.log("Current storeVisibility:", storeVisibility);
+    console.log("Current user.store.settings.is_public:", user.store.settings?.is_public);
+
+    // Optimistic update - immediately change UI
+    setStoreVisibility(checked);
+    setIsToggleSaving(true);
+
+    try {
+      console.log("Saving toggle state to database...");
+      
+      // Create updated settings with ONLY the is_public change
+      const updatedSettings: StoreSettings = {
+        ...user.store.settings,
+        is_public: Boolean(checked) // Ensure it's a boolean
+      };
+      
+      console.log("Settings being saved:", updatedSettings);
+      console.log("is_public value being saved:", updatedSettings.is_public, "type:", typeof updatedSettings.is_public);
+      
+      // Update via the context function
+      await updateStoreSettings(updatedSettings);
+      
+      console.log("Toggle save successful!");
+      toast.success(`Store is now ${checked ? 'public' : 'private'}`);
+    } catch (error) {
+      console.error("Failed to save toggle state:", error);
+      
+      // Revert optimistic update on error
+      setStoreVisibility(!checked);
+      toast.error("Failed to update store visibility: " + (error as Error).message);
+    } finally {
+      setIsToggleSaving(false);
+    }
+  };
   
   const handleStoreInfoChange = (
     e: React.ChangeEvent<HTMLInputElement>
@@ -267,16 +296,14 @@ const Settings = () => {
     
     setIsSavingSettings(true);
     try {
-      console.log("=== SAVING STORE SETTINGS ===");
-      console.log("Store visibility before save:", storeVisibility);
-      console.log("Store visibility type:", typeof storeVisibility);
+      console.log("=== SAVING OTHER STORE SETTINGS ===");
       
-      // Combine all settings into one object
+      // Combine all settings into one object, preserving current visibility state
       const combinedSettings: StoreSettings = {
         aboutUs: contentSettings.aboutUs,
         privacyPolicy: contentSettings.privacyPolicy,
         contactInfo: contentSettings.contactInfo,
-        is_public: Boolean(storeVisibility), // Ensure it's a boolean
+        is_public: storeVisibility, // Use current UI state
         storeSettings,
         paymentSettings,
         shippingSettings,
@@ -291,12 +318,11 @@ const Settings = () => {
       };
       
       console.log("Combined settings to save:", combinedSettings);
-      console.log("is_public value being saved:", combinedSettings.is_public, "type:", typeof combinedSettings.is_public);
       
-      // Update via the context function which will handle both DB and local state
+      // Update via the context function
       await updateStoreSettings(combinedSettings);
       
-      console.log("=== SETTINGS SAVED SUCCESSFULLY ===");
+      console.log("=== OTHER SETTINGS SAVED SUCCESSFULLY ===");
       toast.success("Settings saved successfully");
     } catch (error) {
       console.error("Failed to save settings:", error);
@@ -353,20 +379,20 @@ const Settings = () => {
             </div>
           </div>
           
-          {/* Store Visibility - Improved with clearer labels */}
+          {/* Store Visibility - FIXED with immediate save */}
           <div className="pt-4 border-t mt-4">
             <h3 className="text-md font-medium mb-2">Store Visibility</h3>
             <div className="flex items-center space-x-2">
               <Switch
                 id="storeVisibility"
                 checked={storeVisibility}
-                onCheckedChange={(checked) => {
-                  console.log("Toggle changed to:", checked);
-                  setStoreVisibility(checked);
-                }}
+                disabled={isToggleSaving}
+                onCheckedChange={handleStoreVisibilityToggle}
               />
               <Label htmlFor="storeVisibility" className="flex items-center">
-                {storeVisibility ? (
+                {isToggleSaving ? (
+                  <span className="font-medium text-gray-400">Saving...</span>
+                ) : storeVisibility ? (
                   <span className="font-medium text-green-500">Public</span>
                 ) : (
                   <span className="font-medium text-gray-500">Private</span>
@@ -380,6 +406,7 @@ const Settings = () => {
             </div>
             <p className="text-xs text-muted-foreground mt-1 ml-7">
               When public, anyone can view your store without logging in. When private, only you can view it.
+              {isToggleSaving && " Changes are being saved automatically."}
             </p>
           </div>
           
