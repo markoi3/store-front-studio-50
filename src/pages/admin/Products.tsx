@@ -19,15 +19,15 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Link } from "react-router-dom";
-import { Package, Plus, Search } from "lucide-react";
+import { Package, Plus, Search, Pencil, Trash2, MoreHorizontal } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 // Initial products data
 const initialProducts = [
@@ -71,6 +71,7 @@ const Products = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
+  const { toast } = useToast();
 
   useEffect(() => {
     const loadProducts = async () => {
@@ -105,6 +106,36 @@ const Products = () => {
     loadProducts();
   }, [user?.store?.id]);
 
+  // Function to delete a product
+  const handleDeleteProduct = (productId: string) => {
+    // Confirm before deleting
+    if (window.confirm("Da li ste sigurni da želite da obrišete ovaj proizvod?")) {
+      try {
+        // Filter out the product to delete
+        const updatedProducts = products.filter(product => product.id !== productId);
+        
+        // Update state
+        setProducts(updatedProducts);
+        
+        // Update localStorage
+        localStorage.setItem("products", JSON.stringify(updatedProducts));
+        
+        // Show success toast
+        toast({
+          title: "Proizvod obrisan",
+          description: "Proizvod je uspešno obrisan.",
+        });
+      } catch (error) {
+        console.error("Error deleting product:", error);
+        toast({
+          title: "Greška",
+          description: "Došlo je do greške prilikom brisanja proizvoda.",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
   // Function to filter products based on search query
   const filteredProducts = products.filter((product) =>
     product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -118,6 +149,11 @@ const Products = () => {
       ? parseFloat(product.price) 
       : (product.price || 0);
     return sum + price * (product.stock || 1);
+  }, 0);
+  
+  // Calculate total product quantity
+  const totalQuantity = filteredProducts.reduce((sum, product) => {
+    return sum + (parseInt(product.stock) || 0);
   }, 0);
 
   return (
@@ -217,11 +253,35 @@ const Products = () => {
                           )}
                         </TableCell>
                         <TableCell className="text-right">
-                          <Link to={`/proizvod/${product.id}`}>
-                            <Button variant="outline" size="sm">
-                              Prikaži
-                            </Button>
-                          </Link>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="outline" size="sm" className="h-8 w-8 p-0">
+                                <span className="sr-only">Otvori meni</span>
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem asChild>
+                                <Link to={`/products/${product.id}`} className="flex items-center">
+                                  <Package className="h-4 w-4 mr-2" />
+                                  Prikaži proizvod
+                                </Link>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem asChild>
+                                <Link to={`/proizvod/${product.id}`} className="flex items-center">
+                                  <Pencil className="h-4 w-4 mr-2" />
+                                  Modifikuj proizvod
+                                </Link>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                className="flex items-center text-destructive focus:text-destructive"
+                                onClick={() => handleDeleteProduct(product.id)}
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Obriši
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -236,7 +296,7 @@ const Products = () => {
           <CardHeader>
             <CardTitle>Statistika proizvoda</CardTitle>
           </CardHeader>
-          <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             <div className="bg-gray-50 p-4 rounded-lg">
               <div className="text-sm text-gray-500">Ukupno proizvoda</div>
               <div className="text-2xl font-bold">{products.length}</div>
@@ -269,6 +329,12 @@ const Products = () => {
               <div className="text-sm text-gray-500">Objavljeno</div>
               <div className="text-2xl font-bold">
                 {products.filter((p) => p.published).length}
+              </div>
+            </div>
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <div className="text-sm text-gray-500">Ukupna količina</div>
+              <div className="text-2xl font-bold">
+                {totalQuantity.toLocaleString()}
               </div>
             </div>
           </CardContent>
