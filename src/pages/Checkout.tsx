@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { withStoreLayout } from "@/components/layout/StorePageLayout";
 import { useCart } from "@/contexts/CartContext";
@@ -6,6 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useStore } from "@/hooks/useStore";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   Select,
   SelectContent,
@@ -19,7 +23,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 const Checkout = () => {
   const { items, subtotal, clearCart } = useCart();
   const navigate = useNavigate();
-  const { getStoreUrl } = useStore();
+  const { getStoreUrl, currentStore } = useStore();
+  const { user } = useAuth();
   
   // Simplified shipping cost
   const shippingCost = subtotal > 100 ? 0 : 10;
@@ -28,6 +33,7 @@ const Checkout = () => {
   const totalCost = subtotal + shippingCost;
   
   const [formStep, setFormStep] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Form states
   const [shippingDetails, setShippingDetails] = useState({
@@ -50,23 +56,130 @@ const Checkout = () => {
     cvc: "",
   });
   
+  const [orderInfo, setOrderInfo] = useState<{ id: string } | null>(null);
+  
   const handleShippingSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setFormStep(2);
     window.scrollTo(0, 0);
   };
   
-  const handlePaymentSubmit = (e: React.FormEvent) => {
+  const handlePaymentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Process payment (this would normally call a payment API)
-    // For demo purposes, we'll just simulate a successful payment
-    setFormStep(3);
-    window.scrollTo(0, 0);
+    setIsSubmitting(true);
+    
+    try {
+      // First, create or update customer record
+      const customerData = {
+        name: `${shippingDetails.firstName} ${shippingDetails.lastName}`,
+        email: shippingDetails.email,
+        phone: shippingDetails.phone,
+        store_id: currentStore?.id,
+        address: {
+          address: shippingDetails.address,
+          city: shippingDetails.city,
+          state: shippingDetails.state,
+          postalCode: shippingDetails.postalCode,
+          country: shippingDetails.country
+        }
+      };
+      
+      // Check if customer with this email already exists for this store
+      const { data: existingCustomers } = await supabase
+        .from('customers')
+        .select('id')
+        .eq('email', shippingDetails.email)
+        .eq('store_id', currentStore?.id)
+        .maybeSingle();
+      
+      let customerId;
+      
+      if (existingCustomers?.id) {
+        // Update existing customer
+        const { error: updateError } = await supabase
+          .from('customers')
+          .update({
+            name: customerData.name,
+            phone: customerData.phone,
+            address: customerData.address
+          })
+          .eq('id', existingCustomers.id);
+        
+        if (updateError) throw updateError;
+        customerId = existingCustomers.id;
+      } else {
+        // Create new customer
+        const { data: newCustomer, error: createError } = await supabase
+          .from('customers')
+          .insert(customerData)
+          .select('id')
+          .single();
+        
+        if (createError) throw createError;
+        if (!newCustomer?.id) throw new Error("Failed to create customer");
+        customerId = newCustomer.id;
+      }
+      
+      // Now create the order
+      const orderData = {
+        store_id: currentStore?.id,
+        customer_id: customerId,
+        amount: totalCost,
+        items: items.map(item => ({
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity
+        })),
+        billing_info: {
+          payment_method: paymentMethod,
+          card_info: paymentMethod === 'credit-card' ? {
+            cardName: cardDetails.cardName,
+            // Store only last 4 digits of card for security
+            cardNumber: cardDetails.cardNumber ? `xxxx-xxxx-xxxx-${cardDetails.cardNumber.slice(-4)}` : null,
+            expiryDate: cardDetails.expiryDate
+          } : null
+        },
+        shipping_info: {
+          name: `${shippingDetails.firstName} ${shippingDetails.lastName}`,
+          address: shippingDetails.address,
+          city: shippingDetails.city,
+          state: shippingDetails.state,
+          postalCode: shippingDetails.postalCode,
+          country: shippingDetails.country
+        },
+        status: 'processing',
+        payment_status: 'paid' // In a real app, this would be set after payment processing
+      };
+      
+      const { data: newOrder, error: orderError } = await supabase
+        .from('orders')
+        .insert(orderData)
+        .select('id')
+        .single();
+      
+      if (orderError) throw orderError;
+      if (!newOrder?.id) throw new Error("Failed to create order");
+      
+      // Store the order ID for the confirmation page
+      setOrderInfo({ id: newOrder.id });
+      
+      // Proceed to confirmation
+      setFormStep(3);
+      window.scrollTo(0, 0);
+      
+    } catch (error: any) {
+      console.error("Error processing order:", error);
+      toast.error("Error processing your order: " + (error.message || "Please try again"));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
   
   const handleOrderComplete = () => {
     clearCart();
-    navigate(getStoreUrl("/thank-you"));
+    // Pass the order ID to the thank you page
+    navigate(getStoreUrl(`/thank-you?orderId=${orderInfo?.id || ''}`));
   };
   
   const handleShippingChange = (e: React.ChangeEvent<HTMLInputElement>) => {

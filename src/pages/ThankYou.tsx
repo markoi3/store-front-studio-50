@@ -1,9 +1,40 @@
 
+import { useEffect, useState } from "react";
 import { ShopLayout } from "@/components/layout/ShopLayout";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const ThankYou = () => {
+  const [searchParams] = useSearchParams();
+  const orderId = searchParams.get('orderId');
+  const [orderNumber, setOrderNumber] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(Boolean(orderId));
+
+  useEffect(() => {
+    if (!orderId) return;
+    
+    const fetchOrderDetails = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('orders')
+          .select('id')
+          .eq('id', orderId)
+          .single();
+        
+        if (error) throw error;
+        setOrderNumber(data.id);
+      } catch (error) {
+        console.error("Error fetching order details:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchOrderDetails();
+  }, [orderId]);
+  
   return (
     <ShopLayout>
       <div className="container mx-auto px-4 py-16">
@@ -36,9 +67,13 @@ const ThankYou = () => {
           
           <div className="bg-accent p-4 rounded-md mb-6">
             <h2 className="font-medium mb-2">Order Details</h2>
-            <p className="text-muted-foreground">
-              Order Number: #{Math.floor(100000 + Math.random() * 900000)}
-            </p>
+            {isLoading ? (
+              <Skeleton className="h-6 w-32 mx-auto" />
+            ) : (
+              <p className="text-muted-foreground">
+                Order Number: #{orderNumber || Math.floor(100000 + Math.random() * 900000)}
+              </p>
+            )}
           </div>
           
           <div className="space-y-4">

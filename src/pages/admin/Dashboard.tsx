@@ -163,7 +163,7 @@ const Dashboard = () => {
       if (!order.items || !Array.isArray(order.items)) return;
       
       order.items.forEach(item => {
-        if (!item || !item.name) return;
+        if (!item || typeof item !== 'object' || !item.name) return;
         
         const productName = item.name;
         const quantity = typeof item.quantity === 'number' ? item.quantity : 1;

@@ -79,7 +79,9 @@ const Orders = () => {
           let paymentMethod = 'credit-card'; // Default value
           if (order.billing_info && typeof order.billing_info === 'object') {
             // Check if payment_method exists on the billing_info object
-            paymentMethod = order.billing_info.payment_method || 'credit-card';
+            if ('payment_method' in order.billing_info) {
+              paymentMethod = order.billing_info.payment_method as string;
+            }
           }
           
           return {
