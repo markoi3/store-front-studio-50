@@ -32,8 +32,8 @@ const SaasHome = () => {
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mb-6">Tvoje mesto za online poslovanje.</h1>
-              <p className="text-xl text-muted-foreground mb-8 max-w-lg">Platforma za tvoje biznis finansije - i rast.</p>
+              <h1 className="text-4xl lg:text-6xl font-bold leading-tight mb-6 md:text-6xl">Mesto za vaše online poslovanje.</h1>
+              <p className="text-xl text-muted-foreground mb-8 max-w-lg">Sve što vam je potrebno da razvijate vaš biznis - online prodavnica, integrisana plaćanja, upravljanje odnosa sa kupcima. Axia je tu za vas.</p>
               <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
                 <Button size="lg" className="text-lg">Započni besplatno</Button>
                 <Button size="lg" variant="outline" className="text-lg">Pogledaj Demo</Button>
@@ -55,7 +55,7 @@ const SaasHome = () => {
       <section id="features" className="py-24">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Everything you need to succeed</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">Laka i pouzdana online trgovina</h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
               Our platform provides all the tools you need to create, manage, and grow your online store.
             </p>
