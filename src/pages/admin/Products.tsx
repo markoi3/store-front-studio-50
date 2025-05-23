@@ -126,8 +126,15 @@ const Products = () => {
               const { error } = await supabase
                 .from("products")
                 .insert({
-                  ...product,
-                  store_id: user.store.id
+                  name: product.name,
+                  description: product.description,
+                  price: parseFloat(product.price), // Convert price string to number
+                  image: product.image,
+                  slug: product.slug,
+                  category: product.category,
+                  stock: product.stock,
+                  published: product.published,
+                  store_id: user.store.id // Pass store_id separately
                 });
                 
               if (error) {
@@ -326,7 +333,7 @@ const Products = () => {
                                 </Link>
                               </DropdownMenuItem>
                               <DropdownMenuItem asChild>
-                                <Link to={`/products/${product.id}`} className="flex items-center">
+                                <Link to={`/admin/products/${product.id}`} className="flex items-center">
                                   <Pencil className="h-4 w-4 mr-2" />
                                   Modifikuj proizvod
                                 </Link>
