@@ -27,8 +27,7 @@ import {
   CalendarDays,
   Receipt,
   Download,
-  Loader2,
-  MapPin
+  Loader2
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -160,28 +159,6 @@ const Transakcije = () => {
     }
   };
 
-  // Format address from object or string
-  const formatAddress = (addressData: any) => {
-    if (!addressData) return "Nije dostupna";
-    
-    if (typeof addressData === 'string') {
-      return addressData;
-    }
-    
-    if (typeof addressData === 'object') {
-      const parts = [];
-      if (addressData.street) parts.push(addressData.street);
-      if (addressData.number) parts.push(addressData.number);
-      if (addressData.city) parts.push(addressData.city);
-      if (addressData.postal_code) parts.push(addressData.postal_code);
-      if (addressData.country) parts.push(addressData.country);
-      
-      return parts.length > 0 ? parts.join(', ') : "Nije dostupna";
-    }
-    
-    return "Nije dostupna";
-  };
-
   return (
     <AdminLayout>
       <div className="space-y-6">
@@ -279,7 +256,7 @@ const Transakcije = () => {
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Adresa:</span>
-                <span className="text-right">{formatAddress(shippingInfo.address || billingInfo.address)}</span>
+                <span className="text-right">{shippingInfo.address || billingInfo.address || "Nije unesena"}</span>
               </div>
               {shippingInfo.notes && (
                 <div className="flex justify-between">
@@ -315,97 +292,13 @@ const Transakcije = () => {
                   {customer?.phone || billingInfo.phone || "Nije dostupan"}
                 </p>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Address Details Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <MapPin className="mr-2 h-5 w-5" /> Detalji adrese
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Billing Address */}
               <div>
-                <h3 className="font-medium text-lg mb-4">Adresa za naplatu</h3>
-                <div className="space-y-2">
-                  <div className="grid grid-cols-2 gap-2">
-                    <p className="text-muted-foreground">Ulica:</p>
-                    <p className="font-medium">
-                      {billingInfo.address?.street || billingInfo.street || "Nije dostupna"}
-                    </p>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <p className="text-muted-foreground">Broj:</p>
-                    <p className="font-medium">
-                      {billingInfo.address?.number || billingInfo.number || "Nije dostupan"}
-                    </p>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <p className="text-muted-foreground">Grad:</p>
-                    <p className="font-medium">
-                      {billingInfo.address?.city || billingInfo.city || "Nije dostupan"}
-                    </p>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <p className="text-muted-foreground">Poštanski broj:</p>
-                    <p className="font-medium">
-                      {billingInfo.address?.postal_code || billingInfo.postal_code || "Nije dostupan"}
-                    </p>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <p className="text-muted-foreground">Država:</p>
-                    <p className="font-medium">
-                      {billingInfo.address?.country || billingInfo.country || "Nije dostupna"}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Shipping Address */}
-              <div>
-                <h3 className="font-medium text-lg mb-4">Adresa za isporuku</h3>
-                <div className="space-y-2">
-                  {shippingInfo.address || Object.keys(shippingInfo).some(key => ['street', 'number', 'city', 'postal_code', 'country'].includes(key)) ? (
-                    <>
-                      <div className="grid grid-cols-2 gap-2">
-                        <p className="text-muted-foreground">Ulica:</p>
-                        <p className="font-medium">
-                          {shippingInfo.address?.street || shippingInfo.street || "Nije dostupna"}
-                        </p>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        <p className="text-muted-foreground">Broj:</p>
-                        <p className="font-medium">
-                          {shippingInfo.address?.number || shippingInfo.number || "Nije dostupan"}
-                        </p>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        <p className="text-muted-foreground">Grad:</p>
-                        <p className="font-medium">
-                          {shippingInfo.address?.city || shippingInfo.city || "Nije dostupan"}
-                        </p>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        <p className="text-muted-foreground">Poštanski broj:</p>
-                        <p className="font-medium">
-                          {shippingInfo.address?.postal_code || shippingInfo.postal_code || "Nije dostupan"}
-                        </p>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        <p className="text-muted-foreground">Država:</p>
-                        <p className="font-medium">
-                          {shippingInfo.address?.country || shippingInfo.country || "Nije dostupna"}
-                        </p>
-                      </div>
-                    </>
-                  ) : (
-                    <p className="text-muted-foreground italic">Ista kao adresa za naplatu</p>
-                  )}
-                </div>
+                <p className="text-muted-foreground text-sm mb-1">Adresa</p>
+                <p className="font-medium">
+                  {customer?.address?.street 
+                    ? `${customer.address.street}, ${customer.address.city}, ${customer.address.postal_code}`
+                    : billingInfo.address || "Nije dostupna"}
+                </p>
               </div>
             </div>
           </CardContent>
