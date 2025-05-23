@@ -68,7 +68,13 @@ export const useStoreData = (storeId: string | undefined) => {
         }
         
         console.log("Found store:", storeData);
-        console.log("Store is public:", storeData.settings?.is_public);
+        
+        // Safely check if is_public is true using type checking
+        let isPublic = false;
+        if (storeData.settings && typeof storeData.settings === 'object') {
+          isPublic = storeData.settings.is_public === true;
+        }
+        console.log("Store is public:", isPublic);
         
         // Fetch published products for this store
         const { data: productsData, error: productsError } = await supabase
@@ -111,7 +117,8 @@ export const useStoreData = (storeId: string | undefined) => {
           image: product.image || "https://via.placeholder.com/300",
           slug: product.slug,
           storeId: storeId,
-          category: product.category
+          category: product.category,
+          sold_count: product.sold_count || 0 // Ensure sold_count exists
         })) : [];
         
         setStoreProducts(formattedProducts);

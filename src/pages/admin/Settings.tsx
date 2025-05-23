@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -91,9 +90,11 @@ const Settings = () => {
         slug: user.store.slug || ""
       });
 
-      // Load store visibility status
+      // Load store visibility status - make sure to properly check for boolean value
       if (user.store.settings) {
+        // Explicitly check for boolean true
         setStoreVisibility(user.store.settings.is_public === true);
+        console.log("Store visibility from DB:", user.store.settings.is_public);
         
         // Load content settings from store
         setContentSettings({
@@ -243,13 +244,14 @@ const Settings = () => {
     setIsSavingSettings(true);
     try {
       console.log("Saving store settings...");
+      console.log("Store visibility before save:", storeVisibility);
       
       // Combine all settings into one object
       const combinedSettings = {
         aboutUs: contentSettings.aboutUs,
         privacyPolicy: contentSettings.privacyPolicy,
         contactInfo: contentSettings.contactInfo,
-        is_public: storeVisibility, // Add store visibility setting
+        is_public: storeVisibility, // Explicitly set boolean value
         storeSettings,
         paymentSettings,
         shippingSettings,
@@ -264,6 +266,7 @@ const Settings = () => {
       };
       
       console.log("Combined settings:", combinedSettings);
+      console.log("is_public value being saved:", combinedSettings.is_public);
       
       // Update the database
       const { error } = await supabase
@@ -344,20 +347,32 @@ const Settings = () => {
             </div>
           </div>
           
-          {/* Store Visibility */}
-          <div className="flex items-center space-x-2 pt-2">
-            <Switch
-              id="storeVisibility"
-              checked={storeVisibility}
-              onCheckedChange={setStoreVisibility}
-            />
-            <Label htmlFor="storeVisibility">
-              Public store (visible to anyone)
-            </Label>
+          {/* Store Visibility - Improved with clearer labels */}
+          <div className="pt-4 border-t mt-4">
+            <h3 className="text-md font-medium mb-2">Store Visibility</h3>
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="storeVisibility"
+                checked={storeVisibility}
+                onCheckedChange={setStoreVisibility}
+              />
+              <Label htmlFor="storeVisibility" className="flex items-center">
+                {storeVisibility ? (
+                  <span className="font-medium text-green-500">Public</span>
+                ) : (
+                  <span className="font-medium text-gray-500">Private</span>
+                )}
+                <span className="ml-2 text-sm text-muted-foreground">
+                  {storeVisibility 
+                    ? "(visible to anyone)" 
+                    : "(only visible to you)"}
+                </span>
+              </Label>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1 ml-7">
+              When public, anyone can view your store without logging in. When private, only you can view it.
+            </p>
           </div>
-          <p className="text-xs text-muted-foreground pl-7">
-            When enabled, anyone can view your store without logging in. When disabled, only you can view it.
-          </p>
           
           <Button 
             onClick={handleUpdateStoreInfo}

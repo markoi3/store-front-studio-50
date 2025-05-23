@@ -51,7 +51,7 @@ interface Product {
   description: string;
   created_at: string;
   image: string;
-  sold_count: number; // Added sold_count property
+  sold_count?: number; // Make sold_count optional
 }
 
 interface Order {
@@ -63,7 +63,7 @@ interface Order {
 interface Customer {
   id: string;
   created_at: string;
-  email: string;
+  email?: string | null; // Make email optional
   avatar_url?: string | null;
   name?: string | null;
   updated_at?: string | null;
@@ -180,7 +180,7 @@ const Dashboard = () => {
     
     const revenue = products.reduce((total, product) => {
       const price = typeof product.price === 'number' ? product.price : 0;
-      const soldCount = typeof product.sold_count === 'number' ? product.sold_count : 0;
+      const soldCount = product.sold_count || 0;
       return total + (price * soldCount);
     }, 0);
     
@@ -199,6 +199,16 @@ const Dashboard = () => {
   })).sort((a, b) => b.revenue - a.revenue).slice(0, 5);
 
   const orderAmounts = orders?.map(order => order.amount) || [];
+
+  // Safe formatter for numeric values that might be strings
+  const formatCurrency = (value: any): string => {
+    if (typeof value === 'number') {
+      return `$${value.toFixed(2)}`;
+    } else if (typeof value === 'string' && !isNaN(Number(value))) {
+      return `$${Number(value).toFixed(2)}`;
+    }
+    return 'N/A';
+  };
 
   const formatDate = (dateString: string): string => {
     const date = new Date(dateString);
@@ -283,7 +293,7 @@ const Dashboard = () => {
               <Skeleton className="h-6 w-32" />
             ) : (
               <div className="text-2xl font-bold">
-                {metrics ? `$${metrics.totalRevenue.toFixed(2)}` : 'N/A'}
+                {metrics ? formatCurrency(metrics.totalRevenue) : 'N/A'}
               </div>
             )}
           </CardContent>
@@ -410,7 +420,7 @@ const Dashboard = () => {
                   {recentOrders.map((order) => (
                     <TableRow key={order.id}>
                       <TableCell className="font-medium">{order.id.substring(0, 8)}</TableCell>
-                      <TableCell>${Number(order.amount).toFixed(2)}</TableCell>
+                      <TableCell>{formatCurrency(order.amount)}</TableCell>
                       <TableCell>{formatDate(order.created_at)}</TableCell>
                     </TableRow>
                   ))}
