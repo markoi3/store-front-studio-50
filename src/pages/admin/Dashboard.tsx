@@ -59,7 +59,7 @@ const Dashboard = () => {
         if (customersError) throw customersError;
         
         // Calculate statistics
-        const totalRevenue = orders?.reduce((sum, order) => sum + (parseFloat(order.total) || 0), 0) || 0;
+        const totalRevenue = orders?.reduce((sum, order) => sum + (parseFloat(order.amount.toString()) || 0), 0) || 0;
         
         setStatistics({
           totalOrders: orders?.length || 0,
@@ -176,9 +176,9 @@ const Dashboard = () => {
               <div className="divide-y">
                 {recentOrders.map((order) => (
                   <div key={order.id} className="flex items-center justify-between py-2">
-                    <div className="font-medium">#{order.order_number}</div>
+                    <div className="font-medium">#{order.id.substring(0, 8)}</div>
                     <div className="text-muted-foreground">{order.customer_name || 'Gost'}</div>
-                    <div>{formatCurrency(order.total)}</div>
+                    <div>{formatCurrency(order.amount)}</div>
                   </div>
                 ))}
               </div>

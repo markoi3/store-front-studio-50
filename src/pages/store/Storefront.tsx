@@ -1,6 +1,6 @@
 
 import { useEffect, useState } from "react";
-import { useParams, useLocation } from "react-router-dom";
+import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { StoreLayout } from "@/components/layout/StoreLayout";
 import { useStoreData } from "@/hooks/useStoreData";
 import { PageElementRenderer } from "@/components/store/PageElementRenderer";
@@ -8,8 +8,14 @@ import { PageElementRenderer } from "@/components/store/PageElementRenderer";
 const Storefront = () => {
   const { storeId } = useParams();
   const location = useLocation();
+  const navigate = useNavigate();
   const { store, loading, storeProducts, error } = useStoreData(storeId);
   const [currentPageElements, setCurrentPageElements] = useState<any[]>([]);
+  
+  // Handle navigation within the store
+  const handleNavigation = (path: string) => {
+    navigate(path);
+  };
   
   // Determine the current page based on the path
   useEffect(() => {
@@ -136,6 +142,8 @@ const Storefront = () => {
             key={element.id} 
             elements={[element]} 
             products={storeProducts} 
+            storeId={storeId || ''} 
+            onNavigate={handleNavigation}
           />
         ))}
       </div>

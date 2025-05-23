@@ -11,6 +11,23 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
+// Define extended customer type with additional fields
+interface ExtendedCustomer {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  address?: any;
+  auth_id?: string;
+  store_id: string;
+  created_at?: string;
+  updated_at?: string;
+  company_name?: string;
+  tax_id?: string;
+  notes?: string;
+  birthday?: string;
+}
+
 const EditCustomer = () => {
   const { customerId } = useParams();
   const navigate = useNavigate();
@@ -29,7 +46,7 @@ const EditCustomer = () => {
     country: '',
     birthday: undefined as Date | undefined,
   });
-  const [customer, setCustomer] = useState<any>(null);
+  const [customer, setCustomer] = useState<ExtendedCustomer | null>(null);
   
   useEffect(() => {
     const fetchCustomer = async () => {
@@ -48,7 +65,7 @@ const EditCustomer = () => {
         }
         
         if (data) {
-          setCustomer(data);
+          setCustomer(data as ExtendedCustomer);
           
           // Safely extract address data from customer.address
           const address = data?.address ? 
@@ -61,14 +78,14 @@ const EditCustomer = () => {
             name: data?.name || '',
             email: data?.email || '',
             phone: data?.phone || '',
-            companyName: data?.company_name || '',
-            taxId: data?.tax_id || '',
-            notes: data?.notes || '',
+            companyName: (data as ExtendedCustomer)?.company_name || '',
+            taxId: (data as ExtendedCustomer)?.tax_id || '',
+            notes: (data as ExtendedCustomer)?.notes || '',
             street: address?.street || '',
             city: address?.city || '',
             zip: address?.zip || '',
             country: address?.country || '',
-            birthday: data?.birthday ? new Date(data.birthday) : undefined,
+            birthday: (data as ExtendedCustomer)?.birthday ? new Date((data as ExtendedCustomer).birthday!) : undefined,
           });
         }
       } catch (error: any) {
