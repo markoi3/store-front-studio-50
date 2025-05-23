@@ -85,7 +85,7 @@ const SaasHome = () => {
                   <line x1="2" x2="22" y1="10" y2="10" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold mb-2">Secure Payments</h3>
+              <h3 className="text-xl font-bold mb-2">Sigurne online u</h3>
               <p className="text-muted-foreground">
                 Accept payments from customers around the world with our secure payment gateways.
               </p>
