@@ -71,6 +71,21 @@ const initialFakturePodaci = [
   },
 ];
 
+// Define an interface for document data to help with TypeScript
+interface DocumentData {
+  datum?: string;
+  rokPlacanja?: string;
+  primalac?: {
+    naziv?: string;
+  };
+  klijent?: string;
+  iznos?: number;
+  total?: number;
+  pdv?: number;
+  status?: string;
+  [key: string]: any;
+}
+
 const Fakture = () => {
   const [period, setPeriod] = useState<string>("all");
   const [status, setStatus] = useState<string>("all");
@@ -122,16 +137,22 @@ const Fakture = () => {
         if (documents && documents.length > 0) {
           // Transform database documents to the format expected by the UI
           const transformedDocuments = documents.map(doc => {
-            const data = doc.data || {};
+            // Safely access nested properties with type checking
+            const data = doc.data as DocumentData || {};
             
             return {
               id: doc.number || doc.id,
               tip: doc.type,
-              datum: doc.data?.datum || doc.created_at?.split('T')[0],
+              datum: typeof data === 'object' && data.datum ? data.datum : doc.created_at?.split('T')[0],
               rokPlacanja: doc.due_date ? new Date(doc.due_date).toISOString().split('T')[0] : undefined,
-              klijent: data.primalac?.naziv || data.klijent || "Nepoznat",
-              iznos: data.iznos || data.total || 0,
-              pdv: data.pdv || 0,
+              klijent: typeof data === 'object' ? 
+                (data.primalac && typeof data.primalac === 'object' ? data.primalac.naziv : null) || 
+                data.klijent || 
+                "Nepoznat" : "Nepoznat",
+              iznos: typeof data === 'object' ? 
+                (typeof data.iznos === 'number' ? data.iznos : null) || 
+                (typeof data.total === 'number' ? data.total : 0) : 0,
+              pdv: typeof data === 'object' && typeof data.pdv === 'number' ? data.pdv : 0,
               status: doc.status || "čeka uplatu",
               public_access_token: doc.public_access_token,
               original: doc // Keep the original document for reference

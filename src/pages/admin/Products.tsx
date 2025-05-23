@@ -86,7 +86,7 @@ const Products = () => {
           const transformedProducts = user?.store?.id
             ? initialProducts.map(product => ({
                 ...product,
-                storeId: String(user.store?.id || "")
+                storeId: String(user.store?.id || "") // Convert store_id to string
               }))
             : initialProducts;
           setProducts(transformedProducts);
