@@ -255,7 +255,9 @@ const Settings = () => {
           { id: "2", label: "Proizvodi", url: "/shop" },
           { id: "3", label: "O nama", url: "/about" },
           { id: "4", label: "Kontakt", url: "/contact" }
-        ]
+        ],
+        // Preserve the is_public flag if it exists, otherwise default to true
+        is_public: user.store.settings?.is_public !== undefined ? user.store.settings.is_public : true
       };
       
       console.log("Combined settings to save:", combinedSettings);
