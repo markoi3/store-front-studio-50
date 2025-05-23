@@ -27,6 +27,11 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
       const cleanLocalStorage = () => {
         // Remove products to prevent displaying products from other accounts
         localStorage.removeItem("products");
+        // Remove any other cached data that shouldn't persist between users
+        localStorage.removeItem("orders");
+        localStorage.removeItem("customers");
+        localStorage.removeItem("invoices");
+        localStorage.removeItem("estimates");
       };
       
       cleanLocalStorage();
@@ -47,6 +52,25 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
       
       console.log("Creating store with slug:", storeSlug);
       
+      // Check if store with this slug already exists
+      const { data: existingStore, error: checkError } = await supabase
+        .from('stores')
+        .select('id, slug')
+        .eq('slug', storeSlug)
+        .maybeSingle();
+        
+      if (checkError) {
+        console.error("Error checking existing store:", checkError);
+      }
+      
+      // If slug exists, append a random string to make it unique
+      let finalSlug = storeSlug;
+      if (existingStore) {
+        const randomStr = Math.random().toString(36).substring(2, 8);
+        finalSlug = `${storeSlug}-${randomStr}`;
+        console.log(`Store slug ${storeSlug} already exists, using ${finalSlug} instead`);
+      }
+      
       const defaultSettings = {
         privacyPolicy: "",
         aboutUs: "",
@@ -64,7 +88,7 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
         .insert({
           user_id: user.id,
           name: storeName,
-          slug: storeSlug,
+          slug: finalSlug,
           settings: defaultSettings
         })
         .select()

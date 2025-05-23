@@ -1,382 +1,333 @@
 
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { User, Session } from "@supabase/supabase-js";
-import { toast } from "sonner";
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { User, Session } from '@supabase/supabase-js';
+import { toast } from 'sonner';
 
-type StoreInfo = {
+// Define the shape of the user profile data
+interface UserProfile {
   id: string;
-  name: string;
-  slug: string;
-  settings: {
-    privacyPolicy?: string;
-    aboutUs?: string;
-    contactInfo?: string;
-    menuItems?: Array<{id: string; label: string; url: string}>;
-    [key: string]: any;
+  name?: string;
+  email?: string;
+  avatar_url?: string;
+  updated_at?: string;
+  store?: {
+    id: string;
+    name: string;
+    slug: string;
+    settings?: Record<string, any>;
   };
-};
+}
 
-type AuthUser = {
-  id: string;
-  email: string;
-  name: string;
-  role: "admin" | "customer";
-  store?: StoreInfo;
-};
-
-type AuthContextType = {
-  user: AuthUser | null;
-  session: Session | null; // Add session to the context
+// Define the shape of the authentication context
+interface AuthContextType {
+  user: UserProfile | null;
+  session: Session | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, name: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<{ user: User | null; session: Session | null; } | { user: null; session: null; }>;
   logout: () => Promise<void>;
-  updateStoreSettings: (settings: any) => Promise<void>;
-};
+  register: (email: string, password: string, name: string) => Promise<{ user: User | null; session: Session | null; } | { user: null; session: null; }>;
+  refreshUserProfile: () => Promise<void>;
+  updateStoreSettings: (settings: Record<string, any>) => Promise<void>;
+}
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+// Create the context with a default value
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  session: null,
+  isLoading: true,
+  login: async () => ({ user: null, session: null }),
+  logout: async () => {},
+  register: async () => ({ user: null, session: null }),
+  refreshUserProfile: async () => {},
+  updateStoreSettings: async () => {},
+});
 
-// Helper function to clean up auth state
-const cleanupAuthState = () => {
-  // Remove standard auth tokens
-  localStorage.removeItem('supabase.auth.token');
-  // Remove all Supabase auth keys from localStorage
-  Object.keys(localStorage).forEach((key) => {
-    if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
-      localStorage.removeItem(key);
-    }
-  });
-  // Remove from sessionStorage if in use
-  Object.keys(sessionStorage || {}).forEach((key) => {
-    if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
-      sessionStorage.removeItem(key);
-    }
-  });
-  
-  // Clear any other app state that might contain user data
-  localStorage.removeItem('products');
-};
-
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<AuthUser | null>(null);
-  const [session, setSession] = useState<Session | null>(null); // Track session state
+// Create a provider component
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [user, setUser] = useState<UserProfile | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-
-  // Fetch user store data
-  const fetchUserStore = async (userId: string) => {
+  
+  // Function to fetch and format user profile data
+  const fetchUserProfile = async (userId: string) => {
     try {
-      console.log("Fetching store for user ID:", userId);
+      // First, try to get the user profile (if one exists)
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
       
+      if (profileError) {
+        console.error("Error fetching user profile:", profileError);
+      }
+      
+      // Get the store associated with this user
       const { data: storeData, error: storeError } = await supabase
         .from('stores')
         .select('*')
         .eq('user_id', userId)
-        .single();
-
+        .maybeSingle();
+      
       if (storeError) {
-        console.error("Error fetching store:", storeError);
-        return null;
+        console.error("Error fetching store data:", storeError);
       }
-
-      console.log("Found store for user:", storeData);
-      return storeData;
+      
+      // Parse store settings if needed
+      let storeSettings = {};
+      if (storeData?.settings) {
+        if (typeof storeData.settings === 'string') {
+          try {
+            storeSettings = JSON.parse(storeData.settings);
+          } catch (e) {
+            console.error("Error parsing store settings:", e);
+          }
+        } else {
+          storeSettings = storeData.settings;
+        }
+      }
+      
+      // Combine user data with profile data
+      const userProfile: UserProfile = {
+        id: userId,
+        ...(profileData || {}),
+        store: storeData ? {
+          id: storeData.id,
+          name: storeData.name,
+          slug: storeData.slug,
+          settings: storeSettings
+        } : undefined
+      };
+      
+      setUser(userProfile);
+      
+      console.log("Set user profile:", userProfile);
+      
+      return userProfile;
     } catch (error) {
-      console.error("Error in fetchUserStore:", error);
+      console.error("Error in fetchUserProfile:", error);
       return null;
     }
   };
-
-  // Transform Supabase user to our app user format
-  const transformUser = async (supabaseUser: User): Promise<AuthUser> => {
-    const storeData = await fetchUserStore(supabaseUser.id);
+  
+  // Function to update store settings
+  const updateStoreSettings = async (settings: Record<string, any>) => {
+    if (!user?.store?.id) {
+      toast.error("No store found for your account");
+      return;
+    }
     
-    const defaultSettings = {
-      privacyPolicy: "",
-      aboutUs: "",
-      contactInfo: "",
-      menuItems: [
-        { id: "1", label: "Početna", url: "/" },
-        { id: "2", label: "Proizvodi", url: "/shop" },
-        { id: "3", label: "O nama", url: "/about" },
-        { id: "4", label: "Kontakt", url: "/contact" }
-      ]
-    };
-    
-    return {
-      id: supabaseUser.id,
-      email: supabaseUser.email || '',
-      name: supabaseUser.user_metadata?.name || supabaseUser.email?.split('@')[0] || 'User',
-      role: "admin", // All registered users are admins of their own stores
-      store: storeData ? {
-        id: storeData.id,
-        name: storeData.name,
-        slug: storeData.slug,
-        settings: typeof storeData.settings === 'object' && storeData.settings !== null
-          ? { ...defaultSettings, ...storeData.settings }
-          : defaultSettings
-      } : undefined
-    };
-  };
-
-  useEffect(() => {
-    // Check for existing session and setup auth listener
-    const initAuth = async () => {
-      setIsLoading(true);
-      console.log("Initializing auth...");
+    try {
+      const { error } = await supabase
+        .from('stores')
+        .update({
+          settings,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user.store.id);
       
-      // Set up auth state listener FIRST
-      const { data: { subscription } } = supabase.auth.onAuthStateChange(
-        async (event, currentSession) => {
-          console.log("Auth state changed:", event);
-          
-          if (event === 'SIGNED_OUT') {
-            // Clear all user data from localStorage
-            cleanupAuthState();
+      if (error) {
+        toast.error("Failed to update store settings: " + error.message);
+        throw error;
+      }
+      
+      // Update the local user state with new settings
+      setUser(prev => {
+        if (!prev) return prev;
+        
+        return {
+          ...prev,
+          store: {
+            ...prev.store!,
+            settings
           }
+        };
+      });
+      
+      toast.success("Store settings updated successfully");
+    } catch (error) {
+      console.error("Error updating store settings:", error);
+      throw error;
+    }
+  };
+  
+  // Function to refresh user profile data
+  const refreshUserProfile = async () => {
+    if (!session?.user?.id) return;
+    
+    await fetchUserProfile(session.user.id);
+    console.log("User profile refreshed");
+  };
+  
+  // Set up the auth state listener
+  useEffect(() => {
+    const setupAuthListener = async () => {
+      setIsLoading(true);
+      
+      // First, set up the auth state change listener
+      const { data: { subscription } } = await supabase.auth.onAuthStateChange(
+        async (event, currentSession) => {
+          console.log("Auth state changed:", event, currentSession?.user?.id);
           
-          // Update session state synchronously
           setSession(currentSession);
           
-          if (currentSession?.user) {
-            try {
-              console.log("User authenticated, transforming user data");
-              // Using setTimeout to avoid potential deadlocks
-              setTimeout(async () => {
-                const authUser = await transformUser(currentSession.user);
-                setUser(authUser);
-              }, 0);
-            } catch (error) {
-              console.error("Error transforming user:", error);
-              setUser(null);
-            }
-          } else {
-            console.log("No active session, clearing user");
-            setUser(null);
+          if (event === 'INITIAL_SESSION') {
+            // This will be handled by the getSession call below
+            return;
           }
+          
+          if (event === 'SIGNED_IN' && currentSession) {
+            // When the user signs in, fetch their profile
+            await fetchUserProfile(currentSession.user.id);
+          } else if (event === 'SIGNED_OUT') {
+            // When the user signs out, clear user data
+            setUser(null);
+          } else if (event === 'USER_UPDATED') {
+            // When the user is updated, refresh their profile
+            if (currentSession?.user?.id) {
+              await fetchUserProfile(currentSession.user.id);
+            }
+          }
+          
+          setIsLoading(false);
         }
       );
       
-      // THEN check for existing session
-      const { data: { session: existingSession } } = await supabase.auth.getSession();
+      // Check for an existing session
+      const { data: { session: initialSession } } = await supabase.auth.getSession();
       
-      if (existingSession?.user) {
-        try {
-          console.log("Found existing session, setting user");
-          setSession(existingSession);
-          const authUser = await transformUser(existingSession.user);
-          setUser(authUser);
-        } catch (error) {
-          console.error("Error transforming existing user:", error);
-        }
+      setSession(initialSession);
+      
+      if (initialSession?.user?.id) {
+        // If there's an existing session, fetch the user's profile
+        await fetchUserProfile(initialSession.user.id);
       }
       
       setIsLoading(false);
       
+      // Clean up the listener when the component unmounts
       return () => {
         subscription.unsubscribe();
       };
     };
     
-    initAuth();
+    setupAuthListener();
   }, []);
-
+  
+  // Login function
   const login = async (email: string, password: string) => {
-    setIsLoading(true);
     try {
-      console.log("Attempting login for:", email);
+      console.log("Attempting to log in user:", email);
       
-      // Clean up existing auth state
-      cleanupAuthState();
-      
-      // Attempt to sign out any existing session
-      try {
-        await supabase.auth.signOut({ scope: 'global' });
-      } catch (err) {
-        console.log("Pre-login sign out failed, continuing anyway:", err);
-      }
-      
-      const { data, error } = await supabase.auth.signInWithPassword({ 
-        email, 
-        password 
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
       });
       
       if (error) {
-        console.error("Login error:", error.message);
-        toast.error("Login failed: " + error.message);
+        console.error("Error signing in:", error);
         throw error;
       }
       
-      if (data.user) {
-        console.log("Login successful for:", data.user.email);
-        // Set session first
-        setSession(data.session);
-        
-        // Then transform and set user data
-        const authUser = await transformUser(data.user);
-        setUser(authUser);
-        
-        toast.success("Login successful!");
-        
-        // Force page reload to ensure clean state
-        setTimeout(() => {
-          window.location.href = '/dashboard';
-        }, 100);
+      console.log("User logged in successfully:", data);
+      
+      // The auth state listener will update the user state
+      // Redirect user to dashboard
+      if (data.session) {
+        console.log("Redirecting to dashboard");
+        window.location.href = '/dashboard';
       }
+      
+      return data;
     } catch (error) {
-      console.error("Login error:", error);
+      console.error("Error in login function:", error);
       throw error;
-    } finally {
-      setIsLoading(false);
     }
   };
-
-  const register = async (email: string, password: string, name: string) => {
-    setIsLoading(true);
+  
+  // Logout function
+  const logout = async () => {
     try {
-      console.log("Attempting registration for:", email);
+      console.log("Logging out...");
       
-      // Clean up existing auth state
-      cleanupAuthState();
+      const { error } = await supabase.auth.signOut();
       
-      // Attempt to sign out any existing session
-      try {
-        await supabase.auth.signOut({ scope: 'global' });
-      } catch (err) {
-        console.log("Pre-registration sign out failed, continuing anyway:", err);
+      if (error) {
+        console.error("Error signing out:", error);
+        throw error;
       }
       
-      const { data, error } = await supabase.auth.signUp({ 
-        email, 
+      console.log("User logged out successfully");
+      
+      // The auth state listener will update the user state
+      // Redirect user to home
+      window.location.href = '/';
+    } catch (error) {
+      console.error("Error in logout function:", error);
+      throw error;
+    }
+  };
+  
+  // Register function
+  const register = async (email: string, password: string, name: string) => {
+    try {
+      console.log("Attempting to register user:", email);
+      
+      // Register the user
+      const { data, error } = await supabase.auth.signUp({
+        email,
         password,
         options: {
           data: {
-            name: name
-          }
-        }
+            name: name,
+          },
+        },
       });
       
       if (error) {
-        console.error("Registration error:", error.message);
-        toast.error("Registration failed: " + error.message);
+        console.error("Error registering:", error);
         throw error;
       }
       
-      if (data.user) {
-        console.log("Registration successful for:", data.user.email);
-        
-        // Set session first
-        setSession(data.session);
-        
-        // Wait a moment for the trigger to create the store
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        const authUser = await transformUser(data.user);
-        setUser(authUser);
-        
-        toast.success("Registration successful!");
-        
-        // Force page reload to ensure clean state
-        setTimeout(() => {
-          window.location.href = '/dashboard';
-        }, 100);
-      }
+      console.log("User registered successfully:", data);
+      
+      // Note: The auth state listener will handle updating the user state
+      // once email verification is complete
+      
+      return data;
     } catch (error) {
-      console.error("Registration error:", error);
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const logout = async () => {
-    try {
-      console.log("Logging out user");
-      
-      // Clean up auth state first
-      cleanupAuthState();
-      
-      // Then sign out
-      await supabase.auth.signOut({ scope: 'global' });
-      
-      // Clear state
-      setUser(null);
-      setSession(null);
-      
-      toast.success("Logged out successfully");
-      
-      // Force page reload to ensure clean state
-      window.location.href = '/';
-    } catch (error) {
-      console.error("Logout error:", error);
-      toast.error("Logout failed. Please try again.");
-    }
-  };
-
-  const updateStoreSettings = async (settings: any) => {
-    if (!user || !user.store) return;
-    
-    try {
-      console.log("Updating store settings");
-      
-      const { data, error } = await supabase
-        .from('stores')
-        .update({ 
-          settings: {
-            ...user.store.settings,
-            ...settings
-          }
-        })
-        .eq('id', user.store.id)
-        .select()
-        .single();
-        
-      if (error) {
-        console.error("Update settings error:", error);
-        toast.error("Failed to update settings: " + error.message);
-        throw error;
-      }
-      
-      setUser(prev => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          store: {
-            ...prev.store!,
-            settings: {
-              ...prev.store!.settings,
-              ...settings
-            }
-          }
-        };
-      });
-      
-      toast.success("Settings updated successfully");
-    } catch (error) {
-      console.error("Update store settings error:", error);
+      console.error("Error in register function:", error);
       throw error;
     }
   };
-
+  
+  // Provide the auth context to the app
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      session,
-      isLoading, 
-      login, 
-      register, 
-      logout, 
-      updateStoreSettings 
-    }}>
+    <AuthContext.Provider 
+      value={{ 
+        user, 
+        session, 
+        isLoading, 
+        login, 
+        logout, 
+        register, 
+        refreshUserProfile,
+        updateStoreSettings
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
 };
 
+// Custom hook to use the auth context
 export const useAuth = () => {
   const context = useContext(AuthContext);
+  
   if (context === undefined) {
     throw new Error("useAuth must be used within an AuthProvider");
   }
+  
   return context;
 };
