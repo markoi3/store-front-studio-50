@@ -4,7 +4,6 @@ import { withStoreLayout } from "@/components/layout/StorePageLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { StoreSettings } from "@/hooks/useStore";
 import { PageElementRenderer } from "@/components/store/PageElementRenderer";
-import { getDefaultProducts } from "@/components/store/DefaultProducts";
 import { Product } from "@/components/shop/ProductCard";
 
 interface BuilderElement {
@@ -48,7 +47,7 @@ const CustomPage = () => {
           
         if (error) {
           console.error("Error fetching products:", error);
-          return getDefaultProducts(storeId);
+          return [];
         }
         
         if (data && data.length > 0) {
@@ -63,11 +62,11 @@ const CustomPage = () => {
             category: product.category
           }));
         } else {
-          return getDefaultProducts(storeId);
+          return [];
         }
       } catch (err) {
         console.error("Error in fetchStoreProducts:", err);
-        return getDefaultProducts(storeId);
+        return [];
       }
     };
     
@@ -155,15 +154,7 @@ const CustomPage = () => {
   
   return (
     <div className="container mx-auto px-4 py-12">
-      <div className="max-w-3xl mx-auto mb-8">
-        <h1 className="text-3xl font-bold mb-6">{pageData.title}</h1>
-        
-        {pageData.content && (
-          <div className="prose max-w-none mb-8">
-            {pageData.content}
-          </div>
-        )}
-      </div>
+      {/* Title and content are now optional - not displayed by default */}
       
       {/* Use the unified PageElementRenderer for all page elements */}
       {pageData.elements && pageData.elements.length > 0 && (

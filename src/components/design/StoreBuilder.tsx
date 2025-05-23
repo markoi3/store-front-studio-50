@@ -14,7 +14,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-type ElementType = 'hero' | 'products' | 'text' | 'image' | 'categories' | 'testimonials' | 'cta';
+type ElementType = 'hero' | 'products' | 'text' | 'image' | 'categories' | 'testimonials' | 'cta' | 'customHTML' | 'customCSS';
 
 interface BuilderElement {
   id: string;
@@ -206,6 +206,18 @@ export const StoreBuilder = () => {
         textColor: '#000000',
         buttonColor: '#3b82f6',
         buttonTextColor: '#ffffff'
+      }
+    },
+    customHTML: {
+      type: 'customHTML',
+      settings: {
+        content: '<p>Your custom HTML content here...</p>'
+      }
+    },
+    customCSS: {
+      type: 'customCSS',
+      settings: {
+        content: '<style>Your custom CSS content here...</style>'
       }
     }
   };
@@ -498,6 +510,14 @@ export const StoreBuilder = () => {
                     <Plus className="h-4 w-4 mr-1" />
                     Call to Action
                   </Button>
+                  <Button variant="outline" className="justify-start" onClick={() => addElement('customHTML')}>
+                    <Plus className="h-4 w-4 mr-1" />
+                    Custom HTML
+                  </Button>
+                  <Button variant="outline" className="justify-start" onClick={() => addElement('customCSS')}>
+                    <Plus className="h-4 w-4 mr-1" />
+                    Custom CSS
+                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -653,6 +673,18 @@ export const StoreBuilder = () => {
                                       >
                                         {element.settings.buttonText}
                                       </Button>
+                                    </div>
+                                  )}
+                                  
+                                  {element.type === 'customHTML' && (
+                                    <div className="text-center py-2">
+                                      <h3 className="font-medium mb-2">{element.settings.content}</h3>
+                                    </div>
+                                  )}
+                                  
+                                  {element.type === 'customCSS' && (
+                                    <div className="text-center py-2">
+                                      <h3 className="font-medium mb-2">{element.settings.content}</h3>
                                     </div>
                                   )}
                                   
@@ -1006,6 +1038,38 @@ export const StoreBuilder = () => {
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+        );
+        
+      case 'customHTML':
+        return (
+          <div className="space-y-3">
+            <div>
+              <Label htmlFor={`${element.id}-content`} className="text-xs">Content</Label>
+              <Textarea
+                id={`${element.id}-content`}
+                value={element.settings.content}
+                onChange={(e) => updateElementSettings(element.id, { content: e.target.value })}
+                className="text-sm"
+                rows={3}
+              />
+            </div>
+          </div>
+        );
+        
+      case 'customCSS':
+        return (
+          <div className="space-y-3">
+            <div>
+              <Label htmlFor={`${element.id}-content`} className="text-xs">Content</Label>
+              <Textarea
+                id={`${element.id}-content`}
+                value={element.settings.content}
+                onChange={(e) => updateElementSettings(element.id, { content: e.target.value })}
+                className="text-sm"
+                rows={3}
+              />
             </div>
           </div>
         );

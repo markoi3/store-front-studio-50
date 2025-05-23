@@ -4,6 +4,8 @@ import { ProductsElement } from "./ProductsElement";
 import { TextElement } from "./TextElement";
 import { CTAElement } from "./CTAElement";
 import { ImageElement } from "./ImageElement";
+import { CustomHtmlElement } from "./CustomHtmlElement";
+import { CustomCssElement } from "./CustomCssElement";
 import { Product } from "@/components/shop/ProductCard";
 
 interface PageElementRendererProps {
@@ -43,6 +45,14 @@ export const PageElementRenderer = ({ elements, products, storeId, onNavigate }:
           
           {element.type === 'image' && (
             <ImageElement element={element} />
+          )}
+          
+          {element.type === 'customHTML' && (
+            <CustomHtmlElement element={element} />
+          )}
+          
+          {element.type === 'customCSS' && (
+            <CustomCssElement element={element} />
           )}
         </div>
       ))}
