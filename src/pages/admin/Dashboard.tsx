@@ -1,452 +1,435 @@
 import { useEffect, useState } from "react";
-import { AdminLayout } from "@/components/layout/AdminLayout";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useAuth } from "@/contexts/AuthContext";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  LineChart,
-  Line,
-  BarChart,
-  Bar,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-} from "recharts";
+} from 'recharts';
+import {
+  BarChart,
+  Bar,
+  Cell,
+  ReferenceLine,
+  ComposedChart,
+  Line,
+  Scatter,
+  Legend
+} from 'recharts';
+import { Sparklines, SparklinesLine } from 'react-sparklines';
+import { Skeleton } from "@/components/ui/skeleton";
+import { Calendar } from "@/components/ui/calendar"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { cn } from "@/lib/utils";
+import { format } from "date-fns"
+import { CalendarIcon } from "lucide-react"
+import { DateRange } from "react-day-picker"
+import { Input } from "@/components/ui/input"
+import { addDays } from 'date-fns';
+import { useToast } from "@/components/ui/use-toast"
+import { useCart } from "@/contexts/CartContext";
+
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  description: string;
+  created_at: string;
+  image: string;
+  sold_count: number;
+}
+
+interface Order {
+  id: string;
+  amount: number;
+  created_at: string;
+}
+
+interface Customer {
+  id: string;
+  created_at: string;
+  email: string;
+}
 
 const Dashboard = () => {
-  const { user } = useAuth();
-  const [isLoading, setIsLoading] = useState(true);
-  const [salesData, setSalesData] = useState([]);
-  const [productSalesData, setProductSalesData] = useState([]);
-  const [recentOrders, setRecentOrders] = useState([]);
-  const [stats, setStats] = useState({
-    totalRevenue: 0,
-    orderCount: 0,
-    customerCount: 0,
-    conversionRate: 0,
+  const [date, setDate] = useState<DateRange | undefined>({
+    from: addDays(new Date(), -30),
+    to: new Date(),
+  })
+  const [filter, setFilter] = useState<string>('30d');
+  const { toast } = useToast()
+  const { clearCart } = useCart();
+
+  const { data: products, isLoading: isLoadingProducts, error: productsError } = useQuery<Product[]>({
+    queryKey: ['products'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+      if (error) {
+        throw error;
+      }
+      return data || [];
+    },
+  });
+
+  const { data: orders, isLoading: isLoadingOrders, error: ordersError } = useQuery<Order[]>({
+    queryKey: ['orders', date?.from, date?.to],
+    queryFn: async () => {
+      if (!date?.from || !date?.to) {
+        return [];
+      }
+
+      const { data, error } = await supabase
+        .from('orders')
+        .select('*')
+        .gte('created_at', date.from.toISOString())
+        .lte('created_at', date.to.toISOString());
+
+      if (error) {
+        throw error;
+      }
+      return data || [];
+    },
+  });
+
+  const { data: customers, isLoading: isLoadingCustomers, error: customersError } = useQuery<Customer[]>({
+    queryKey: ['customers', date?.from, date?.to],
+    queryFn: async () => {
+      if (!date?.from || !date?.to) {
+        return [];
+      }
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .gte('created_at', date.from.toISOString())
+        .lte('created_at', date.to.toISOString());
+
+      if (error) {
+        throw error;
+      }
+      return data || [];
+    },
   });
 
   useEffect(() => {
-    if (!user?.store?.id) return;
-
-    const fetchDashboardData = async () => {
-      setIsLoading(true);
-      try {
-        // Fetch orders for this store
-        const { data: orders, error: ordersError } = await supabase
-          .from('orders')
-          .select('*, customer_id, amount, items, payment_status, status, created_at')
-          .eq('store_id', user.store.id)
-          .order('created_at', { ascending: false });
-
-        if (ordersError) throw ordersError;
-
-        // Fetch customers for this store
-        const { data: customers, error: customersError } = await supabase
-          .from('customers')
-          .select('*')
-          .eq('store_id', user.store.id);
-
-        if (customersError) throw customersError;
-
-        // Calculate stats
-        const totalRevenue = orders?.reduce((sum, order) => {
-          // Ensure amount is a number before adding
-          const orderAmount = typeof order.amount === 'number' ? order.amount : 0;
-          return sum + orderAmount;
-        }, 0) || 0;
-        const orderCount = orders?.length || 0;
-        const customerCount = customers?.length || 0;
-        
-        // Fix conversion rate calculation: ensure we're working with numbers
-        let conversionRate = 0;
-        if (orderCount > 0 && customerCount > 0) {
-          // Convert to numbers explicitly before division
-          const orderCountNum = Number(orderCount);
-          const customerCountNum = Number(customerCount);
-          // Fix: Ensure we're dividing numbers, and format the result to 1 decimal place
-          conversionRate = Number(((orderCountNum / Math.max(customerCountNum, 1)) * 100).toFixed(1));
-        }
-
-        setStats({
-          totalRevenue,
-          orderCount,
-          customerCount,
-          conversionRate,
-        });
-
-        // Prepare sales data by month
-        const monthlySales = prepareMonthlyData(orders || []);
-        setSalesData(monthlySales);
-
-        // Prepare product sales data
-        const productSales = prepareProductData(orders || []);
-        setProductSalesData(productSales.slice(0, 5)); // Get top 5 products
-
-        // Set recent orders
-        setRecentOrders(
-          (orders || []).slice(0, 5).map(order => {
-            // Find customer name from customers array or use placeholder
-            const customer = customers?.find(c => c.id === order.customer_id);
-            return {
-              id: order.id,
-              customer: customer ? customer.name : 'Nepoznat kupac',
-              date: order.created_at ? new Date(order.created_at).toISOString().split('T')[0] : 'N/A',
-              amount: typeof order.amount === 'number' ? order.amount : 0,
-              status: order.status || 'pending'
-            };
-          })
-        );
-      } catch (error) {
-        console.error("Error fetching dashboard data:", error);
-        // Set fallback data if fetching fails
-        setSalesData(generateFallbackMonthlyData());
-        setProductSalesData(generateFallbackProductData());
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchDashboardData();
-  }, [user?.store?.id]);
-
-  // Helper function to prepare monthly sales data
-  const prepareMonthlyData = (orders) => {
-    if (!orders || orders.length === 0) return generateFallbackMonthlyData();
-    
-    const monthNames = ["Jan", "Feb", "Mar", "Apr", "Maj", "Jun", "Jul", "Avg", "Sep", "Okt", "Nov", "Dec"];
-    const result = [];
-    
-    // Get current month and go back 6 months
-    const currentDate = new Date();
-    const currentMonth = currentDate.getMonth();
-    
-    // Initialize all months with 0 sales
-    for (let i = 6; i >= 0; i--) {
-      const monthIndex = (currentMonth - i + 12) % 12; // Handle wrapping around to previous year
-      result.push({
-        name: monthNames[monthIndex],
-        sales: 0
-      });
+    if (productsError) {
+      toast({
+        title: "Uh oh! Something went wrong.",
+        description: "There was a problem fetching products.",
+        variant: "destructive",
+      })
     }
+  }, [productsError, toast]);
+
+  useEffect(() => {
+    if (ordersError) {
+      toast({
+        title: "Uh oh! Something went wrong.",
+        description: "There was a problem fetching orders.",
+        variant: "destructive",
+      })
+    }
+  }, [ordersError, toast]);
+
+  useEffect(() => {
+    if (customersError) {
+      toast({
+        title: "Uh oh! Something went wrong.",
+        description: "There was a problem fetching customers.",
+        variant: "destructive",
+      })
+    }
+  }, [customersError, toast]);
+
+  const calculateMetrics = (products: any[]) => {
+    const totalSold = products.reduce((sum, product) => sum + (product.sold_count || 0), 0);
     
-    // Aggregate sales by month
-    orders.forEach(order => {
-      if (!order.created_at) return;
-      
-      const orderDate = new Date(order.created_at);
-      const orderMonth = orderDate.getMonth();
-      const monthDiff = (currentMonth - orderMonth + 12) % 12;
-      
-      if (monthDiff <= 6) {
-        const monthIndex = 6 - monthDiff;
-        // Ensure order.amount is a number before adding
-        const orderAmount = typeof order.amount === 'number' ? order.amount : 0;
-        result[monthIndex].sales += orderAmount;
+    const revenue = products.reduce((total, product) => {
+      const price = typeof product.price === 'number' ? product.price : 0;
+      const soldCount = typeof product.sold_count === 'number' ? product.sold_count : 0;
+      return total + (price * soldCount);
+    }, 0);
+    
+    return {
+      totalRevenue: revenue,
+      totalSold: totalSold,
+      totalProducts: products.length,
+    };
+  };
+
+  const metrics = products ? calculateMetrics(products) : null;
+
+  const productRevenue = products?.map(product => ({
+    name: product.name,
+    revenue: product.price * product.sold_count,
+  })).sort((a, b) => b.revenue - a.revenue).slice(0, 5);
+
+  const orderAmounts = orders?.map(order => order.amount) || [];
+
+  const formatDate = (dateString: string): string => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  };
+
+  const recentOrders = orders?.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 5);
+
+  const newCustomers = customers?.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 5);
+
+  const changeDateRange = (range: DateRange | undefined) => {
+    setDate(range);
+    if (range?.from && range?.to) {
+      const diff = range.to.getTime() - range.from.getTime();
+      const days = Math.ceil(diff / (1000 * 3600 * 24));
+
+      if (days <= 30) {
+        setFilter('30d');
+      } else if (days <= 90) {
+        setFilter('90d');
+      } else if (days <= 180) {
+        setFilter('180d');
+      } else {
+        setFilter('1y');
       }
-    });
-    
-    return result;
-  };
-
-  // Helper function to prepare product sales data
-  const prepareProductData = (orders) => {
-    if (!orders || orders.length === 0) return generateFallbackProductData();
-    
-    const productSales = {};
-    
-    // Extract items from all orders
-    orders.forEach(order => {
-      if (!order.items || !Array.isArray(order.items)) return;
-      
-      order.items.forEach(item => {
-        if (!item || typeof item !== 'object' || !item.name) return;
-        
-        const productName = item.name;
-        const quantity = typeof item.quantity === 'number' ? item.quantity : 1;
-        
-        if (productSales[productName]) {
-          productSales[productName] += quantity;
-        } else {
-          productSales[productName] = quantity;
-        }
-      });
-    });
-    
-    // Convert to array and sort by sales
-    return Object.entries(productSales)
-      .map(([name, sales]) => ({ name, sales }))
-      .sort((a, b) => b.sales - a.sales);
-  };
-
-  // Fallback data generators
-  const generateFallbackMonthlyData = () => {
-    return [
-      { name: "Jan", sales: 4000 },
-      { name: "Feb", sales: 3000 },
-      { name: "Mar", sales: 5000 },
-      { name: "Apr", sales: 2780 },
-      { name: "Maj", sales: 1890 },
-      { name: "Jun", sales: 2390 },
-      { name: "Jul", sales: 3490 },
-    ];
-  };
-
-  const generateFallbackProductData = () => {
-    return [
-      { name: "Klub sto", sales: 12 },
-      { name: "Kancelarijska stolica", sales: 19 },
-      { name: "Set šolja", sales: 32 },
-      { name: "Podna lampa", sales: 14 },
-      { name: "Trpezarijska stolica", sales: 10 },
-    ];
-  };
-
-  // Format functions for better display
-  const formatCurrency = (value) => {
-    return value.toLocaleString('sr-RS');
+    }
   };
 
   return (
-    <AdminLayout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Kontrolna tabla</h1>
-          <Link to="/products/new">
-            <Button>Dodaj novi proizvod</Button>
-          </Link>
-        </div>
-        
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Ukupan prihod
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <Skeleton className="h-8 w-36" />
-              ) : (
-                <>
-                  <div className="text-2xl font-bold font-numeric">{formatCurrency(stats.totalRevenue)} RSD</div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Ukupan prihod od prodaje
-                  </p>
-                </>
+    <div className="container mx-auto py-10">
+      <div className="mb-4 flex items-center justify-between">
+        <h1 className="text-3xl font-bold">Dashboard</h1>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant={"outline"}
+              className={cn(
+                "w-[300px] justify-start text-left font-normal",
+                !date && "text-muted-foreground"
               )}
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Porudžbine
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <Skeleton className="h-8 w-24" />
-              ) : (
-                <>
-                  <div className="text-2xl font-bold font-numeric">{stats.orderCount}</div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Ukupan broj porudžbina
-                  </p>
-                </>
-              )}
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Kupci
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <Skeleton className="h-8 w-24" />
-              ) : (
-                <>
-                  <div className="text-2xl font-bold font-numeric">{stats.customerCount}</div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Registrovanih kupaca
-                  </p>
-                </>
-              )}
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Stopa konverzije
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <Skeleton className="h-8 w-24" />
-              ) : (
-                <>
-                  <div className="text-2xl font-bold font-numeric">{stats.conversionRate}%</div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Porudžbine / kupci
-                  </p>
-                </>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-        
-        {/* Charts */}
-        <Tabs defaultValue="sales">
-          <TabsList>
-            <TabsTrigger value="sales">Pregled prodaje</TabsTrigger>
-            <TabsTrigger value="products">Performanse proizvoda</TabsTrigger>
-          </TabsList>
-          <TabsContent value="sales">
-            <Card>
-              <CardHeader>
-                <CardTitle>Pregled prodaje</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  <div className="h-[300px] flex items-center justify-center bg-muted/20 rounded-md">
-                    <p className="text-muted-foreground">Učitavanje podataka...</p>
-                  </div>
+            >
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {date?.from ? (
+                date.to ? (
+                  `${format(date.from, "MMM dd, yyyy")} - ${format(date.to, "MMM dd, yyyy")}`
                 ) : (
-                  <div className="h-[300px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={salesData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="name" />
-                        <YAxis />
-                        <Tooltip formatter={(value) => [`${formatCurrency(value)} RSD`, 'Prodaja']} />
-                        <Line
-                          type="monotone"
-                          dataKey="sales"
-                          stroke="#8884d8"
-                          strokeWidth={2}
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-          <TabsContent value="products">
-            <Card>
-              <CardHeader>
-                <CardTitle>Performanse proizvoda</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  <div className="h-[300px] flex items-center justify-center bg-muted/20 rounded-md">
-                    <p className="text-muted-foreground">Učitavanje podataka...</p>
-                  </div>
-                ) : (
-                  <div className="h-[300px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={productSalesData}>
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="name" />
-                        <YAxis />
-                        <Tooltip />
-                        <Bar dataKey="sales" fill="#8884d8" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-        
-        {/* Recent Orders */}
+                  format(date.from, "MMM dd, yyyy")
+                )
+              ) : (
+                <span>Pick a date</span>
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="end">
+            <Calendar
+              mode="range"
+              defaultMonth={date?.from}
+              selected={date}
+              onSelect={changeDateRange}
+              numberOfMonths={2}
+            />
+          </PopoverContent>
+        </Popover>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
         <Card>
           <CardHeader>
-            <CardTitle>Nedavne porudžbine</CardTitle>
+            <CardTitle>Total Revenue</CardTitle>
+            <CardDescription>Total revenue generated</CardDescription>
           </CardHeader>
           <CardContent>
-            {isLoading ? (
-              <div className="space-y-2">
-                <Skeleton className="h-12 w-full" />
-                <Skeleton className="h-12 w-full" />
-                <Skeleton className="h-12 w-full" />
-              </div>
-            ) : recentOrders.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="text-left text-xs text-muted-foreground">
-                      <th className="pb-2">ID porudžbine</th>
-                      <th className="pb-2">Kupac</th>
-                      <th className="pb-2">Datum</th>
-                      <th className="pb-2">Iznos</th>
-                      <th className="pb-2">Status</th>
-                      <th className="pb-2">Akcije</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {recentOrders.map((order) => (
-                      <tr key={order.id} className="border-t border-border">
-                        <td className="py-3">{order.id.substring(0, 8)}</td>
-                        <td className="py-3">{order.customer}</td>
-                        <td className="py-3">{order.date}</td>
-                        <td className="py-3 font-numeric">{formatCurrency(order.amount)} RSD</td>
-                        <td className="py-3">
-                          <span
-                            className={`inline-block px-2 py-1 text-xs rounded-full ${
-                              order.status === "completed"
-                                ? "bg-green-100 text-green-800"
-                                : order.status === "processing"
-                                ? "bg-blue-100 text-blue-800"
-                                : order.status === "shipped"
-                                ? "bg-yellow-100 text-yellow-800"
-                                : "bg-muted text-muted-foreground"
-                            }`}
-                          >
-                            {order.status === "completed" ? "završeno" : 
-                            order.status === "processing" ? "u obradi" : 
-                            order.status === "shipped" ? "poslato" : "na čekanju"}
-                          </span>
-                        </td>
-                        <td className="py-3">
-                          <Link to={`/orders/${order.id}`}>
-                            <Button variant="ghost" size="sm">
-                              Pregled
-                            </Button>
-                          </Link>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+            {isLoadingProducts ? (
+              <Skeleton className="h-6 w-32" />
             ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                <p>Nema porudžbina za prikaz</p>
-                <p className="text-sm">Porudžbine će se pojaviti ovde kada kupci obave kupovinu</p>
+              <div className="text-2xl font-bold">
+                {metrics ? `$${metrics.totalRevenue.toFixed(2)}` : 'N/A'}
               </div>
             )}
-            <div className="mt-4 text-center">
-              <Link to="/orders">
-                <Button variant="outline">Prikaži sve porudžbine</Button>
-              </Link>
-            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Products Sold</CardTitle>
+            <CardDescription>Number of products sold</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoadingProducts ? (
+              <Skeleton className="h-6 w-32" />
+            ) : (
+              <div className="text-2xl font-bold">
+                {metrics ? metrics.totalSold : 'N/A'}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Total Products</CardTitle>
+            <CardDescription>Number of products available</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoadingProducts ? (
+              <Skeleton className="h-6 w-32" />
+            ) : (
+              <div className="text-2xl font-bold">
+                {metrics ? metrics.totalProducts : 'N/A'}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
-    </AdminLayout>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+        <Card className="col-span-1">
+          <CardHeader>
+            <CardTitle>Revenue Over Time</CardTitle>
+            <CardDescription>Revenue generated over the selected time period</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoadingOrders ? (
+              <Skeleton className="h-[200px] w-full" />
+            ) : (
+              <ResponsiveContainer width="100%" height={300}>
+                <AreaChart data={orders}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="created_at" tickFormatter={formatDate} />
+                  <YAxis />
+                  <Tooltip labelFormatter={formatDate} formatter={(value) => `$${value.toFixed(2)}`} />
+                  <Area type="monotone" dataKey="amount" stroke="#8884d8" fill="#8884d8" />
+                </AreaChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="col-span-1">
+          <CardHeader>
+            <CardTitle>Order Amounts</CardTitle>
+            <CardDescription>Distribution of order amounts</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoadingOrders ? (
+              <Skeleton className="h-[200px] w-full" />
+            ) : (
+              <Sparklines data={orderAmounts} height={35}>
+                <SparklinesLine color="#4169E1" />
+              </Sparklines>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <Card className="col-span-1">
+          <CardHeader>
+            <CardTitle>Top Selling Products</CardTitle>
+            <CardDescription>Top 5 products by revenue</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoadingProducts ? (
+              <Skeleton className="h-[200px] w-full" />
+            ) : (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={productRevenue}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip formatter={(value) => `$${value?.toFixed(2)}`} />
+                  <Bar dataKey="revenue" fill="#82ca9d" />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="col-span-1">
+          <CardHeader>
+            <CardTitle>Recent Orders</CardTitle>
+            <CardDescription>Last 5 orders placed</CardDescription>
+          </CardHeader>
+          <CardContent className="overflow-auto">
+            {isLoadingOrders ? (
+              <Skeleton className="h-[200px] w-full" />
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[100px]">Order ID</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Date</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {recentOrders?.map((order) => (
+                    <TableRow key={order.id}>
+                      <TableCell className="font-medium">{order.id.substring(0, 8)}</TableCell>
+                      <TableCell>${order.amount.toFixed(2)}</TableCell>
+                      <TableCell>{formatDate(order.created_at)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-6">
+        <Card className="col-span-1">
+          <CardHeader>
+            <CardTitle>New Customers</CardTitle>
+            <CardDescription>Last 5 new customers</CardDescription>
+          </CardHeader>
+          <CardContent className="overflow-auto">
+            {isLoadingCustomers ? (
+              <Skeleton className="h-[200px] w-full" />
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[100px]">Customer ID</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Date</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {newCustomers?.map((customer) => (
+                    <TableRow key={customer.id}>
+                      <TableCell className="font-medium">{customer.id.substring(0, 8)}</TableCell>
+                      <TableCell>{customer.email}</TableCell>
+                      <TableCell>{formatDate(customer.created_at)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
   );
 };
 
