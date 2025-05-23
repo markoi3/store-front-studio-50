@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -48,10 +49,10 @@ interface Product {
   id: string;
   name: string;
   price: number;
-  description: string;
-  created_at: string;
-  image: string;
-  sold_count?: number; // Make sold_count optional
+  description?: string;
+  created_at?: string;
+  image?: string;
+  sold_count: number; // Now required to match the database
 }
 
 interface Order {
@@ -63,7 +64,7 @@ interface Order {
 interface Customer {
   id: string;
   created_at: string;
-  email?: string | null; // Make email optional
+  email?: string; // Updated to match the database
   avatar_url?: string | null;
   name?: string | null;
   updated_at?: string | null;
@@ -136,7 +137,7 @@ const Dashboard = () => {
       // Transform profiles data to match Customer interface
       return (data || []).map(profile => ({
         id: profile.id,
-        created_at: profile.updated_at || new Date().toISOString(), // Fallback if created_at is missing
+        created_at: profile.updated_at || new Date().toISOString(), 
         email: profile.email || 'Unknown',
         avatar_url: profile.avatar_url,
         name: profile.name,

@@ -187,6 +187,7 @@ export type Database = {
           seo_description: string | null
           seo_title: string | null
           slug: string
+          sold_count: number | null
           stock: number
           store_id: string
           updated_at: string | null
@@ -205,6 +206,7 @@ export type Database = {
           seo_description?: string | null
           seo_title?: string | null
           slug: string
+          sold_count?: number | null
           stock?: number
           store_id: string
           updated_at?: string | null
@@ -223,6 +225,7 @@ export type Database = {
           seo_description?: string | null
           seo_title?: string | null
           slug?: string
+          sold_count?: number | null
           stock?: number
           store_id?: string
           updated_at?: string | null
@@ -241,18 +244,21 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          email: string | null
           id: string
           name: string | null
           updated_at: string | null
         }
         Insert: {
           avatar_url?: string | null
+          email?: string | null
           id: string
           name?: string | null
           updated_at?: string | null
         }
         Update: {
           avatar_url?: string | null
+          email?: string | null
           id?: string
           name?: string | null
           updated_at?: string | null

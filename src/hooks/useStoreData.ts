@@ -3,30 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Product } from "@/components/shop/ProductCard";
 import { useToast } from "@/hooks/use-toast";
-
-interface StoreMenuItem {
-  id: string;
-  label: string;
-  url: string;
-}
-
-interface StoreSettings {
-  menuItems?: StoreMenuItem[];
-  aboutUs?: string;
-  privacyPolicy?: string;
-  contactInfo?: string;
-  pageElements?: any[];
-  is_public?: boolean;
-  [key: string]: any;
-}
-
-interface StoreData {
-  id: string;
-  name: string;
-  slug: string;
-  settings: StoreSettings;
-  elements: any[];
-}
+import { StoreData, StoreSettings, isValidStoreSettings } from "@/types/store";
 
 export const useStoreData = (storeId: string | undefined) => {
   const [store, setStore] = useState<StoreData | null>(null);
@@ -69,10 +46,15 @@ export const useStoreData = (storeId: string | undefined) => {
         
         console.log("Found store:", storeData);
         
-        // Safely check if is_public is true using type checking
+        // Properly type-check if settings exist and is_public is a boolean
         let isPublic = false;
         if (storeData.settings && typeof storeData.settings === 'object') {
-          isPublic = storeData.settings.is_public === true;
+          // Use the newly created type guard
+          if (isValidStoreSettings(storeData.settings)) {
+            isPublic = storeData.settings.is_public;
+          } else if (typeof storeData.settings.is_public === 'boolean') {
+            isPublic = storeData.settings.is_public;
+          }
         }
         console.log("Store is public:", isPublic);
         
@@ -104,10 +86,18 @@ export const useStoreData = (storeId: string | undefined) => {
         };
         
         // Process store settings
-        const storeSettings: StoreSettings = 
-          (typeof storeData.settings === 'object' && storeData.settings !== null) 
-            ? { ...defaultSettings, ...storeData.settings }
-            : defaultSettings;
+        let storeSettings: StoreSettings;
+        
+        if (typeof storeData.settings === 'object' && storeData.settings !== null) {
+          storeSettings = {
+            ...defaultSettings,
+            ...storeData.settings,
+            // Ensure is_public is always a boolean
+            is_public: isPublic
+          };
+        } else {
+          storeSettings = defaultSettings;
+        }
         
         // Transform products to match our Product type
         const formattedProducts = productsData ? productsData.map((product: any) => ({
@@ -118,7 +108,7 @@ export const useStoreData = (storeId: string | undefined) => {
           slug: product.slug,
           storeId: storeId,
           category: product.category,
-          sold_count: product.sold_count || 0 // Ensure sold_count exists
+          sold_count: product.sold_count || 0 // Now properly handled
         })) : [];
         
         setStoreProducts(formattedProducts);

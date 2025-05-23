@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,7 @@ import {
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { StoreSettings } from "@/types/store";
 
 const Settings = () => {
   const { user, updateStoreSettings } = useAuth();
@@ -90,11 +92,16 @@ const Settings = () => {
         slug: user.store.slug || ""
       });
 
-      // Load store visibility status - make sure to properly check for boolean value
+      // Load store visibility status with improved type checking
       if (user.store.settings) {
         // Explicitly check for boolean true
-        setStoreVisibility(user.store.settings.is_public === true);
+        const isPublic = typeof user.store.settings.is_public === 'boolean' 
+          ? user.store.settings.is_public 
+          : false;
+          
+        setStoreVisibility(isPublic);
         console.log("Store visibility from DB:", user.store.settings.is_public);
+        console.log("Store visibility parsed to:", isPublic);
         
         // Load content settings from store
         setContentSettings({
@@ -247,11 +254,11 @@ const Settings = () => {
       console.log("Store visibility before save:", storeVisibility);
       
       // Combine all settings into one object
-      const combinedSettings = {
+      const combinedSettings: StoreSettings = {
         aboutUs: contentSettings.aboutUs,
         privacyPolicy: contentSettings.privacyPolicy,
         contactInfo: contentSettings.contactInfo,
-        is_public: storeVisibility, // Explicitly set boolean value
+        is_public: Boolean(storeVisibility), // Ensure it's a boolean
         storeSettings,
         paymentSettings,
         shippingSettings,
@@ -266,7 +273,7 @@ const Settings = () => {
       };
       
       console.log("Combined settings:", combinedSettings);
-      console.log("is_public value being saved:", combinedSettings.is_public);
+      console.log("is_public value being saved:", combinedSettings.is_public, "type:", typeof combinedSettings.is_public);
       
       // Update the database
       const { error } = await supabase

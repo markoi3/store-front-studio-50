@@ -1,3 +1,4 @@
+
 import { useParams, useNavigate } from "react-router-dom";
 import { StoreLayout } from "@/components/layout/StoreLayout";
 import { Button } from "@/components/ui/button";
@@ -8,7 +9,7 @@ import { getDefaultProducts } from "@/components/store/DefaultProducts";
 const Storefront = () => {
   const { storeId } = useParams();
   const navigate = useNavigate();
-  const { store, loading, storeProducts } = useStoreData(storeId);
+  const { store, loading, storeProducts, error } = useStoreData(storeId);
   
   if (loading) {
     return (
@@ -32,7 +33,9 @@ const Storefront = () => {
           <div className="flex justify-center items-center min-h-[60vh]">
             <div className="text-center">
               <h1 className="text-2xl font-bold mb-2">Prodavnica nije pronađena</h1>
-              <p className="text-muted-foreground mb-6">Prodavnica koju tražite ne postoji ili više nije dostupna.</p>
+              <p className="text-muted-foreground mb-6">
+                {error || "Prodavnica koju tražite ne postoji ili više nije dostupna."}
+              </p>
               <Button asChild>
                 <a href="/">Povratak na početnu</a>
               </Button>
@@ -42,6 +45,10 @@ const Storefront = () => {
       </StoreLayout>
     );
   }
+  
+  // Debug information for store visibility
+  console.log("Store settings:", store.settings);
+  console.log("Store is_public:", store.settings.is_public);
   
   // Use stored products if available, otherwise use defaults
   const displayProducts = storeProducts.length > 0 ? storeProducts : getDefaultProducts(storeId);
