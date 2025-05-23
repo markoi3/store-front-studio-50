@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -224,7 +223,7 @@ const Products = () => {
           <div>
             <h1 className="text-2xl font-bold">Proizvodi</h1>
           </div>
-          <Link to="/proizvod/novi">
+          <Link to="/products/new">
             <Button>
               <Plus className="h-4 w-4 mr-2" />
               Novi proizvod
@@ -333,7 +332,7 @@ const Products = () => {
                                 </Link>
                               </DropdownMenuItem>
                               <DropdownMenuItem asChild>
-                                <Link to={`/admin/products/${product.id}`} className="flex items-center">
+                                <Link to={`/products/${product.id}`} className="flex items-center">
                                   <Pencil className="h-4 w-4 mr-2" />
                                   Modifikuj proizvod
                                 </Link>
