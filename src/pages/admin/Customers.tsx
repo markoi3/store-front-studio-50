@@ -14,8 +14,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Search, Plus, UserPlus } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Search } from "lucide-react";
 
 interface Customer {
   id: string;
@@ -26,7 +25,6 @@ interface Customer {
 }
 
 const Customers = () => {
-  const navigate = useNavigate();
   const { user } = useAuth();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
@@ -71,10 +69,7 @@ const Customers = () => {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold">Kupci</h1>
-          <Button onClick={() => navigate("/customers/new")}>
-            <UserPlus className="mr-2 h-4 w-4" />
-            Dodaj kupca
-          </Button>
+          <Button variant="outline">Dodaj kupca</Button>
         </div>
         
         <div className="relative">
@@ -103,12 +98,8 @@ const Customers = () => {
                   Nema pronađenih kupaca
                 </h3>
                 <p className="text-muted-foreground">
-                  Kupci će se pojaviti ovde nakon što izvrše porudžbinu ili ih ručno dodate.
+                  Kupci će se pojaviti ovde nakon što izvrše porudžbinu.
                 </p>
-                <Button onClick={() => navigate("/customers/new")} className="mt-4">
-                  <UserPlus className="mr-2 h-4 w-4" />
-                  Dodaj prvog kupca
-                </Button>
               </div>
             ) : (
               <Table>
@@ -130,20 +121,9 @@ const Customers = () => {
                       <TableCell>
                         {new Date(customer.created_at).toLocaleDateString('sr-RS')}
                       </TableCell>
-                      <TableCell className="text-right space-x-1">
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => navigate(`/customers/${customer.id}`)}
-                        >
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="sm">
                           Detalji
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => navigate(`/customers/edit/${customer.id}`)}
-                        >
-                          Izmeni
                         </Button>
                       </TableCell>
                     </TableRow>
