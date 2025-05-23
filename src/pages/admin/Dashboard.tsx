@@ -49,18 +49,10 @@ interface Product {
   id: string;
   name: string;
   price: number;
-  description?: string;
-  created_at?: string;
-  image?: string;
+  description: string;
+  created_at: string;
+  image: string;
   sold_count: number;
-  category?: string;
-  images?: any;
-  published?: boolean;
-  seo_title?: string;
-  seo_description?: string;
-  stock?: number;
-  slug?: string;
-  variants?: any;
 }
 
 interface Order {
@@ -93,12 +85,7 @@ const Dashboard = () => {
       if (error) {
         throw error;
       }
-      
-      // Add sold_count property if it doesn't exist
-      return (data || []).map(product => ({
-        ...product,
-        sold_count: product.sold_count || 0
-      })) as Product[];
+      return data || [];
     },
   });
 
@@ -172,7 +159,7 @@ const Dashboard = () => {
     }
   }, [customersError, toast]);
 
-  const calculateMetrics = (products: Product[]) => {
+  const calculateMetrics = (products: any[]) => {
     const totalSold = products.reduce((sum, product) => sum + (product.sold_count || 0), 0);
     
     const revenue = products.reduce((total, product) => {
@@ -192,7 +179,7 @@ const Dashboard = () => {
 
   const productRevenue = products?.map(product => ({
     name: product.name,
-    revenue: product.price * (product.sold_count || 0),
+    revenue: product.price * product.sold_count,
   })).sort((a, b) => b.revenue - a.revenue).slice(0, 5);
 
   const orderAmounts = orders?.map(order => order.amount) || [];
