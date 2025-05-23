@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Product } from "@/components/shop/ProductCard";
+import { useToast } from "@/hooks/use-toast";
 
 interface StoreMenuItem {
   id: string;
@@ -29,12 +30,18 @@ interface StoreData {
 export const useStoreData = (storeId: string | undefined) => {
   const [store, setStore] = useState<StoreData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [storeProducts, setStoreProducts] = useState<Product[]>([]);
+  const { toast } = useToast();
   
   useEffect(() => {
     const loadStoreData = async () => {
       try {
-        if (!storeId) return;
+        if (!storeId) {
+          setError("Store ID is required");
+          setLoading(false);
+          return;
+        }
         
         console.log("Loading store data for slug:", storeId);
         
@@ -47,12 +54,14 @@ export const useStoreData = (storeId: string | undefined) => {
           
         if (storeError) {
           console.error("Error fetching store:", storeError);
+          setError("Error loading store data");
           setLoading(false);
           return;
         }
         
         if (!storeData) {
           console.error("No store found with slug:", storeId);
+          setError(`Prodavnica nije pronađena: ${storeId}`);
           setLoading(false);
           return;
         }
@@ -144,8 +153,10 @@ export const useStoreData = (storeId: string | undefined) => {
         
         console.log("Page elements:", formattedStore.elements);
         setStore(formattedStore);
+        setError(null);
       } catch (error) {
         console.error("Error loading store data:", error);
+        setError("Error loading store data");
       } finally {
         setLoading(false);
       }
@@ -154,5 +165,5 @@ export const useStoreData = (storeId: string | undefined) => {
     loadStoreData();
   }, [storeId]);
 
-  return { store, loading, storeProducts };
+  return { store, loading, storeProducts, error };
 };

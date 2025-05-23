@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -29,43 +30,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
-// Initial products data for fallback
-const initialProducts = [
-  {
-    id: "1",
-    name: "Početni veb sajt - paket",
-    description: "Osnovni sajt sa do 5 stranica, SEO optimizacija, osnovni dizajn",
-    price: "35000",
-    image: "https://via.placeholder.com/150",
-    slug: "pocetni-sajt-paket",
-    category: "web-design",
-    stock: 999,
-    published: true
-  },
-  {
-    id: "2",
-    name: "Napredni veb sajt - paket",
-    description: "Sajt sa do 15 stranica, napredni SEO, prilagođeni dizajn, blog sekcija",
-    price: "75000",
-    image: "https://via.placeholder.com/150",
-    slug: "napredni-sajt-paket",
-    category: "web-design",
-    stock: 999,
-    published: true
-  },
-  {
-    id: "3",
-    name: "Online prodavnica - osnovni paket",
-    description: "E-commerce rešenje sa do 50 proizvoda, osnovni dizajn, integracija plaćanja",
-    price: "120000",
-    image: "https://via.placeholder.com/150",
-    slug: "online-prodavnica-osnovni",
-    category: "e-commerce",
-    stock: 999,
-    published: true
-  }
-];
-
 const Products = () => {
   const [products, setProducts] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -78,92 +42,61 @@ const Products = () => {
       try {
         setLoading(true);
         
-        // First try loading from Supabase if we have a store ID
-        if (user?.store?.id) {
-          const { data: supabaseProducts, error } = await supabase
-            .from("products")
-            .select("*")
-            .eq("store_id", user.store.id);
-            
-          if (error) {
-            console.error("Error loading products from Supabase:", error);
-            throw error;
-          }
-          
-          if (supabaseProducts && supabaseProducts.length > 0) {
-            console.log("Products loaded from Supabase:", supabaseProducts);
-            setProducts(supabaseProducts);
-            // Also update localStorage for offline access
-            localStorage.setItem("products", JSON.stringify(supabaseProducts));
-            setLoading(false);
-            return;
-          }
+        // Only proceed if we have a store ID
+        if (!user?.store?.id) {
+          console.log("No store ID available, showing empty products list");
+          setProducts([]);
+          setLoading(false);
+          return;
         }
         
-        // Fallback to localStorage if Supabase fetch failed or returned no products
-        const storedProducts = localStorage.getItem("products");
-        if (storedProducts) {
-          const parsedProducts = JSON.parse(storedProducts);
-          setProducts(parsedProducts);
-        } else {
-          // If no products in localStorage, use initialProducts
-          const transformedProducts = user?.store?.id
-            ? initialProducts.map(product => ({
-                ...product,
-                store_id: String(user.store?.id || "") // Use store_id to match Supabase column
-              }))
-            : initialProducts;
-          setProducts(transformedProducts);
+        console.log("Loading products for store ID:", user.store.id);
+        
+        // Fetch products from Supabase for this store only
+        const { data: supabaseProducts, error } = await supabase
+          .from("products")
+          .select("*")
+          .eq("store_id", user.store.id);
           
-          // Save to localStorage
-          localStorage.setItem("products", JSON.stringify(transformedProducts));
-          
-          // If store_id is available, also save to Supabase
-          if (user?.store?.id) {
-            // We add the products one by one to Supabase
-            for (const product of transformedProducts) {
-              const { error } = await supabase
-                .from("products")
-                .insert({
-                  name: product.name,
-                  description: product.description,
-                  price: parseFloat(product.price), // Convert price string to number
-                  image: product.image,
-                  slug: product.slug,
-                  category: product.category,
-                  stock: product.stock,
-                  published: product.published,
-                  store_id: user.store.id // Pass store_id separately
-                });
-                
-              if (error) {
-                console.error("Error saving product to Supabase:", error);
-              }
-            }
-          }
+        if (error) {
+          console.error("Error loading products from Supabase:", error);
+          throw error;
         }
+        
+        console.log("Products loaded from Supabase:", supabaseProducts || []);
+        setProducts(supabaseProducts || []);
+        
+        // Clear any previous localStorage products to avoid mixing data between accounts
+        localStorage.removeItem("products");
+        
       } catch (error) {
         console.error("Error loading products:", error);
         setProducts([]);
+        toast({
+          title: "Error",
+          description: "Failed to load products. Please try again.",
+          variant: "destructive",
+        });
       } finally {
         setLoading(false);
       }
     };
 
     loadProducts();
-  }, [user?.store?.id]);
+  }, [user?.store?.id, toast]);
 
   // Function to delete a product
   const handleDeleteProduct = async (productId: string) => {
     // Confirm before deleting
     if (window.confirm("Da li ste sigurni da želite da obrišete ovaj proizvod?")) {
       try {
-        // Delete from Supabase first if store_id is available
+        // Delete from Supabase
         if (user?.store?.id) {
           const { error } = await supabase
             .from("products")
             .delete()
-            .eq("id", productId);
+            .eq("id", productId)
+            .eq("store_id", user.store.id); // Ensure we only delete products from this store
             
           if (error) {
             console.error("Error deleting product from Supabase:", error);
@@ -177,13 +110,10 @@ const Products = () => {
         // Update state
         setProducts(updatedProducts);
         
-        // Update localStorage
-        localStorage.setItem("products", JSON.stringify(updatedProducts));
-        
         // Show success toast
         toast({
           title: "Proizvod obrisan",
-          description: "Proizvod je uspešno obrisan iz Supabase i lokalne memorije.",
+          description: "Proizvod je uspešno obrisan.",
         });
       } catch (error) {
         console.error("Error deleting product:", error);
@@ -198,7 +128,7 @@ const Products = () => {
 
   // Function to filter products based on search query
   const filteredProducts = products.filter((product) =>
-    product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    product.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     (product.description && product.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
     (product.id && product.id.toLowerCase().includes(searchQuery.toLowerCase()))
   );
@@ -213,7 +143,7 @@ const Products = () => {
   
   // Calculate total product quantity
   const totalQuantity = filteredProducts.reduce((sum, product) => {
-    return sum + (parseInt(product.stock) || 0);
+    return sum + (parseInt(String(product.stock)) || 0);
   }, 0);
 
   return (

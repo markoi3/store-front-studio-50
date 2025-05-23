@@ -21,6 +21,16 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
       toast.error("No store found for your account. Creating one...");
       createStoreForUser();
     }
+    
+    // Clean up localStorage on user change to prevent data leakage
+    if (user) {
+      const cleanLocalStorage = () => {
+        // Remove products to prevent displaying products from other accounts
+        localStorage.removeItem("products");
+      };
+      
+      cleanLocalStorage();
+    }
   }, [user]);
   
   // Function to create a store for user if one doesn't exist
@@ -31,8 +41,11 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
     try {
       // Generate store slug from email
       const emailUsername = user.email.split('@')[0];
+      // Ensure the slug is clean and valid
       const storeSlug = emailUsername.toLowerCase().replace(/[^a-z0-9]/g, '-');
       const storeName = `${user.name}'s Store`;
+      
+      console.log("Creating store with slug:", storeSlug);
       
       const defaultSettings = {
         privacyPolicy: "",
@@ -61,6 +74,7 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
         console.error("Error creating store:", error);
         toast.error("Failed to create store: " + error.message);
       } else {
+        console.log("Store created successfully:", data);
         toast.success("Store created successfully! Refreshing...");
         // Reload the page to update user context with new store
         setTimeout(() => {
@@ -69,6 +83,7 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
       }
     } catch (error) {
       console.error("Error in createStoreForUser:", error);
+      toast.error("An unexpected error occurred while creating your store.");
     } finally {
       setStoreLoading(false);
     }

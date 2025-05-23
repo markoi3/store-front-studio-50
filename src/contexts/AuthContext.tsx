@@ -53,6 +53,9 @@ const cleanupAuthState = () => {
       sessionStorage.removeItem(key);
     }
   });
+  
+  // Clear any other app state that might contain user data
+  localStorage.removeItem('products');
 };
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
@@ -63,6 +66,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Fetch user store data
   const fetchUserStore = async (userId: string) => {
     try {
+      console.log("Fetching store for user ID:", userId);
+      
       const { data: storeData, error: storeError } = await supabase
         .from('stores')
         .select('*')
@@ -74,6 +79,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return null;
       }
 
+      console.log("Found store for user:", storeData);
       return storeData;
     } catch (error) {
       console.error("Error in fetchUserStore:", error);
@@ -123,6 +129,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const { data: { subscription } } = supabase.auth.onAuthStateChange(
         async (event, currentSession) => {
           console.log("Auth state changed:", event);
+          
+          if (event === 'SIGNED_OUT') {
+            // Clear all user data from localStorage
+            cleanupAuthState();
+          }
           
           // Update session state synchronously
           setSession(currentSession);
