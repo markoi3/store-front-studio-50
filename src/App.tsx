@@ -1,3 +1,4 @@
+
 import React from 'react';
 import './App.css';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
@@ -31,10 +32,10 @@ import NoviPredracun from './pages/admin/NoviPredracun';
 import NoviObracun from './pages/admin/NoviObracun';
 import Transakcije from './pages/admin/Transakcije';
 import BrziLink from './pages/admin/BrziLink';
-import Storefront from './pages/Storefront';
+import Storefront from './pages/store/Storefront';
 import CustomPage from './pages/CustomPage';
-import PublicDocument from './pages/PublicDocument';
-import PaymentLink from './pages/PaymentLink';
+import PublicDocument from './pages/public/PublicDocument';
+import PaymentLink from './pages/payment/PaymentLink';
 import NewCustomer from './pages/admin/NewCustomer';
 import CustomerDetail from './pages/admin/CustomerDetail';
 import EditCustomer from './pages/admin/EditCustomer';
