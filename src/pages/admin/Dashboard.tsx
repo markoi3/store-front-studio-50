@@ -43,6 +43,7 @@ import { Input } from "@/components/ui/input"
 import { addDays } from 'date-fns';
 import { useToast } from "@/components/ui/use-toast"
 import { useCart } from "@/contexts/CartContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Product {
   id: string;
@@ -77,74 +78,115 @@ const Dashboard = () => {
   const [filter, setFilter] = useState<string>('30d');
   const { toast } = useToast()
   const { clearCart } = useCart();
+  const { user } = useAuth();
+
+  // Get store ID from user context for filtering
+  const storeId = user?.store?.id;
+
+  console.log("Dashboard: Current user:", user);
+  console.log("Dashboard: Store ID:", storeId);
 
   const { data: products, isLoading: isLoadingProducts, error: productsError } = useQuery<Product[]>({
-    queryKey: ['products'],
+    queryKey: ['products', storeId],
     queryFn: async () => {
+      console.log("Dashboard: Fetching products for store ID:", storeId);
+      
+      if (!storeId) {
+        console.log("Dashboard: No store ID available, returning empty array");
+        return [];
+      }
+
       const { data, error } = await supabase
         .from('products')
         .select('*')
+        .eq('store_id', storeId);
+      
       if (error) {
+        console.error("Dashboard: Error fetching products:", error);
         throw error;
       }
       
-      return (data || []).map(product => ({
-        ...product,
-        sold_count: product.sold_count || 0
-      }));
+      console.log("Dashboard: Raw products data:", data);
+      console.log("Dashboard: Number of products fetched:", data?.length || 0);
+      
+      const formattedProducts = (data || []).map(product => {
+        console.log("Dashboard: Processing product:", product.name, "sold_count:", product.sold_count);
+        return {
+          ...product,
+          sold_count: product.sold_count || 0
+        };
+      });
+      
+      console.log("Dashboard: Formatted products:", formattedProducts);
+      return formattedProducts;
     },
+    enabled: !!storeId,
   });
 
   const { data: orders, isLoading: isLoadingOrders, error: ordersError } = useQuery<Order[]>({
-    queryKey: ['orders', date?.from, date?.to],
+    queryKey: ['orders', date?.from, date?.to, storeId],
     queryFn: async () => {
-      if (!date?.from || !date?.to) {
+      if (!date?.from || !date?.to || !storeId) {
         return [];
       }
+
+      console.log("Dashboard: Fetching orders for store ID:", storeId);
 
       const { data, error } = await supabase
         .from('orders')
         .select('*')
+        .eq('store_id', storeId)
         .gte('created_at', date.from.toISOString())
         .lte('created_at', date.to.toISOString());
 
       if (error) {
-        throw error;
-      }
-      return data || [];
-    },
-  });
-
-  const { data: customers, isLoading: isLoadingCustomers, error: customersError } = useQuery<Customer[]>({
-    queryKey: ['customers', date?.from, date?.to],
-    queryFn: async () => {
-      if (!date?.from || !date?.to) {
-        return [];
-      }
-
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .gte('created_at', date.from.toISOString())
-        .lte('created_at', date.to.toISOString());
-
-      if (error) {
+        console.error("Dashboard: Error fetching orders:", error);
         throw error;
       }
       
-      return (data || []).map(profile => ({
-        id: profile.id,
-        created_at: profile.updated_at || new Date().toISOString(), 
-        email: profile.email || 'Unknown',
-        avatar_url: profile.avatar_url,
-        name: profile.name,
-        updated_at: profile.updated_at
+      console.log("Dashboard: Orders data:", data);
+      return data || [];
+    },
+    enabled: !!storeId,
+  });
+
+  const { data: customers, isLoading: isLoadingCustomers, error: customersError } = useQuery<Customer[]>({
+    queryKey: ['customers', date?.from, date?.to, storeId],
+    queryFn: async () => {
+      if (!date?.from || !date?.to || !storeId) {
+        return [];
+      }
+
+      console.log("Dashboard: Fetching customers for store ID:", storeId);
+
+      const { data, error } = await supabase
+        .from('customers')
+        .select('*')
+        .eq('store_id', storeId)
+        .gte('created_at', date.from.toISOString())
+        .lte('created_at', date.to.toISOString());
+
+      if (error) {
+        console.error("Dashboard: Error fetching customers:", error);
+      } else {
+        console.log("Dashboard: Customers data:", data);
+      }
+      
+      return (data || []).map(customer => ({
+        id: customer.id,
+        created_at: customer.created_at || new Date().toISOString(), 
+        email: customer.email || 'Unknown',
+        avatar_url: customer.address,
+        name: customer.name,
+        updated_at: customer.updated_at
       }));
     },
+    enabled: !!storeId,
   });
 
   useEffect(() => {
     if (productsError) {
+      console.error("Dashboard: Products error:", productsError);
       toast({
         title: "Uh oh! Something went wrong.",
         description: "There was a problem fetching products.",
@@ -155,6 +197,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     if (ordersError) {
+      console.error("Dashboard: Orders error:", ordersError);
       toast({
         title: "Uh oh! Something went wrong.",
         description: "There was a problem fetching orders.",
@@ -165,6 +208,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     if (customersError) {
+      console.error("Dashboard: Customers error:", customersError);
       toast({
         title: "Uh oh! Something went wrong.",
         description: "There was a problem fetching customers.",
@@ -174,13 +218,25 @@ const Dashboard = () => {
   }, [customersError, toast]);
 
   const calculateMetrics = (products: Product[]) => {
-    const totalSold = products.reduce((sum, product) => sum + (product.sold_count || 0), 0);
+    console.log("Dashboard: Calculating metrics for products:", products);
+    
+    const totalSold = products.reduce((sum, product) => {
+      const soldCount = product.sold_count || 0;
+      console.log(`Dashboard: Product ${product.name} sold count: ${soldCount}`);
+      return sum + soldCount;
+    }, 0);
     
     const revenue = products.reduce((total, product) => {
       const price = typeof product.price === 'number' ? product.price : 0;
       const soldCount = product.sold_count || 0;
-      return total + (price * soldCount);
+      const productRevenue = price * soldCount;
+      console.log(`Dashboard: Product ${product.name} revenue: ${price} x ${soldCount} = ${productRevenue}`);
+      return total + productRevenue;
     }, 0);
+    
+    console.log("Dashboard: Total sold:", totalSold);
+    console.log("Dashboard: Total revenue:", revenue);
+    console.log("Dashboard: Total products:", products.length);
     
     return {
       totalRevenue: revenue,
@@ -198,12 +254,18 @@ const Dashboard = () => {
 
   const orderAmounts = orders?.map(order => order.amount) || [];
 
-  // Safe formatter for numeric values that might be strings
+  // RSD formatter for Serbian locale
   const formatCurrency = (value: any): string => {
     if (typeof value === 'number') {
-      return `$${value.toFixed(2)}`;
+      return `${value.toLocaleString('sr-RS', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2
+      })} RSD`;
     } else if (typeof value === 'string' && !isNaN(Number(value))) {
-      return `$${Number(value).toFixed(2)}`;
+      return `${Number(value).toLocaleString('sr-RS', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2
+      })} RSD`;
     }
     return 'N/A';
   };
@@ -211,16 +273,22 @@ const Dashboard = () => {
   // Fixed chart tooltip formatter to handle ValueType properly
   const formatChartValue = (value: any): string => {
     if (typeof value === 'number') {
-      return `$${value.toFixed(2)}`;
+      return `${value.toLocaleString('sr-RS', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2
+      })} RSD`;
     } else if (typeof value === 'string' && !isNaN(Number(value))) {
-      return `$${Number(value).toFixed(2)}`;
+      return `${Number(value).toLocaleString('sr-RS', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2
+      })} RSD`;
     }
     return String(value);
   };
 
   const formatDate = (dateString: string): string => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
+    return date.toLocaleDateString('sr-RS', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -293,8 +361,8 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
         <Card>
           <CardHeader>
-            <CardTitle>Total Revenue</CardTitle>
-            <CardDescription>Total revenue generated</CardDescription>
+            <CardTitle>Ukupni prihod</CardTitle>
+            <CardDescription>Ukupno ostvareni prihod</CardDescription>
           </CardHeader>
           <CardContent>
             {isLoadingProducts ? (
@@ -309,15 +377,15 @@ const Dashboard = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle>Products Sold</CardTitle>
-            <CardDescription>Number of products sold</CardDescription>
+            <CardTitle>Prodati proizvodi</CardTitle>
+            <CardDescription>Ukupan broj prodatih proizvoda</CardDescription>
           </CardHeader>
           <CardContent>
             {isLoadingProducts ? (
               <Skeleton className="h-6 w-32" />
             ) : (
               <div className="text-2xl font-bold">
-                {metrics ? metrics.totalSold : 'N/A'}
+                {metrics ? metrics.totalSold.toLocaleString('sr-RS') : 'N/A'}
               </div>
             )}
           </CardContent>
@@ -325,15 +393,15 @@ const Dashboard = () => {
 
         <Card>
           <CardHeader>
-            <CardTitle>Total Products</CardTitle>
-            <CardDescription>Number of products available</CardDescription>
+            <CardTitle>Ukupno proizvoda</CardTitle>
+            <CardDescription>Broj dostupnih proizvoda</CardDescription>
           </CardHeader>
           <CardContent>
             {isLoadingProducts ? (
               <Skeleton className="h-6 w-32" />
             ) : (
               <div className="text-2xl font-bold">
-                {metrics ? metrics.totalProducts : 'N/A'}
+                {metrics ? metrics.totalProducts.toLocaleString('sr-RS') : 'N/A'}
               </div>
             )}
           </CardContent>
@@ -343,8 +411,8 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
         <Card className="col-span-1">
           <CardHeader>
-            <CardTitle>Revenue Over Time</CardTitle>
-            <CardDescription>Revenue generated over the selected time period</CardDescription>
+            <CardTitle>Prihod kroz vreme</CardTitle>
+            <CardDescription>Prihod ostvaren u izabranom periodu</CardDescription>
           </CardHeader>
           <CardContent>
             {isLoadingOrders ? (
@@ -365,8 +433,8 @@ const Dashboard = () => {
 
         <Card className="col-span-1">
           <CardHeader>
-            <CardTitle>Order Amounts</CardTitle>
-            <CardDescription>Distribution of order amounts</CardDescription>
+            <CardTitle>Iznosi porudžbina</CardTitle>
+            <CardDescription>Distribucija iznosa porudžbina</CardDescription>
           </CardHeader>
           <CardContent>
             {isLoadingOrders ? (
@@ -374,9 +442,9 @@ const Dashboard = () => {
             ) : (
               <div className="h-[200px] flex items-center justify-center">
                 {orderAmounts.length > 0 ? (
-                  <p>Order amounts data visualization would go here</p>
+                  <p>Grafikon iznosa porudžbina</p>
                 ) : (
-                  <p className="text-muted-foreground">No order data available</p>
+                  <p className="text-muted-foreground">Nema podataka o porudžbinama</p>
                 )}
               </div>
             )}
@@ -387,8 +455,8 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card className="col-span-1">
           <CardHeader>
-            <CardTitle>Top Selling Products</CardTitle>
-            <CardDescription>Top 5 products by revenue</CardDescription>
+            <CardTitle>Najbolji proizvodi</CardTitle>
+            <CardDescription>Top 5 proizvoda po prihodu</CardDescription>
           </CardHeader>
           <CardContent>
             {isLoadingProducts ? (
@@ -409,8 +477,8 @@ const Dashboard = () => {
 
         <Card className="col-span-1">
           <CardHeader>
-            <CardTitle>Recent Orders</CardTitle>
-            <CardDescription>Last 5 orders placed</CardDescription>
+            <CardTitle>Nedavne porudžbine</CardTitle>
+            <CardDescription>Poslednjih 5 porudžbina</CardDescription>
           </CardHeader>
           <CardContent className="overflow-auto">
             {isLoadingOrders ? (
@@ -419,9 +487,9 @@ const Dashboard = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[100px]">Order ID</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Date</TableHead>
+                    <TableHead className="w-[100px]">ID porudžbine</TableHead>
+                    <TableHead>Iznos</TableHead>
+                    <TableHead>Datum</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -442,8 +510,8 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-6">
         <Card className="col-span-1">
           <CardHeader>
-            <CardTitle>New Customers</CardTitle>
-            <CardDescription>Last 5 new customers</CardDescription>
+            <CardTitle>Novi kupci</CardTitle>
+            <CardDescription>Poslednjih 5 novih kupaca</CardDescription>
           </CardHeader>
           <CardContent className="overflow-auto">
             {isLoadingCustomers ? (
@@ -452,9 +520,9 @@ const Dashboard = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[100px]">Customer ID</TableHead>
+                    <TableHead className="w-[100px]">ID kupca</TableHead>
                     <TableHead>Email</TableHead>
-                    <TableHead>Date</TableHead>
+                    <TableHead>Datum</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
