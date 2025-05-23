@@ -43,7 +43,7 @@ const SaasHome = () => {
               <div className="relative">
                 <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-accent rounded-xl blur-lg"></div>
                 <div className="relative bg-white p-4 rounded-xl shadow-lg">
-                  <img alt="E-Shop Builder Dashboard" className="rounded-lg shadow-sm" src="/lovable-uploads/7af40af3-d02c-4b6b-9853-24de035a7d09.png" />
+                  <img alt="E-Shop Builder Dashboard" src="/lovable-uploads/6fef5303-c8e2-46fe-a327-ac622c209816.png" className="rounded-lg shadow-sm object-scale-down" />
                 </div>
               </div>
             </div>
