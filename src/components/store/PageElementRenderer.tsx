@@ -2,6 +2,8 @@
 import { HeroElement } from "./HeroElement";
 import { ProductsElement } from "./ProductsElement";
 import { TextElement } from "./TextElement";
+import { CTAElement } from "./CTAElement";
+import { ImageElement } from "./ImageElement";
 import { Product } from "@/components/shop/ProductCard";
 
 interface PageElementRendererProps {
@@ -33,6 +35,14 @@ export const PageElementRenderer = ({ elements, products, storeId, onNavigate }:
           
           {element.type === 'text' && (
             <TextElement element={element} />
+          )}
+
+          {element.type === 'cta' && (
+            <CTAElement element={element} onNavigate={onNavigate} />
+          )}
+          
+          {element.type === 'image' && (
+            <ImageElement element={element} />
           )}
         </div>
       ))}
