@@ -21,46 +21,51 @@ export const PageElementRenderer = ({ elements, products, storeId, onNavigate }:
     return null;
   }
 
-  console.log("Rendering page elements:", elements);
-  console.log("Available products:", products);
+  console.log("PageElementRenderer - elements:", elements);
+  console.log("PageElementRenderer - products:", products);
+  console.log("PageElementRenderer - storeId:", storeId);
   
   return (
     <div className="space-y-12">
-      {elements.map((element) => (
-        <div key={element.id}>
-          {element.type === 'hero' && (
-            <HeroElement element={element} onNavigate={onNavigate} />
-          )}
-          
-          {element.type === 'products' && (
-            <ProductsElement 
-              element={element} 
-              products={products} 
-              storeId={storeId} 
-            />
-          )}
-          
-          {element.type === 'text' && (
-            <TextElement element={element} />
-          )}
+      {elements.map((element) => {
+        console.log("Rendering element type:", element.type);
+        
+        return (
+          <div key={element.id}>
+            {element.type === 'hero' && (
+              <HeroElement element={element} onNavigate={onNavigate} />
+            )}
+            
+            {element.type === 'products' && (
+              <ProductsElement 
+                element={element} 
+                products={products} 
+                storeId={storeId} 
+              />
+            )}
+            
+            {element.type === 'text' && (
+              <TextElement element={element} />
+            )}
 
-          {element.type === 'cta' && (
-            <CTAElement element={element} onNavigate={onNavigate} />
-          )}
-          
-          {element.type === 'image' && (
-            <ImageElement element={element} />
-          )}
-          
-          {element.type === 'customHTML' && (
-            <CustomHtmlElement element={element} />
-          )}
-          
-          {element.type === 'customCSS' && (
-            <CustomCssElement element={element} />
-          )}
-        </div>
-      ))}
+            {element.type === 'cta' && (
+              <CTAElement element={element} onNavigate={onNavigate} />
+            )}
+            
+            {element.type === 'image' && (
+              <ImageElement element={element} />
+            )}
+            
+            {element.type === 'customHTML' && (
+              <CustomHtmlElement element={element} />
+            )}
+            
+            {element.type === 'customCSS' && (
+              <CustomCssElement element={element} />
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 };

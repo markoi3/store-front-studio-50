@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { withStoreLayout } from "@/components/layout/StorePageLayout";
@@ -23,6 +22,7 @@ const CustomPage = () => {
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [products, setProducts] = useState<Product[]>([]);
+  const [actualStoreId, setActualStoreId] = useState<string | null>(null);
   
   // Function to handle navigation while keeping store context
   const handleNavigate = (path: string) => {
@@ -36,15 +36,42 @@ const CustomPage = () => {
   };
 
   useEffect(() => {
-    const fetchStoreProducts = async () => {
-      if (!storeId) return [];
+    const fetchStoreInfo = async () => {
+      if (!storeId) return null;
       
       try {
-        console.log("Fetching products for store:", storeId);
+        console.log("Fetching store info for slug:", storeId);
+        const { data, error } = await supabase
+          .from('stores')
+          .select('id')
+          .eq('slug', storeId)
+          .maybeSingle();
+          
+        if (error) {
+          console.error("Error fetching store ID:", error);
+          return null;
+        }
+        
+        if (data) {
+          console.log("Found actual store ID:", data.id, "from slug:", storeId);
+          setActualStoreId(data.id);
+          return data.id;
+        }
+        
+        return null;
+      } catch (err) {
+        console.error("Error in fetchStoreInfo:", err);
+        return null;
+      }
+    };
+    
+    const fetchStoreProducts = async (storeDbId: string) => {
+      try {
+        console.log("Fetching products for store ID:", storeDbId);
         const { data, error } = await supabase
           .from('products')
           .select('*')
-          .eq('store_id', storeId)
+          .eq('store_id', storeDbId)
           .eq('published', true);
           
         if (error) {
@@ -65,7 +92,7 @@ const CustomPage = () => {
             category: product.category
           }));
         } else {
-          console.log("No products found for store");
+          console.log("No products found for store ID:", storeDbId);
           return [];
         }
       } catch (err) {
@@ -81,33 +108,38 @@ const CustomPage = () => {
         setLoading(true);
         console.log(`Fetching data for custom page: ${pageSlug} in store: ${storeId}`);
         
-        // Fetch store data and products in parallel
-        const storeResult = await supabase
-          .from('stores')
-          .select('id, settings')
-          .eq('slug', storeId)
-          .maybeSingle();
+        // First, get the actual store ID from the slug
+        const storeDbId = await fetchStoreInfo();
         
-        if (storeResult.error) {
-          console.error("Error fetching store settings:", storeResult.error);
-          setLoading(false);
-          return;
-        } 
-        
-        const { data } = storeResult;
-        
-        if (!data) {
+        if (!storeDbId) {
           console.error("No store found with slug:", storeId);
           setLoading(false);
           return;
         }
         
-        console.log("Found store:", data);
+        // Fetch store settings
+        const { data: storeData, error } = await supabase
+          .from('stores')
+          .select('settings')
+          .eq('id', storeDbId)
+          .maybeSingle();
+        
+        if (error) {
+          console.error("Error fetching store settings:", error);
+          setLoading(false);
+          return;
+        } 
+        
+        if (!storeData) {
+          console.error("No store data found with ID:", storeDbId);
+          setLoading(false);
+          return;
+        }
         
         // Fetch products specifically for this store
-        const productsResult = await fetchStoreProducts();
+        const productsResult = await fetchStoreProducts(storeDbId);
         setProducts(productsResult);
-        console.log("Set products:", productsResult);
+        console.log("Set products for rendering:", productsResult);
         
         // Parse settings safely
         const defaultSettings: StoreSettings = {
@@ -124,8 +156,8 @@ const CustomPage = () => {
             
         // Process store settings
         const storeSettings: StoreSettings = 
-          (typeof data.settings === 'object' && data.settings !== null) 
-            ? { ...defaultSettings, ...data.settings }
+          (typeof storeData.settings === 'object' && storeData.settings !== null) 
+            ? { ...defaultSettings, ...storeData.settings }
             : defaultSettings;
         
         // Find the custom page with matching slug
@@ -134,6 +166,7 @@ const CustomPage = () => {
         if (customPage) {
           console.log(`Custom page found: ${customPage.title}`);
           console.log(`Elements: ${customPage.elements ? customPage.elements.length : 0}`);
+          console.log("Page elements details:", customPage.elements);
           
           setPageData({
             title: customPage.title,
@@ -176,10 +209,11 @@ const CustomPage = () => {
     );
   }
   
+  console.log("Rendering page with elements:", pageData.elements?.length || 0);
+  console.log("Passing products to renderer:", products.length);
+  
   return (
     <div className="container mx-auto px-4 py-12">
-      {/* Title and content are now optional - not displayed by default */}
-      
       {/* Use the unified PageElementRenderer for all page elements */}
       {pageData.elements && pageData.elements.length > 0 && (
         <PageElementRenderer 

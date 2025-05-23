@@ -69,7 +69,7 @@ const Products = () => {
             price: parseFloat(product.price || 0),
             image: product.image || "https://via.placeholder.com/300",
             slug: product.slug,
-            storeId: user.store?.id,
+            storeId: user.store?.id || "",  // Fix: Convert to string
             category: product.category || "general",
             stock: product.stock || 0,
             published: product.published || false
