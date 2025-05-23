@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -98,9 +97,11 @@ const EditProduct = () => {
           })));
         }
         
-        // Set images if they exist
+        // Set images if they exist - Fix TypeScript error by properly converting Json[] to string[]
         if (product.images && Array.isArray(product.images)) {
-          setImages(product.images);
+          // Convert each element to string to ensure compatibility
+          const imageArray: string[] = product.images.map(img => String(img));
+          setImages(imageArray);
         } else if (product.image) {
           setImages([product.image]);
         }
