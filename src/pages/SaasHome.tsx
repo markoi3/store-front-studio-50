@@ -71,7 +71,7 @@ const SaasHome = () => {
                   <path d="M9 21V9" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold mb-2">Beautiful Templates</h3>
+              <h3 className="text-xl font-bold mb-2">Dizajniraj prodavnicu</h3>
               <p className="text-muted-foreground">
                 Choose from dozens of professionally designed templates to start your online store.
               </p>
