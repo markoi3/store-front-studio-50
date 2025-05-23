@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 const ThankYou = () => {
   const [searchParams] = useSearchParams();
   const orderId = searchParams.get('orderId');
-  const [orderNumber, setOrderNumber] = useState<string | null>(null);
+  const [orderDetails, setOrderDetails] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(Boolean(orderId));
 
   useEffect(() => {
@@ -17,14 +17,21 @@ const ThankYou = () => {
     
     const fetchOrderDetails = async () => {
       try {
+        console.log("Fetching order with ID:", orderId);
         const { data, error } = await supabase
           .from('orders')
-          .select('id')
+          .select('id, amount, created_at, items')
           .eq('id', orderId)
-          .single();
+          .maybeSingle();
         
         if (error) throw error;
-        setOrderNumber(data.id);
+        
+        if (data) {
+          console.log("Found order details:", data);
+          setOrderDetails(data);
+        } else {
+          console.log("Order not found");
+        }
       } catch (error) {
         console.error("Error fetching order details:", error);
       } finally {
@@ -70,9 +77,29 @@ const ThankYou = () => {
             {isLoading ? (
               <Skeleton className="h-6 w-32 mx-auto" />
             ) : (
-              <p className="text-muted-foreground">
-                Order Number: #{orderNumber || Math.floor(100000 + Math.random() * 900000)}
-              </p>
+              <>
+                {orderDetails ? (
+                  <div className="space-y-2">
+                    <p className="text-muted-foreground">
+                      Order Number: #{orderDetails.id.substring(0, 8)}
+                    </p>
+                    {orderDetails.amount && (
+                      <p className="text-muted-foreground">
+                        Total: {orderDetails.amount.toLocaleString('sr-RS')} RSD
+                      </p>
+                    )}
+                    {orderDetails.items && Array.isArray(orderDetails.items) && (
+                      <p className="text-muted-foreground">
+                        Items: {orderDetails.items.length}
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground">
+                    Order processed successfully.
+                  </p>
+                )}
+              </>
             )}
           </div>
           

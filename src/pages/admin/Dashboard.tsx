@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -68,7 +67,10 @@ const Dashboard = () => {
         // Fix conversion rate calculation: ensure we're working with numbers
         let conversionRate = 0;
         if (orderCount > 0 && customerCount > 0) {
-          conversionRate = parseFloat(((orderCount / Math.max(customerCount, 1)) * 100).toFixed(1));
+          // Convert to numbers explicitly before division
+          const orderCountNum = Number(orderCount);
+          const customerCountNum = Number(customerCount);
+          conversionRate = parseFloat(((orderCountNum / Math.max(customerCountNum, 1)) * 100).toFixed(1));
         }
 
         setStats({

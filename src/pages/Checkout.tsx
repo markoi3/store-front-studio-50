@@ -23,7 +23,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 const Checkout = () => {
   const { items, subtotal, clearCart } = useCart();
   const navigate = useNavigate();
-  const { getStoreUrl, currentStore } = useStore();
+  const { getStoreUrl, store } = useStore();
   const { user } = useAuth();
   
   // Simplified shipping cost
@@ -74,7 +74,7 @@ const Checkout = () => {
         name: `${shippingDetails.firstName} ${shippingDetails.lastName}`,
         email: shippingDetails.email,
         phone: shippingDetails.phone,
-        store_id: currentStore?.id,
+        store_id: store?.id,
         address: {
           address: shippingDetails.address,
           city: shippingDetails.city,
@@ -89,7 +89,7 @@ const Checkout = () => {
         .from('customers')
         .select('id')
         .eq('email', shippingDetails.email)
-        .eq('store_id', currentStore?.id)
+        .eq('store_id', store?.id)
         .maybeSingle();
       
       let customerId;
@@ -122,7 +122,7 @@ const Checkout = () => {
       
       // Now create the order
       const orderData = {
-        store_id: currentStore?.id,
+        store_id: store?.id,
         customer_id: customerId,
         amount: totalCost,
         items: items.map(item => ({
@@ -160,6 +160,8 @@ const Checkout = () => {
       
       if (orderError) throw orderError;
       if (!newOrder?.id) throw new Error("Failed to create order");
+      
+      console.log("Created new order:", newOrder.id);
       
       // Store the order ID for the confirmation page
       setOrderInfo({ id: newOrder.id });
@@ -480,7 +482,7 @@ const Checkout = () => {
               <div className="mb-6">
                 <p className="font-medium">Order Number</p>
                 <p className="text-muted-foreground">
-                  #{Math.floor(100000 + Math.random() * 900000)}
+                  #{orderInfo?.id ? orderInfo.id.substring(0, 8) : 'Processing...'}
                 </p>
               </div>
               <Button onClick={handleOrderComplete}>
