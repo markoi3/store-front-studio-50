@@ -57,11 +57,19 @@ const Dashboard = () => {
         if (customersError) throw customersError;
 
         // Calculate stats
-        const totalRevenue = orders?.reduce((sum, order) => sum + (order.amount || 0), 0) || 0;
+        const totalRevenue = orders?.reduce((sum, order) => {
+          // Ensure amount is a number before adding
+          const orderAmount = typeof order.amount === 'number' ? order.amount : 0;
+          return sum + orderAmount;
+        }, 0) || 0;
         const orderCount = orders?.length || 0;
         const customerCount = customers?.length || 0;
-        // Dummy conversion rate calculation (can be replaced with actual analytics in the future)
-        const conversionRate = orderCount > 0 ? ((orderCount / Math.max(customerCount, 1)) * 100).toFixed(1) : 0;
+        
+        // Fix conversion rate calculation: ensure we're working with numbers
+        let conversionRate = 0;
+        if (orderCount > 0 && customerCount > 0) {
+          conversionRate = parseFloat(((orderCount / Math.max(customerCount, 1)) * 100).toFixed(1));
+        }
 
         setStats({
           totalRevenue,
@@ -87,7 +95,7 @@ const Dashboard = () => {
               id: order.id,
               customer: customer ? customer.name : 'Nepoznat kupac',
               date: order.created_at ? new Date(order.created_at).toISOString().split('T')[0] : 'N/A',
-              amount: order.amount || 0,
+              amount: typeof order.amount === 'number' ? order.amount : 0,
               status: order.status || 'pending'
             };
           })
@@ -135,7 +143,9 @@ const Dashboard = () => {
       
       if (monthDiff <= 6) {
         const monthIndex = 6 - monthDiff;
-        result[monthIndex].sales += Number(order.amount) || 0;
+        // Ensure order.amount is a number before adding
+        const orderAmount = typeof order.amount === 'number' ? order.amount : 0;
+        result[monthIndex].sales += orderAmount;
       }
     });
     
@@ -156,7 +166,7 @@ const Dashboard = () => {
         if (!item || !item.name) return;
         
         const productName = item.name;
-        const quantity = Number(item.quantity) || 1;
+        const quantity = typeof item.quantity === 'number' ? item.quantity : 1;
         
         if (productSales[productName]) {
           productSales[productName] += quantity;

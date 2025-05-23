@@ -75,6 +75,13 @@ const Orders = () => {
           const customer = customers.find(c => c.id === order.customer_id);
           const itemCount = Array.isArray(order.items) ? order.items.length : 0;
           
+          // Fix billing_info.payment_method access by checking if it's an object first
+          let paymentMethod = 'credit-card'; // Default value
+          if (order.billing_info && typeof order.billing_info === 'object') {
+            // Check if payment_method exists on the billing_info object
+            paymentMethod = order.billing_info.payment_method || 'credit-card';
+          }
+          
           return {
             id: order.id,
             customer: {
@@ -82,10 +89,10 @@ const Orders = () => {
               email: customer ? customer.email : 'Email nije dostupan'
             },
             date: order.created_at ? new Date(order.created_at).toISOString().split('T')[0] : 'N/A',
-            total: order.amount || 0,
+            total: typeof order.amount === 'number' ? order.amount : 0,
             status: order.status || 'pending',
             items: itemCount,
-            paymentMethod: order.billing_info?.payment_method || 'credit-card'
+            paymentMethod: paymentMethod
           };
         });
         
