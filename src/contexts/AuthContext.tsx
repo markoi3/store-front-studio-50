@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from "@supabase/supabase-js";
@@ -13,6 +12,7 @@ type StoreInfo = {
     aboutUs?: string;
     contactInfo?: string;
     menuItems?: Array<{id: string; label: string; url: string}>;
+    is_public?: boolean;
     [key: string]: any;
   };
 };
@@ -318,14 +318,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     
     try {
       console.log("Updating store settings");
+      console.log("New settings being saved:", settings);
+      console.log("Current user store settings:", user.store.settings);
+      
+      // Merge the new settings with existing ones
+      const updatedSettings = {
+        ...user.store.settings,
+        ...settings
+      };
+      
+      console.log("Merged settings to save:", updatedSettings);
       
       const { data, error } = await supabase
         .from('stores')
         .update({ 
-          settings: {
-            ...user.store.settings,
-            ...settings
-          }
+          settings: updatedSettings
         })
         .eq('id', user.store.id)
         .select()
@@ -337,18 +344,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         throw error;
       }
       
+      console.log("Database update successful:", data);
+      
+      // Update the local user state with the new settings
       setUser(prev => {
-        if (!prev) return prev;
-        return {
+        if (!prev || !prev.store) return prev;
+        
+        const updatedUser = {
           ...prev,
           store: {
-            ...prev.store!,
-            settings: {
-              ...prev.store!.settings,
-              ...settings
-            }
+            ...prev.store,
+            settings: updatedSettings
           }
         };
+        
+        console.log("Updated local user state:", updatedUser);
+        return updatedUser;
       });
       
       toast.success("Settings updated successfully");

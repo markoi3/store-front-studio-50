@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
@@ -99,9 +98,12 @@ const Settings = () => {
           ? user.store.settings.is_public 
           : false;
           
+        console.log("Loading store visibility from user context:");
+        console.log("- Raw is_public value:", user.store.settings.is_public);
+        console.log("- Type:", typeof user.store.settings.is_public);
+        console.log("- Parsed to boolean:", isPublic);
+        
         setStoreVisibility(isPublic);
-        console.log("Store visibility from DB:", user.store.settings.is_public);
-        console.log("Store visibility parsed to:", isPublic);
         
         // Load content settings from store
         setContentSettings({
@@ -130,6 +132,21 @@ const Settings = () => {
       setIsInitialLoad(false);
     }
   }, [user, isInitialLoad]);
+  
+  // Update store visibility when user context changes
+  useEffect(() => {
+    if (user?.store?.settings && !isInitialLoad) {
+      const isPublic = typeof user.store.settings.is_public === 'boolean' 
+        ? user.store.settings.is_public 
+        : false;
+      
+      console.log("User context changed, updating store visibility:");
+      console.log("- New is_public value:", user.store.settings.is_public);
+      console.log("- Parsed to boolean:", isPublic);
+      
+      setStoreVisibility(isPublic);
+    }
+  }, [user?.store?.settings?.is_public, isInitialLoad]);
   
   const handleStoreInfoChange = (
     e: React.ChangeEvent<HTMLInputElement>
@@ -250,8 +267,9 @@ const Settings = () => {
     
     setIsSavingSettings(true);
     try {
-      console.log("Saving store settings...");
+      console.log("=== SAVING STORE SETTINGS ===");
       console.log("Store visibility before save:", storeVisibility);
+      console.log("Store visibility type:", typeof storeVisibility);
       
       // Combine all settings into one object
       const combinedSettings: StoreSettings = {
@@ -272,32 +290,13 @@ const Settings = () => {
         ]
       };
       
-      console.log("Combined settings:", combinedSettings);
+      console.log("Combined settings to save:", combinedSettings);
       console.log("is_public value being saved:", combinedSettings.is_public, "type:", typeof combinedSettings.is_public);
       
-      // Update the database
-      const { error } = await supabase
-        .from('stores')
-        .update({
-          settings: combinedSettings
-        })
-        .eq('id', user.store.id);
+      // Update via the context function which will handle both DB and local state
+      await updateStoreSettings(combinedSettings);
       
-      if (error) {
-        console.error("Error updating store settings:", error);
-        throw new Error(error.message);
-      }
-      
-      // Update the local context
-      if (updateStoreSettings) {
-        try {
-          await updateStoreSettings(combinedSettings);
-          console.log("Local context updated successfully");
-        } catch (contextError) {
-          console.error("Error updating local context:", contextError);
-        }
-      }
-      
+      console.log("=== SETTINGS SAVED SUCCESSFULLY ===");
       toast.success("Settings saved successfully");
     } catch (error) {
       console.error("Failed to save settings:", error);
@@ -361,7 +360,10 @@ const Settings = () => {
               <Switch
                 id="storeVisibility"
                 checked={storeVisibility}
-                onCheckedChange={setStoreVisibility}
+                onCheckedChange={(checked) => {
+                  console.log("Toggle changed to:", checked);
+                  setStoreVisibility(checked);
+                }}
               />
               <Label htmlFor="storeVisibility" className="flex items-center">
                 {storeVisibility ? (
