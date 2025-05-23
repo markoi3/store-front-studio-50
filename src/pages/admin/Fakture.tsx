@@ -47,30 +47,6 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
-// Initial fake data only used when no documents are available from the database
-const initialFakturePodaci = [
-  {
-    id: "FAK-2023-001",
-    tip: "faktura",
-    datum: "2023-11-10",
-    rokPlacanja: "2023-11-25",
-    klijent: "Tehnomanija d.o.o.",
-    iznos: 35600,
-    pdv: 5933.33,
-    status: "plaćeno",
-  },
-  {
-    id: "PR-2023-001",
-    tip: "predračun",
-    datum: "2023-11-05",
-    rokPlacanja: "2023-12-05",
-    klijent: "Milan Petrović PR",
-    iznos: 18500,
-    pdv: 3083.33,
-    status: "čeka uplatu",
-  },
-];
-
 // Define an interface for document data to help with TypeScript
 interface DocumentData {
   datum?: string;
@@ -162,9 +138,8 @@ const Fakture = () => {
           console.log("Transformed documents:", transformedDocuments);
           setStavke(transformedDocuments);
         } else {
-          console.log("No documents found, using initial data for display purposes");
-          // Load default sample data for display when there are no documents
-          setStavke(initialFakturePodaci);
+          console.log("No documents found, showing empty state");
+          setStavke([]);
         }
       } catch (err) {
         console.error("Unexpected error fetching documents:", err);
@@ -174,7 +149,7 @@ const Fakture = () => {
           description: "Neočekivana greška prilikom učitavanja dokumenata.",
           variant: "destructive",
         });
-        setStavke(initialFakturePodaci);
+        setStavke([]);
       } finally {
         setIsLoading(false);
       }
@@ -219,7 +194,7 @@ const Fakture = () => {
     
     // Filter po pretrazi (ime klijenta ili ID fakture)
     const searchMatch = search === "" || 
-      faktura.klijent.toLowerCase().includes(search.toLowerCase()) ||
+      faktura.klijent?.toLowerCase().includes(search.toLowerCase()) ||
       faktura.id.toLowerCase().includes(search.toLowerCase());
     
     // Filter po aktivnom tabu
@@ -454,6 +429,9 @@ const Fakture = () => {
                           <div className="flex flex-col items-center justify-center text-muted-foreground">
                             <AlertCircle className="h-12 w-12 opacity-20 mb-2" />
                             <p>Nema pronađenih faktura ili predračuna</p>
+                            <p className="text-sm mt-2">
+                              Kreirajte novu fakturu ili predračun da biste započeli
+                            </p>
                           </div>
                         </TableCell>
                       </TableRow>
