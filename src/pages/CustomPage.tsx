@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { withStoreLayout } from "@/components/layout/StorePageLayout";
@@ -39,6 +40,7 @@ const CustomPage = () => {
       if (!storeId) return [];
       
       try {
+        console.log("Fetching products for store:", storeId);
         const { data, error } = await supabase
           .from('products')
           .select('*')
@@ -51,6 +53,7 @@ const CustomPage = () => {
         }
         
         if (data && data.length > 0) {
+          console.log(`Found ${data.length} products for store:`, data);
           // Transform products to match our Product type
           return data.map((product: any) => ({
             id: product.id,
@@ -62,6 +65,7 @@ const CustomPage = () => {
             category: product.category
           }));
         } else {
+          console.log("No products found for store");
           return [];
         }
       } catch (err) {
@@ -78,46 +82,66 @@ const CustomPage = () => {
         console.log(`Fetching data for custom page: ${pageSlug} in store: ${storeId}`);
         
         // Fetch store data and products in parallel
-        const [storeResult, productsResult] = await Promise.all([
-          supabase
-            .from('stores')
-            .select('settings')
-            .eq('slug', storeId)
-            .maybeSingle(),
-          fetchStoreProducts()
-        ]);
+        const storeResult = await supabase
+          .from('stores')
+          .select('id, settings')
+          .eq('slug', storeId)
+          .maybeSingle();
         
-        const { data, error } = storeResult;
-        
-        if (error) {
-          console.error("Error fetching store settings:", error);
+        if (storeResult.error) {
+          console.error("Error fetching store settings:", storeResult.error);
           setLoading(false);
           return;
         } 
         
-        setProducts(productsResult);
+        const { data } = storeResult;
         
-        if (data) {
-          // Ensure we're setting an object, even if data.settings is null
-          const settings: StoreSettings = (typeof data.settings === 'object' && data.settings !== null) 
-            ? data.settings as StoreSettings 
-            : {};
+        if (!data) {
+          console.error("No store found with slug:", storeId);
+          setLoading(false);
+          return;
+        }
+        
+        console.log("Found store:", data);
+        
+        // Fetch products specifically for this store
+        const productsResult = await fetchStoreProducts();
+        setProducts(productsResult);
+        console.log("Set products:", productsResult);
+        
+        // Parse settings safely
+        const defaultSettings: StoreSettings = {
+          menuItems: [
+            { id: "1", label: "Početna", url: "/" },
+            { id: "2", label: "Proizvodi", url: "/shop" },
+            { id: "3", label: "O nama", url: "/about" },
+            { id: "4", label: "Kontakt", url: "/contact" }
+          ],
+          aboutUs: "",
+          privacyPolicy: "",
+          contactInfo: ""
+        };
             
-          // Find the custom page with matching slug
-          const customPage = settings.customPages?.find(page => page.slug === pageSlug);
+        // Process store settings
+        const storeSettings: StoreSettings = 
+          (typeof data.settings === 'object' && data.settings !== null) 
+            ? { ...defaultSettings, ...data.settings }
+            : defaultSettings;
+        
+        // Find the custom page with matching slug
+        const customPage = storeSettings.customPages?.find(page => page.slug === pageSlug);
+        
+        if (customPage) {
+          console.log(`Custom page found: ${customPage.title}`);
+          console.log(`Elements: ${customPage.elements ? customPage.elements.length : 0}`);
           
-          if (customPage) {
-            console.log(`Custom page found: ${customPage.title}`);
-            console.log(`Elements: ${customPage.elements ? customPage.elements.length : 0}`);
-            
-            setPageData({
-              title: customPage.title,
-              content: customPage.content,
-              elements: customPage.elements || []
-            });
-          } else {
-            console.log(`No custom page found with slug: ${pageSlug}`);
-          }
+          setPageData({
+            title: customPage.title,
+            content: customPage.content,
+            elements: customPage.elements || []
+          });
+        } else {
+          console.log(`No custom page found with slug: ${pageSlug}`);
         }
       } catch (error) {
         console.error("Error in fetchPageData:", error);

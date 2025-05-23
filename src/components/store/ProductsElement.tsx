@@ -22,6 +22,27 @@ interface ProductsElementProps {
 
 export const ProductsElement = ({ element, products, storeId }: ProductsElementProps) => {
   const navigate = useNavigate();
+  
+  console.log("ProductsElement received products:", products);
+  console.log("ProductsElement settings:", element.settings);
+
+  // Check if products is empty or undefined
+  if (!products || products.length === 0) {
+    console.log("No products available to display");
+    return (
+      <div className="container mx-auto px-4 py-12">
+        <h2 
+          className="text-3xl font-bold mb-6 text-center"
+          style={{color: element.settings?.titleColor || ""}}
+        >
+          {element.settings?.title || "Featured Products"}
+        </h2>
+        <div className="text-center text-muted-foreground">
+          No products available to display.
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-12">

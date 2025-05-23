@@ -22,6 +22,7 @@ export const PageElementRenderer = ({ elements, products, storeId, onNavigate }:
   }
 
   console.log("Rendering page elements:", elements);
+  console.log("Available products:", products);
   
   return (
     <div className="space-y-12">
@@ -32,7 +33,11 @@ export const PageElementRenderer = ({ elements, products, storeId, onNavigate }:
           )}
           
           {element.type === 'products' && (
-            <ProductsElement element={element} products={products} storeId={storeId} />
+            <ProductsElement 
+              element={element} 
+              products={products} 
+              storeId={storeId} 
+            />
           )}
           
           {element.type === 'text' && (

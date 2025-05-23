@@ -4,10 +4,9 @@ import { useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Download, Mail, CreditCard } from "lucide-react";
+import { Download, CreditCard } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
 
 // Function to load documents from localStorage
 const loadDocuments = (docType: string) => {
@@ -22,6 +21,7 @@ const loadDocuments = (docType: string) => {
       data = JSON.parse(localStorage.getItem("obracuni") || "[]");
     }
     
+    console.log(`Loaded ${docType} documents:`, data);
     return data;
   } catch (error) {
     console.error(`Error loading ${docType} documents:`, error);
@@ -33,6 +33,7 @@ const PublicDocument = () => {
   const { docType, docId } = useParams();
   const [document, setDocument] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   
   useEffect(() => {
@@ -42,6 +43,7 @@ const PublicDocument = () => {
       
       if (!docType || !docId) {
         setLoading(false);
+        setError("Missing document type or ID");
         return;
       }
       
@@ -57,6 +59,8 @@ const PublicDocument = () => {
         setDocument(foundDocument);
       } else {
         console.log("Document not found");
+        setError(`Requested ${docType} with ID ${docId} could not be found.`);
+        
         toast({
           title: "Dokument nije pronađen",
           description: "Traženi dokument ne postoji ili je obrisan.",
@@ -121,11 +125,17 @@ const PublicDocument = () => {
         <div className="w-full max-w-3xl p-8 text-center">
           <h1 className="text-2xl font-bold text-red-500 mb-4">Dokument nije pronađen</h1>
           <p className="text-gray-600 mb-8">
-            Dokument koji pokušavate da otvorite nije pronađen ili je obrisan.
+            {error || "Dokument koji pokušavate da otvorite nije pronađen ili je obrisan."}
           </p>
-          <Button asChild>
-            <a href="/">Nazad na početnu</a>
-          </Button>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground mb-4">
+              Ovaj dokument je trenutno sačuvan samo lokalno u pregledaču.<br />
+              Za trajno čuvanje dokumenata, preporučujemo migraciju na bazu podataka.
+            </p>
+            <Button asChild>
+              <a href="/">Nazad na početnu</a>
+            </Button>
+          </div>
         </div>
       </div>
     );
@@ -273,6 +283,7 @@ const PublicDocument = () => {
         
         <div className="text-center text-sm text-muted-foreground">
           <p>Ovaj dokument je automatski generisan i važeći je bez pečata i potpisa.</p>
+          <p className="mt-2">Napomena: Trenutno se dokumenti čuvaju samo lokalno u pregledaču.</p>
         </div>
       </div>
     </div>
