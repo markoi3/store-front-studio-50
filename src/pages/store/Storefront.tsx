@@ -5,11 +5,16 @@ import { Button } from "@/components/ui/button";
 import { PageElementRenderer } from "@/components/store/PageElementRenderer";
 import { useStoreData } from "@/hooks/useStoreData";
 import { getDefaultProducts } from "@/components/store/DefaultProducts";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Storefront = () => {
   const { storeId } = useParams();
   const navigate = useNavigate();
-  const { store, loading, storeProducts, error } = useStoreData(storeId);
+  const { user } = useAuth();
+  const { store, loading, storeProducts, error } = useStoreData({ 
+    storeId, 
+    currentUserId: user?.id 
+  });
   
   if (loading) {
     return (
@@ -32,9 +37,12 @@ const Storefront = () => {
         <div className="container mx-auto px-4 py-12">
           <div className="flex justify-center items-center min-h-[60vh]">
             <div className="text-center">
-              <h1 className="text-2xl font-bold mb-2">Prodavnica nije pronađena</h1>
+              <h1 className="text-2xl font-bold mb-2">Prodavnica nije dostupna</h1>
               <p className="text-muted-foreground mb-6">
-                {error || "Prodavnica koju tražite ne postoji ili više nije dostupna."}
+                {error === "Prodavnica je privatna i nedostupna javnosti" 
+                  ? "Ova prodavnica je privatna i možete je videti samo ako ste vlasnik."
+                  : error || "Prodavnica koju tražite ne postoji ili više nije dostupna."
+                }
               </p>
               <Button asChild>
                 <a href="/">Povratak na početnu</a>
@@ -49,6 +57,7 @@ const Storefront = () => {
   // Debug information for store visibility
   console.log("Store settings:", store.settings);
   console.log("Store is_public:", store.settings.is_public);
+  console.log("Current user:", user);
   
   // Use stored products if available, otherwise use defaults
   const displayProducts = storeProducts.length > 0 ? storeProducts : getDefaultProducts(storeId);

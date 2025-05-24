@@ -5,7 +5,12 @@ import { Product } from "@/components/shop/ProductCard";
 import { useToast } from "@/hooks/use-toast";
 import { StoreData, StoreSettings, isValidStoreSettings } from "@/types/store";
 
-export const useStoreData = (storeId: string | undefined) => {
+interface UseStoreDataParams {
+  storeId: string | undefined;
+  currentUserId?: string | null;
+}
+
+export const useStoreData = ({ storeId, currentUserId }: UseStoreDataParams) => {
   const [store, setStore] = useState<StoreData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -22,8 +27,9 @@ export const useStoreData = (storeId: string | undefined) => {
         }
         
         console.log("Loading store data for slug:", storeId);
+        console.log("Current user ID:", currentUserId);
         
-        // Fetch store by slug - now works with public stores due to RLS policy
+        // Fetch store by slug
         const { data: storeData, error: storeError } = await supabase
           .from('stores')
           .select('*')
@@ -39,7 +45,7 @@ export const useStoreData = (storeId: string | undefined) => {
         
         if (!storeData) {
           console.error("No store found with slug:", storeId);
-          setError(`Prodavnica nije pronađena ili nije javno dostupna: ${storeId}`);
+          setError(`Prodavnica nije pronađena: ${storeId}`);
           setLoading(false);
           return;
         }
@@ -47,8 +53,10 @@ export const useStoreData = (storeId: string | undefined) => {
         console.log("Found store:", storeData);
         console.log("Raw store settings:", storeData.settings);
         
-        // Safely type-check and access is_public property
+        // Check if user can access this store
         let isPublic = false;
+        const isOwner = currentUserId && storeData.user_id === currentUserId;
+        
         if (storeData.settings && 
             typeof storeData.settings === 'object' && 
             !Array.isArray(storeData.settings) &&
@@ -61,6 +69,17 @@ export const useStoreData = (storeId: string | undefined) => {
         }
         
         console.log("Store is_public value:", isPublic);
+        console.log("User is owner:", isOwner);
+        
+        // Allow access if store is public OR user is the owner
+        const canAccess = isPublic || isOwner;
+        
+        if (!canAccess) {
+          console.log("Access denied: store is private and user is not owner");
+          setError("Prodavnica je privatna i nedostupna javnosti");
+          setLoading(false);
+          return;
+        }
         
         // Fetch published products for this store
         const { data: productsData, error: productsError } = await supabase
@@ -173,7 +192,7 @@ export const useStoreData = (storeId: string | undefined) => {
     };
     
     loadStoreData();
-  }, [storeId]);
+  }, [storeId, currentUserId]);
 
   return { store, loading, storeProducts, error };
 };
