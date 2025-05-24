@@ -106,10 +106,10 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
     return <Navigate to="/login" />;
   }
   
-return (
+  return (
     <div className="flex min-h-screen bg-background">
       <AdminSidebar />
-      <main className="flex-1 pl-64 p-6 overflow-auto">
+      <main className="flex-1 ml-64 p-6 overflow-auto">
         {children}
       </main>
     </div>
