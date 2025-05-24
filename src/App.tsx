@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { CartProvider } from "@/contexts/CartContext";
+import { AdminLayout } from "@/components/layout/AdminLayout";
 
 // Public Pages
 import SaasHome from "./pages/SaasHome";
@@ -21,7 +22,7 @@ import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import CustomPage from "./pages/CustomPage"; // Import the CustomPage component
+import CustomPage from "./pages/CustomPage";
 
 // Admin Pages
 import Dashboard from "./pages/admin/Dashboard";
@@ -93,25 +94,25 @@ const App = () => (
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               
-              {/* Admin Routes */}
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/products" element={<Products />} />
-              <Route path="/products/new" element={<NewProduct />} />
-              <Route path="/products/:id" element={<EditProduct />} />
-              <Route path="/orders" element={<Orders />} />
-              <Route path="/orders/:id" element={<Transakcije />} />
-              <Route path="/customers" element={<Customers />} />
-              <Route path="/transakcije/:id" element={<Transakcije />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/design" element={<Design />} />
-              <Route path="/analytics" element={<Analytics />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/racunovodstvo" element={<Racunovodstvo />} />
-              <Route path="/brzi-link" element={<BrziLink />} />
-              <Route path="/fakture" element={<Fakture />} />
-              <Route path="/fakture/nova" element={<NovaFaktura />} />
-              <Route path="/predracun/novi" element={<NoviPredracun />} />
-              <Route path="/obracun/novi" element={<NoviObracun />} />
+              {/* Admin Routes - All wrapped in AdminLayout */}
+              <Route path="/dashboard" element={<AdminLayout><Dashboard /></AdminLayout>} />
+              <Route path="/products" element={<AdminLayout><Products /></AdminLayout>} />
+              <Route path="/products/new" element={<AdminLayout><NewProduct /></AdminLayout>} />
+              <Route path="/products/:id" element={<AdminLayout><EditProduct /></AdminLayout>} />
+              <Route path="/orders" element={<AdminLayout><Orders /></AdminLayout>} />
+              <Route path="/orders/:id" element={<AdminLayout><Transakcije /></AdminLayout>} />
+              <Route path="/customers" element={<AdminLayout><Customers /></AdminLayout>} />
+              <Route path="/transakcije/:id" element={<AdminLayout><Transakcije /></AdminLayout>} />
+              <Route path="/settings" element={<AdminLayout><Settings /></AdminLayout>} />
+              <Route path="/design" element={<AdminLayout><Design /></AdminLayout>} />
+              <Route path="/analytics" element={<AdminLayout><Analytics /></AdminLayout>} />
+              <Route path="/profile" element={<AdminLayout><Profile /></AdminLayout>} />
+              <Route path="/racunovodstvo" element={<AdminLayout><Racunovodstvo /></AdminLayout>} />
+              <Route path="/brzi-link" element={<AdminLayout><BrziLink /></AdminLayout>} />
+              <Route path="/fakture" element={<AdminLayout><Fakture /></AdminLayout>} />
+              <Route path="/fakture/nova" element={<AdminLayout><NovaFaktura /></AdminLayout>} />
+              <Route path="/predracun/novi" element={<AdminLayout><NoviPredracun /></AdminLayout>} />
+              <Route path="/obracun/novi" element={<AdminLayout><NoviObracun /></AdminLayout>} />
               
               {/* Payment Links */}
               <Route path="/pay/:linkId" element={<PaymentLink />} />

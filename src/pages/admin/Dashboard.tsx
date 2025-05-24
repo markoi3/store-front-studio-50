@@ -64,10 +64,9 @@ interface Order {
 interface Customer {
   id: string;
   created_at: string;
-  email?: string;
-  avatar_url?: string | null;
-  name?: string | null;
-  updated_at?: string | null;
+  email: string;
+  name?: string;
+  address?: any;
 }
 
 const Dashboard = () => {
@@ -176,9 +175,8 @@ const Dashboard = () => {
         id: customer.id,
         created_at: customer.created_at || new Date().toISOString(), 
         email: customer.email || 'Unknown',
-        avatar_url: customer.address,
         name: customer.name,
-        updated_at: customer.updated_at
+        address: customer.address
       }));
     },
     enabled: !!storeId,
