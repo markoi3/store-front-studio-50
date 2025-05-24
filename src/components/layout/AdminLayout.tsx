@@ -107,15 +107,10 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
   }
   
 return (
-  <div className="min-h-screen bg-background relative">
-    {/* Fiksiran sidebar levo */}
-    <div className="fixed top-0 left-0 w-64 h-full z-10">
+    <div className="flex min-h-screen bg-background">
       <AdminSidebar />
+      <main className="flex-1 ml-32 p-6 overflow-auto">
+      
+        {children}
+      </main>
     </div>
-
-    {/* Glavni sadržaj sa paddingom da ne ide ispod sidebar-a */}
-    <main className="pl-64 p-6">
-      {children}
-    </main>
-  </div>
-);
