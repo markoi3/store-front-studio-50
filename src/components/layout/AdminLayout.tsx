@@ -106,12 +106,14 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
     return <Navigate to="/login" />;
   }
   
- return (
+return (
   <div className="flex min-h-screen bg-background">
-    {/* fiksna širina side-bara */}
-    <AdminSidebar className="w-64 shrink-0" />
+    {/* Sidebar u svom kontejneru */}
+    <div className="w-64 shrink-0">
+      <AdminSidebar />
+    </div>
 
-    {/* maknuli smo pl-64, ostaje samo unutrašnji padding */}
+    {/* Glavni sadržaj bez preteranog paddinga */}
     <main className="flex-1 p-6 overflow-auto">
       {children}
     </main>
