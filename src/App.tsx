@@ -58,6 +58,20 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+// Create wrapped components
+const WrappedStorefront = withStoreLayout(Storefront);
+const WrappedShop = withStoreLayout(Shop);
+const WrappedProductDetail = withStoreLayout(ProductDetail);
+const WrappedCart = withStoreLayout(Cart);
+const WrappedCheckout = withStoreLayout(Checkout);
+const WrappedThankYou = withStoreLayout(ThankYou);
+const WrappedAbout = withStoreLayout(About);
+const WrappedContact = withStoreLayout(Contact);
+const WrappedCustomPage = withStoreLayout(CustomPage);
+const WrappedTerms = withStoreLayout(Terms);
+const WrappedPrivacy = withStoreLayout(Privacy);
+const WrappedComingSoon = withStoreLayout(ComingSoon);
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
@@ -71,18 +85,18 @@ const App = () => (
               <Route path="/" element={<SaasHome />} />
               
               {/* Store Routes - All wrapped with StorePageLayout */}
-              <Route path="/store/:storeId" element={withStoreLayout(Storefront)} />
-              <Route path="/store/:storeId/shop" element={withStoreLayout(Shop)} />
-              <Route path="/store/:storeId/product/:slug" element={withStoreLayout(ProductDetail)} />
-              <Route path="/store/:storeId/cart" element={withStoreLayout(Cart)} />
-              <Route path="/store/:storeId/checkout" element={withStoreLayout(Checkout)} />
-              <Route path="/store/:storeId/thank-you" element={withStoreLayout(ThankYou)} />
-              <Route path="/store/:storeId/about" element={withStoreLayout(About)} />
-              <Route path="/store/:storeId/contact" element={withStoreLayout(Contact)} />
-              <Route path="/store/:storeId/page/:pageSlug" element={withStoreLayout(CustomPage)} />
-              <Route path="/store/:storeId/terms" element={withStoreLayout(Terms)} />
-              <Route path="/store/:storeId/privacy" element={withStoreLayout(Privacy)} />
-              <Route path="/store/:storeId/coming-soon" element={withStoreLayout(ComingSoon)} />
+              <Route path="/store/:storeId" element={<WrappedStorefront />} />
+              <Route path="/store/:storeId/shop" element={<WrappedShop />} />
+              <Route path="/store/:storeId/product/:slug" element={<WrappedProductDetail />} />
+              <Route path="/store/:storeId/cart" element={<WrappedCart />} />
+              <Route path="/store/:storeId/checkout" element={<WrappedCheckout />} />
+              <Route path="/store/:storeId/thank-you" element={<WrappedThankYou />} />
+              <Route path="/store/:storeId/about" element={<WrappedAbout />} />
+              <Route path="/store/:storeId/contact" element={<WrappedContact />} />
+              <Route path="/store/:storeId/page/:pageSlug" element={<WrappedCustomPage />} />
+              <Route path="/store/:storeId/terms" element={<WrappedTerms />} />
+              <Route path="/store/:storeId/privacy" element={<WrappedPrivacy />} />
+              <Route path="/store/:storeId/coming-soon" element={<WrappedComingSoon />} />
               
               {/* Demo Store Routes (for testing) - Redirect to proper store URLs */}
               <Route path="/home" element={<Navigate to="/store" replace />} />
