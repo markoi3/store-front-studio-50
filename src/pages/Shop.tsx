@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { useAuth } from "@/contexts/AuthContext";
 import { useStoreData } from "@/hooks/useStoreData";
-import { getDefaultProducts } from "@/components/store/DefaultProducts";
 
 const Shop = () => {
   const { storeId } = useParams();
@@ -25,8 +24,8 @@ const Shop = () => {
   
   const categoryParam = searchParams.get("category");
   
-  // Use stored products if available, otherwise use defaults
-  const allProducts = storeProducts.length > 0 ? storeProducts : getDefaultProducts(storeId);
+  // Use only stored products from the store
+  const allProducts = storeProducts;
   
   useEffect(() => {
     let products = [...allProducts];
@@ -224,20 +223,27 @@ const Shop = () => {
           <div className="flex-1">
             {filteredProducts.length === 0 ? (
               <div className="text-center py-16">
-                <h2 className="text-xl font-medium mb-2">No products found</h2>
+                <h2 className="text-xl font-medium mb-2">
+                  {allProducts.length === 0 ? "Nema trenutno proizvoda" : "No products found"}
+                </h2>
                 <p className="text-muted-foreground mb-4">
-                  Try adjusting your filters or search term.
+                  {allProducts.length === 0 
+                    ? "Prodavnica trenutno nema dodane proizvode." 
+                    : "Try adjusting your filters or search term."
+                  }
                 </p>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setSearchParams({});
-                    setSearchTerm("");
-                    setPriceRange([0, 300]);
-                  }}
-                >
-                  Clear Filters
-                </Button>
+                {allProducts.length > 0 && (
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setSearchParams({});
+                      setSearchTerm("");
+                      setPriceRange([0, 300]);
+                    }}
+                  >
+                    Clear Filters
+                  </Button>
+                )}
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
