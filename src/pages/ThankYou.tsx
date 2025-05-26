@@ -1,6 +1,5 @@
 
 import { useEffect, useState } from "react";
-import { withStoreLayout } from "@/components/layout/StorePageLayout";
 import { Button } from "@/components/ui/button";
 import { Link, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -145,4 +144,4 @@ const ThankYou = () => {
   );
 };
 
-export default withStoreLayout(ThankYou);
+export default (ThankYou);
