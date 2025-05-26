@@ -8,6 +8,7 @@ import { CartProvider } from "@/contexts/CartContext";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { withStoreLayout } from "@/components/layout/StorePageLayout";
 
+
 // Public Pages
 import SaasHome from "./pages/SaasHome";
 import Home from "./pages/Home";
@@ -57,7 +58,8 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-// Create wrapped components - EXCLUDING Storefront (jer već ima svoj StoreLayout)
+// Create wrapped components
+const WrappedStorefront = withStoreLayout(Storefront);
 const WrappedShop = withStoreLayout(Shop);
 const WrappedProductDetail = withStoreLayout(ProductDetail);
 const WrappedCart = withStoreLayout(Cart);
@@ -82,8 +84,8 @@ const App = () => (
               {/* SaaS Platform Home */}
               <Route path="/" element={<SaasHome />} />
               
-              {/* Store Routes - Storefront handled separately */}
-              <Route path="/store/:storeId" element={<Storefront />} />
+              {/* Store Routes - All wrapped with StorePageLayout */}
+              <Route path="/store/:storeId" element={<WrappedStorefront />} />
               <Route path="/store/:storeId/shop" element={<WrappedShop />} />
               <Route path="/store/:storeId/product/:slug" element={<WrappedProductDetail />} />
               <Route path="/store/:storeId/cart" element={<WrappedCart />} />
