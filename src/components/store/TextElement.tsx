@@ -1,3 +1,4 @@
+
 interface TextElementProps {
   element: {
     id: string;
@@ -19,16 +20,17 @@ export const TextElement = ({ element }: TextElementProps) => {
         backgroundColor: element.settings?.backgroundColor || ""
       }}
     >
-      <div 
-        className="max-w-3xl mx-auto text-center"
-        style={{
-          color: element.settings?.textColor || "",
-          textAlign: element.settings?.alignment as any || "center"
-        }}
-        dangerouslySetInnerHTML={{ 
-          __html: element.settings?.content || "" 
-        }}
-      />
+      <div className="max-w-3xl mx-auto text-center">
+        <p 
+          className="text-lg"
+          style={{
+            color: element.settings?.textColor || "",
+            textAlign: element.settings?.alignment as any || "center"
+          }}
+        >
+          {element.settings?.content || ""}
+        </p>
+      </div>
     </div>
   );
 };
