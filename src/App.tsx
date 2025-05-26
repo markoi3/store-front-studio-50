@@ -1,82 +1,150 @@
-import { ReactNode, useEffect, useState } from "react";
-import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { StoreLayout } from "./StoreLayout";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import { useStoreVisibility } from "@/hooks/useStoreVisibility";
-import ComingSoon from "@/pages/ComingSoon";
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { CartProvider } from "@/contexts/CartContext";
+import { AdminLayout } from "@/components/layout/AdminLayout";
+import { withStoreLayout } from "@/components/layout/StorePageLayout";
 
-type StorePageLayoutProps = {
-  children: ReactNode;
-  showHeaderFooter?: boolean; // New prop
-};
+// Public Pages
+import SaasHome from "./pages/SaasHome";
+import Home from "./pages/Home";
+import Shop from "./pages/Shop";
+import ProductDetail from "./pages/ProductDetail";
+import Cart from "./pages/Cart";
+import Checkout from "./pages/Checkout";
+import ThankYou from "./pages/ThankYou";
+import About from "./pages/About";
+import Contact from "./pages/Contact";
+import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import CustomPage from "./pages/CustomPage";
+import ComingSoon from "./pages/ComingSoon";
 
-export const StorePageLayout = ({ children, showHeaderFooter = true }: StorePageLayoutProps) => {
-  const { storeId } = useParams<{ storeId?: string }>();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const [loading, setLoading] = useState(false);
-  const { shouldShowComingSoon, loading: visibilityLoading } = useStoreVisibility({ storeId });
+// Admin Pages
+import Dashboard from "./pages/admin/Dashboard";
+import Products from "./pages/admin/Products";
+import NewProduct from "./pages/admin/NewProduct";
+import EditProduct from "./pages/admin/EditProduct";
+import Orders from "./pages/admin/Orders";
+import Settings from "./pages/admin/Settings";
+import Design from "./pages/admin/Design";
+import Analytics from "./pages/admin/Analytics";
+import Profile from "./pages/admin/Profile";
+import Racunovodstvo from "./pages/admin/Racunovodstvo";
+import BrziLink from "./pages/admin/BrziLink";
+import Fakture from "./pages/admin/Fakture";
+import NovaFaktura from "./pages/admin/NovaFaktura";
+import NoviPredracun from "./pages/admin/NoviPredracun";
+import NoviObracun from "./pages/admin/NoviObracun";
+import Transakcije from "./pages/admin/Transakcije";
+import Customers from "./pages/admin/Customers";
 
-  useEffect(() => {
-    const redirectToStoreRoute = async () => {
-      if (!storeId && !location.pathname.startsWith('/store/')) {
-        try {
-          setLoading(true);
-          const currentPath = location.pathname.substring(1);
-          const { data: storeData, error } = await supabase.from('stores').select('slug').limit(1).single();
+// Store Pages
+import Storefront from "./pages/store/Storefront";
 
-          if (error) {
-            console.error("Error fetching store:", error);
-            toast.error("Navigation error", {
-              description: "Could not load store information. Please try again.",
-            });
-            setLoading(false);
-            return;
-          }
+// Payment Pages
+import PaymentLink from "./pages/payment/PaymentLink";
 
-          if (storeData && storeData.slug) {
-            const storeUrl = `/store/${storeData.slug}${currentPath ? `/${currentPath}` : ''}`;
-            console.log(`Redirecting to store route: ${storeUrl}`);
-            navigate(storeUrl);
-          }
-        } catch (error) {
-          console.error("Error redirecting to store route:", error);
-          toast.error("Navigation error", {
-            description: "Could not redirect to store route. Please try again.",
-          });
-        } finally {
-          setLoading(false);
-        }
-      }
-    };
+// Public Document Pages
+import PublicDocument from "./pages/public/PublicDocument";
 
-    redirectToStoreRoute();
-  }, [storeId, location.pathname, navigate]);
+import NotFound from "./pages/NotFound";
 
-  if (loading || visibilityLoading) {
-    return (
-      <StoreLayout>
-        <div className="container mx-auto px-4 py-12 flex items-center justify-center min-h-[60vh]">
-          <div className="animate-pulse flex flex-col items-center">
-            <div className="h-8 w-40 bg-muted rounded mb-4"></div>
-            <div className="h-4 w-60 bg-muted rounded"></div>
-          </div>
-        </div>
-      </StoreLayout>
-    );
-  }
+const queryClient = new QueryClient();
 
-  if (shouldShowComingSoon) {
-    console.log("Showing Coming Soon page for private store");
-    return <ComingSoon />;
-  }
+// Create wrapped components
+const WrappedStorefront = withStoreLayout(Storefront);
+const WrappedShop = withStoreLayout(Shop);
+const WrappedProductDetail = withStoreLayout(ProductDetail);
+const WrappedCart = withStoreLayout(Cart);
+const WrappedCheckout = withStoreLayout(Checkout);
+const WrappedThankYou = withStoreLayout(ThankYou);
+const WrappedAbout = withStoreLayout(About);
+const WrappedContact = withStoreLayout(Contact);
+const WrappedCustomPage = withStoreLayout(CustomPage);
+const WrappedTerms = withStoreLayout(Terms);
+const WrappedPrivacy = withStoreLayout(Privacy);
+const WrappedComingSoon = withStoreLayout(ComingSoon);
 
-  return (
-    <StoreLayout>
-      {showHeaderFooter && <StoreHeader />}
-      <main className="flex-1">{children}</main>
-      {showHeaderFooter && <Footer />}
-    </StoreLayout>
-  );
-};
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <AuthProvider>
+      <CartProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              {/* SaaS Platform Home */}
+              <Route path="/" element={<SaasHome />} />
+              
+              {/* Store Routes - All wrapped with StorePageLayout */}
+              <Route path="/store/:storeId" element={<WrappedStorefront />} />
+              <Route path="/store/:storeId/shop" element={<WrappedShop />} />
+              <Route path="/store/:storeId/product/:slug" element={<WrappedProductDetail />} />
+              <Route path="/store/:storeId/cart" element={<WrappedCart />} />
+              <Route path="/store/:storeId/checkout" element={<WrappedCheckout />} />
+              <Route path="/store/:storeId/thank-you" element={<WrappedThankYou />} />
+              <Route path="/store/:storeId/about" element={<WrappedAbout />} />
+              <Route path="/store/:storeId/contact" element={<WrappedContact />} />
+              <Route path="/store/:storeId/page/:pageSlug" element={<WrappedCustomPage />} />
+              <Route path="/store/:storeId/terms" element={<WrappedTerms />} />
+              <Route path="/store/:storeId/privacy" element={<WrappedPrivacy />} />
+              <Route path="/store/:storeId/coming-soon" element={<WrappedComingSoon />} />
+              
+              {/* Demo Store Routes (for testing) - Redirect to proper store URLs */}
+              <Route path="/home" element={<Navigate to="/store" replace />} />
+              <Route path="/shop" element={<Navigate to="/store" replace />} />
+              <Route path="/product/:slug" element={<Navigate to="/store" replace />} />
+              <Route path="/cart" element={<Navigate to="/store" replace />} />
+              <Route path="/checkout" element={<Navigate to="/store" replace />} />
+              <Route path="/thank-you" element={<Navigate to="/store" replace />} />
+              <Route path="/about" element={<Navigate to="/store" replace />} />
+              <Route path="/contact" element={<Navigate to="/store" replace />} />
+              <Route path="/terms" element={<Navigate to="/store" replace />} />
+              <Route path="/privacy" element={<Navigate to="/store" replace />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              
+              {/* Admin Routes - All wrapped in AdminLayout */}
+              <Route path="/dashboard" element={<AdminLayout><Dashboard /></AdminLayout>} />
+              <Route path="/products" element={<AdminLayout><Products /></AdminLayout>} />
+              <Route path="/products/new" element={<AdminLayout><NewProduct /></AdminLayout>} />
+              <Route path="/products/:id" element={<AdminLayout><EditProduct /></AdminLayout>} />
+              <Route path="/orders" element={<AdminLayout><Orders /></AdminLayout>} />
+              <Route path="/orders/:id" element={<AdminLayout><Transakcije /></AdminLayout>} />
+              <Route path="/customers" element={<AdminLayout><Customers /></AdminLayout>} />
+              <Route path="/transakcije/:id" element={<AdminLayout><Transakcije /></AdminLayout>} />
+              <Route path="/settings" element={<AdminLayout><Settings /></AdminLayout>} />
+              <Route path="/design" element={<AdminLayout><Design /></AdminLayout>} />
+              <Route path="/analytics" element={<AdminLayout><Analytics /></AdminLayout>} />
+              <Route path="/profile" element={<AdminLayout><Profile /></AdminLayout>} />
+              <Route path="/racunovodstvo" element={<AdminLayout><Racunovodstvo /></AdminLayout>} />
+              <Route path="/brzi-link" element={<AdminLayout><BrziLink /></AdminLayout>} />
+              <Route path="/fakture" element={<AdminLayout><Fakture /></AdminLayout>} />
+              <Route path="/fakture/nova" element={<AdminLayout><NovaFaktura /></AdminLayout>} />
+              <Route path="/predracun/novi" element={<AdminLayout><NoviPredracun /></AdminLayout>} />
+              <Route path="/obracun/novi" element={<AdminLayout><NoviObracun /></AdminLayout>} />
+              
+              {/* Payment Links */}
+              <Route path="/pay/:linkId" element={<PaymentLink />} />
+              
+              {/* Public Document Pages */}
+              <Route path="/public/:docType/:docId" element={<PublicDocument />} />
+              
+              {/* 404 Route */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </CartProvider>
+    </AuthProvider>
+  </QueryClientProvider>
+);
+
+export default App;
