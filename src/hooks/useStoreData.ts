@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Product } from "@/components/shop/ProductCard";
 import { useToast } from "@/hooks/use-toast";
-import { StoreData, StoreSettings, isValidStoreSettings } from "@/types/store";
+import { StoreData, StoreSettings } from "@/types/store";
 
 interface UseStoreDataParams {
   storeId: string | undefined;
@@ -53,34 +53,6 @@ export const useStoreData = ({ storeId, currentUserId }: UseStoreDataParams) => 
         console.log("Found store:", storeData);
         console.log("Raw store settings:", storeData.settings);
         
-        // Check if user can access this store
-        let isPublic = false;
-        const isOwner = currentUserId && storeData.user_id === currentUserId;
-        
-        if (storeData.settings && 
-            typeof storeData.settings === 'object' && 
-            !Array.isArray(storeData.settings) &&
-            storeData.settings !== null) {
-          
-          const settingsObj = storeData.settings as Record<string, any>;
-          if (typeof settingsObj.is_public === 'boolean') {
-            isPublic = settingsObj.is_public;
-          }
-        }
-        
-        console.log("Store is_public value:", isPublic);
-        console.log("User is owner:", isOwner);
-        
-        // Allow access if store is public OR user is the owner
-        const canAccess = isPublic || isOwner;
-        
-        if (!canAccess) {
-          console.log("Access denied: store is private and user is not owner");
-          setError("Prodavnica je privatna i nedostupna javnosti");
-          setLoading(false);
-          return;
-        }
-        
         // Fetch published products for this store
         const { data: productsData, error: productsError } = await supabase
           .from('products')
@@ -120,7 +92,7 @@ export const useStoreData = ({ storeId, currentUserId }: UseStoreDataParams) => 
             ...defaultSettings,
             ...settingsObj,
             // Ensure is_public is always a boolean
-            is_public: isPublic
+            is_public: typeof settingsObj.is_public === 'boolean' ? settingsObj.is_public : false
           };
         } else {
           storeSettings = defaultSettings;

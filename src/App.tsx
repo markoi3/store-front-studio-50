@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { CartProvider } from "@/contexts/CartContext";
 import { AdminLayout } from "@/components/layout/AdminLayout";
+import { withStoreLayout } from "@/components/layout/StorePageLayout";
 
 // Public Pages
 import SaasHome from "./pages/SaasHome";
@@ -69,18 +70,19 @@ const App = () => (
               {/* SaaS Platform Home */}
               <Route path="/" element={<SaasHome />} />
               
-              {/* Store Routes */}
-              <Route path="/store/:storeId" element={<Storefront />} />
-              <Route path="/store/:storeId/product/:slug" element={<ProductDetail />} />
-              <Route path="/store/:storeId/cart" element={<Cart />} />
-              <Route path="/store/:storeId/checkout" element={<Checkout />} />
-              <Route path="/store/:storeId/thank-you" element={<ThankYou />} />
-              <Route path="/store/:storeId/about" element={<About />} />
-              <Route path="/store/:storeId/contact" element={<Contact />} />
-              <Route path="/store/:storeId/page/:pageSlug" element={<CustomPage />} />
-              <Route path="/store/:storeId/terms" element={<Terms />} />
-              <Route path="/store/:storeId/privacy" element={<Privacy />} />
-              <Route path="/store/:storeId/coming-soon" element={<ComingSoon />} />
+              {/* Store Routes - All wrapped with StorePageLayout */}
+              <Route path="/store/:storeId" element={withStoreLayout(Storefront)} />
+              <Route path="/store/:storeId/shop" element={withStoreLayout(Shop)} />
+              <Route path="/store/:storeId/product/:slug" element={withStoreLayout(ProductDetail)} />
+              <Route path="/store/:storeId/cart" element={withStoreLayout(Cart)} />
+              <Route path="/store/:storeId/checkout" element={withStoreLayout(Checkout)} />
+              <Route path="/store/:storeId/thank-you" element={withStoreLayout(ThankYou)} />
+              <Route path="/store/:storeId/about" element={withStoreLayout(About)} />
+              <Route path="/store/:storeId/contact" element={withStoreLayout(Contact)} />
+              <Route path="/store/:storeId/page/:pageSlug" element={withStoreLayout(CustomPage)} />
+              <Route path="/store/:storeId/terms" element={withStoreLayout(Terms)} />
+              <Route path="/store/:storeId/privacy" element={withStoreLayout(Privacy)} />
+              <Route path="/store/:storeId/coming-soon" element={withStoreLayout(ComingSoon)} />
               
               {/* Demo Store Routes (for testing) - Redirect to proper store URLs */}
               <Route path="/home" element={<Navigate to="/store" replace />} />

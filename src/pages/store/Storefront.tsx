@@ -1,4 +1,3 @@
-
 import { useParams, useNavigate } from "react-router-dom";
 import { StoreLayout } from "@/components/layout/StoreLayout";
 import { Button } from "@/components/ui/button";
@@ -6,8 +5,6 @@ import { PageElementRenderer } from "@/components/store/PageElementRenderer";
 import { useStoreData } from "@/hooks/useStoreData";
 import { getDefaultProducts } from "@/components/store/DefaultProducts";
 import { useAuth } from "@/contexts/AuthContext";
-import { useStoreVisibility } from "@/hooks/useStoreVisibility";
-import ComingSoon from "@/pages/ComingSoon";
 
 const Storefront = () => {
   const { storeId } = useParams();
@@ -17,7 +14,6 @@ const Storefront = () => {
     storeId, 
     currentUserId: user?.id 
   });
-  const { shouldShowComingSoon } = useStoreVisibility({ storeId });
   
   if (loading) {
     return (
@@ -34,11 +30,6 @@ const Storefront = () => {
     );
   }
   
-  // Show Coming Soon page if store is private and user is not owner
-  if (shouldShowComingSoon) {
-    return <ComingSoon />;
-  }
-  
   if (!store) {
     return (
       <StoreLayout>
@@ -47,10 +38,7 @@ const Storefront = () => {
             <div className="text-center">
               <h1 className="text-2xl font-bold mb-2">Prodavnica nije dostupna</h1>
               <p className="text-muted-foreground mb-6">
-                {error === "Prodavnica je privatna i nedostupna javnosti" 
-                  ? "Ova prodavnica je privatna i možete je videti samo ako ste vlasnik."
-                  : error || "Prodavnica koju tražite ne postoji ili više nije dostupna."
-                }
+                {error || "Prodavnica koju tražite ne postoji ili više nije dostupna."}
               </p>
               <Button asChild>
                 <a href="/">Povratak na početnu</a>
