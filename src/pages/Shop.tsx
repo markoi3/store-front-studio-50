@@ -1,118 +1,67 @@
 import { useState, useEffect } from "react";
 import { ProductCard, Product } from "@/components/shop/ProductCard";
 import { ShopLayout } from "@/components/layout/ShopLayout";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useParams } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-
-// Sample products data
-const allProducts: Product[] = [
-  {
-    id: "1",
-    name: "Minimalist Coffee Table",
-    price: 199.99,
-    image: "https://images.unsplash.com/photo-1595428774223-ef52624120d2?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1974&q=80",
-    slug: "minimalist-coffee-table",
-    category: "furniture"
-  },
-  {
-    id: "2",
-    name: "Ergonomic Office Chair",
-    price: 249.99,
-    image: "https://images.unsplash.com/photo-1580480055273-228ff5388ef8?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1974&q=80",
-    slug: "ergonomic-office-chair",
-    category: "furniture"
-  },
-  {
-    id: "3",
-    name: "Ceramic Mug Set",
-    price: 39.99,
-    image: "https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1974&q=80",
-    slug: "ceramic-mug-set",
-    category: "kitchen"
-  },
-  {
-    id: "4",
-    name: "Modern Floor Lamp",
-    price: 129.99,
-    image: "https://images.unsplash.com/photo-1543198126-1c7d9e6d4f3f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1974&q=80",
-    slug: "modern-floor-lamp",
-    category: "lighting"
-  },
-  {
-    id: "5",
-    name: "Wooden Dining Chair",
-    price: 149.99,
-    image: "https://images.unsplash.com/photo-1551298370-9d3d53740c72?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1974&q=80",
-    slug: "wooden-dining-chair",
-    category: "furniture"
-  },
-  {
-    id: "6",
-    name: "Pendant Light",
-    price: 89.99,
-    image: "https://images.unsplash.com/photo-1573167507387-6b4b98cb7c13?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1974&q=80",
-    slug: "pendant-light",
-    category: "lighting"
-  },
-  {
-    id: "7",
-    name: "Kitchen Knife Set",
-    price: 79.99,
-    image: "https://images.unsplash.com/photo-1593618998160-854542cfa185?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1974&q=80",
-    slug: "kitchen-knife-set",
-    category: "kitchen"
-  },
-  {
-    id: "8",
-    name: "Bookshelf",
-    price: 179.99,
-    image: "https://images.unsplash.com/photo-1588063577637-3c8ca15f9ac0?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1974&q=80",
-    slug: "bookshelf",
-    category: "furniture"
-  }
-];
+import { useAuth } from "@/contexts/AuthContext";
+import { useStoreData } from "@/hooks/useStoreData";
+import { getDefaultProducts } from "@/components/store/DefaultProducts";
 
 const Shop = () => {
+  const { storeId } = useParams();
+  const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [products, setProducts] = useState<Product[]>(allProducts);
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [priceRange, setPriceRange] = useState([0, 300]);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   
+  const { store, loading, storeProducts, error } = useStoreData({ 
+    storeId, 
+    currentUserId: user?.id 
+  });
+  
   const categoryParam = searchParams.get("category");
   
+  // Use stored products if available, otherwise use defaults
+  const allProducts = storeProducts.length > 0 ? storeProducts : getDefaultProducts(storeId);
+  
   useEffect(() => {
-    let filteredProducts = [...allProducts];
+    let products = [...allProducts];
     
     // Filter by category if provided
     if (categoryParam) {
-      filteredProducts = filteredProducts.filter(
+      products = products.filter(
         (product) => product.category === categoryParam
       );
     }
     
     // Filter by search term
     if (searchTerm) {
-      filteredProducts = filteredProducts.filter((product) =>
+      products = products.filter((product) =>
         product.name.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
     
     // Filter by price range
-    filteredProducts = filteredProducts.filter(
+    products = products.filter(
       (product) => product.price >= priceRange[0] && product.price <= priceRange[1]
     );
     
-    setProducts(filteredProducts);
-  }, [categoryParam, searchTerm, priceRange]);
+    setFilteredProducts(products);
+  }, [categoryParam, searchTerm, priceRange, allProducts]);
   
+  // Extract unique categories from products
   const categories = [
     { id: "all", name: "All Categories" },
-    { id: "furniture", name: "Furniture" },
-    { id: "kitchen", name: "Kitchen" },
-    { id: "lighting", name: "Lighting" }
+    ...Array.from(
+      new Set(allProducts.map((product) => product.category))
+    ).map((category) => ({
+      id: category,
+      name: category.charAt(0).toUpperCase() + category.slice(1)
+    }))
   ];
   
   const handleCategoryChange = (categoryId: string) => {
@@ -123,6 +72,43 @@ const Shop = () => {
     }
     setSearchParams(searchParams);
   };
+  
+  // Loading state
+  if (loading) {
+    return (
+      <ShopLayout>
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex justify-center items-center min-h-[60vh]">
+            <div className="animate-pulse flex flex-col items-center">
+              <div className="h-8 w-40 bg-muted rounded mb-4"></div>
+              <div className="h-4 w-60 bg-muted rounded"></div>
+            </div>
+          </div>
+        </div>
+      </ShopLayout>
+    );
+  }
+  
+  // Error state
+  if (!store) {
+    return (
+      <ShopLayout>
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex justify-center items-center min-h-[60vh]">
+            <div className="text-center">
+              <h1 className="text-2xl font-bold mb-2">Prodavnica nije dostupna</h1>
+              <p className="text-muted-foreground mb-6">
+                {error || "Prodavnica koju tražite ne postoji ili više nije dostupna."}
+              </p>
+              <Button asChild>
+                <a href="/">Povratak na početnu</a>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </ShopLayout>
+    );
+  }
   
   return (
     <ShopLayout>
@@ -236,7 +222,7 @@ const Shop = () => {
           
           {/* Products Grid */}
           <div className="flex-1">
-            {products.length === 0 ? (
+            {filteredProducts.length === 0 ? (
               <div className="text-center py-16">
                 <h2 className="text-xl font-medium mb-2">No products found</h2>
                 <p className="text-muted-foreground mb-4">
@@ -255,7 +241,7 @@ const Shop = () => {
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {products.map((product) => (
+                {filteredProducts.map((product) => (
                   <ProductCard key={product.id} product={product} />
                 ))}
               </div>
