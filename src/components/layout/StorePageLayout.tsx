@@ -1,6 +1,7 @@
 import { ReactNode, useEffect, useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { StoreLayout } from "./StoreLayout";
+import { StoreHeader } from "./StoreHeader";
+import { Footer } from "./Footer";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useStoreVisibility } from "@/hooks/useStoreVisibility";
@@ -62,24 +63,37 @@ export const StorePageLayout = ({ children }: StorePageLayoutProps) => {
   
   if (loading || visibilityLoading) {
     return (
-      <StoreLayout>
-        <div className="container mx-auto px-4 py-12 flex items-center justify-center min-h-[60vh]">
-          <div className="animate-pulse flex flex-col items-center">
-            <div className="h-8 w-40 bg-muted rounded mb-4"></div>
-            <div className="h-4 w-60 bg-muted rounded"></div>
+      <div className="flex flex-col min-h-screen bg-background">
+        <StoreHeader />
+        <main className="flex-1">
+          <div className="container mx-auto px-4 py-12 flex items-center justify-center min-h-[60vh]">
+            <div className="animate-pulse flex flex-col items-center">
+              <div className="h-8 w-40 bg-muted rounded mb-4"></div>
+              <div className="h-4 w-60 bg-muted rounded"></div>
+            </div>
           </div>
-        </div>
-      </StoreLayout>
+        </main>
+        <Footer />
+      </div>
     );
   }
   
-  // FIXED: Show Coming Soon WITHOUT StoreLayout (no header/footer)
+  // Show Coming Soon WITHOUT header/footer
   if (shouldShowComingSoon) {
     console.log("Showing Coming Soon page for private store");
     return <ComingSoon />;
   }
   
-  return <StoreLayout>{children}</StoreLayout>;
+  // FIXED: Direct layout implementation instead of wrapping with StoreLayout
+  return (
+    <div className="flex flex-col min-h-screen bg-background">
+      <StoreHeader />
+      <main className="flex-1">
+        {children}
+      </main>
+      <Footer />
+    </div>
+  );
 };
 
 export const withStoreLayout = (Component: React.ComponentType<any>) => {
