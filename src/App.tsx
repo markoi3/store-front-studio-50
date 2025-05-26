@@ -23,6 +23,7 @@ import Privacy from "./pages/Privacy";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import CustomPage from "./pages/CustomPage";
+import ComingSoon from "./pages/ComingSoon";
 
 // Admin Pages
 import Dashboard from "./pages/admin/Dashboard";
@@ -79,6 +80,7 @@ const App = () => (
               <Route path="/store/:storeId/page/:pageSlug" element={<CustomPage />} />
               <Route path="/store/:storeId/terms" element={<Terms />} />
               <Route path="/store/:storeId/privacy" element={<Privacy />} />
+              <Route path="/store/:storeId/coming-soon" element={<ComingSoon />} />
               
               {/* Demo Store Routes (for testing) - Redirect to proper store URLs */}
               <Route path="/home" element={<Navigate to="/store" replace />} />

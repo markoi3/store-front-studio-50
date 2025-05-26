@@ -147,6 +147,7 @@ export const useStoreData = ({ storeId, currentUserId }: UseStoreDataParams) => 
           id: storeData.id,
           name: storeData.name,
           slug: storeData.slug,
+          user_id: storeData.user_id, // Include user_id for ownership checking
           settings: storeSettings,
           elements: storeSettings.pageElements || [
             {

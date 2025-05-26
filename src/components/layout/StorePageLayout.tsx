@@ -4,6 +4,8 @@ import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { StoreLayout } from "./StoreLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useStoreVisibility } from "@/hooks/useStoreVisibility";
+import ComingSoon from "@/pages/ComingSoon";
 
 type StorePageLayoutProps = {
   children: ReactNode;
@@ -14,6 +16,7 @@ export const StorePageLayout = ({ children }: StorePageLayoutProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [loading, setLoading] = useState(false);
+  const { shouldShowComingSoon, loading: visibilityLoading } = useStoreVisibility({ storeId });
   
   // If we're on a non-store route (e.g. /about instead of /store/slug/about),
   // try to redirect to the first store we find
@@ -64,7 +67,7 @@ export const StorePageLayout = ({ children }: StorePageLayoutProps) => {
     redirectToStoreRoute();
   }, [storeId, location.pathname, navigate]);
   
-  if (loading) {
+  if (loading || visibilityLoading) {
     return (
       <StoreLayout>
         <div className="container mx-auto px-4 py-12 flex items-center justify-center min-h-[60vh]">
@@ -75,6 +78,11 @@ export const StorePageLayout = ({ children }: StorePageLayoutProps) => {
         </div>
       </StoreLayout>
     );
+  }
+
+  // Show Coming Soon page if store is private and user is not owner
+  if (shouldShowComingSoon) {
+    return <ComingSoon />;
   }
   
   return <StoreLayout>{children}</StoreLayout>;

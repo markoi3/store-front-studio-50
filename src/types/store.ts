@@ -18,6 +18,10 @@ export interface StoreSettings {
   paymentSettings?: any;
   shippingSettings?: any;
   taxSettings?: any;
+  logo?: {
+    url?: string;
+    alt?: string;
+  };
   [key: string]: any;
 }
 
@@ -25,6 +29,7 @@ export interface StoreData {
   id: string;
   name: string;
   slug: string;
+  user_id: string; // Added user_id for ownership checking
   settings: StoreSettings;
   elements: any[];
 }
