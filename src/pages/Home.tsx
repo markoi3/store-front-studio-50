@@ -1,5 +1,5 @@
 
-import { ShopLayout } from "@/components/layout/ShopLayout";
+
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { ProductCard, Product } from "@/components/shop/ProductCard";
