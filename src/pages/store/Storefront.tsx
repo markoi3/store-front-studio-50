@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-
+import { StoreLayout } from "@/components/layout/StoreLayout";
 import { Button } from "@/components/ui/button";
 import { PageElementRenderer } from "@/components/store/PageElementRenderer";
 import { useStoreData } from "@/hooks/useStoreData";
@@ -17,7 +17,7 @@ const Storefront = () => {
   
   if (loading) {
     return (
-     
+      <StoreLayout>
         <div className="container mx-auto px-4 py-12">
           <div className="flex justify-center items-center min-h-[60vh]">
             <div className="animate-pulse flex flex-col items-center">
@@ -26,13 +26,13 @@ const Storefront = () => {
             </div>
           </div>
         </div>
-     
+      </StoreLayout>
     );
   }
   
   if (!store) {
     return (
-     
+      <StoreLayout>
         <div className="container mx-auto px-4 py-12">
           <div className="flex justify-center items-center min-h-[60vh]">
             <div className="text-center">
@@ -70,7 +70,7 @@ const Storefront = () => {
   };
   
   return (
-    
+    <StoreLayout>
       <div className="space-y-12">
         {/* Page Content */}
         <PageElementRenderer 
@@ -92,7 +92,7 @@ const Storefront = () => {
           </div>
         )}
       </div>
-    
+    </StoreLayout>
   );
 };
 
