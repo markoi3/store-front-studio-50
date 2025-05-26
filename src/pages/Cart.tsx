@@ -1,4 +1,3 @@
-import { withStoreLayout } from "@/components/layout/StorePageLayout";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/contexts/CartContext";
 import { Link } from "react-router-dom";
@@ -159,4 +158,5 @@ const Cart = () => {
   );
 };
 
-export default withStoreLayout(Cart);
+// REMOVED: export default withStoreLayout(Cart);
+export default Cart;
