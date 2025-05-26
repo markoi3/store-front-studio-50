@@ -1,4 +1,3 @@
-
 import { useParams } from "react-router-dom";
 import { useStoreData } from "@/hooks/useStoreData";
 import { useAuth } from "@/contexts/AuthContext";
@@ -28,8 +27,8 @@ const ComingSoon = () => {
   
   // Get custom coming soon elements if they exist
   const comingSoonElements = store?.settings?.comingSoonElements || [];
-
-  // Default elements if no custom ones are set
+  
+  // Default elements with CLEAN content (no HTML tags)
   const defaultElements = [
     {
       id: 'coming-soon-logo',
@@ -47,16 +46,19 @@ const ComingSoon = () => {
       id: 'coming-soon-title',
       type: 'text',
       settings: {
-        content: '<h1 class="text-4xl md:text-6xl font-bold text-foreground mb-4">Coming Soon</h1>',
-        alignment: 'center'
+        content: 'Coming Soon', // Clean text, no HTML
+        alignment: 'center',
+        fontSize: 'xlarge',
+        fontWeight: 'bold'
       }
     },
     {
       id: 'coming-soon-description',
       type: 'text',
       settings: {
-        content: '<p class="text-muted-foreground text-lg">We\'re working on something amazing. Stay tuned!</p>',
-        alignment: 'center'
+        content: "We're working on something amazing. Stay tuned!", // Clean text
+        alignment: 'center',
+        textColor: 'muted'
       }
     }
   ];
@@ -64,7 +66,7 @@ const ComingSoon = () => {
   const elementsToRender = comingSoonElements.length > 0 ? comingSoonElements : defaultElements;
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4">
+    <div className="container mx-auto px-4 py-12 flex items-center justify-center min-h-[60vh]">
       <div className="text-center max-w-md mx-auto">
         <PageElementRenderer 
           elements={elementsToRender}
