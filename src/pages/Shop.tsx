@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { ShopLayout } from "@/components/layout/ShopLayout";
 import { ProductCard, Product } from "@/components/shop/ProductCard";
 import { useSearchParams } from "react-router-dom";
 import { Input } from "@/components/ui/input";
