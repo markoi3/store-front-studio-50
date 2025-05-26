@@ -1,6 +1,6 @@
 import { ReactNode, useEffect, useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { StoreLayout } from "./StoreLayout"; // Keep import (might be used elsewhere)
+import { StoreLayout } from "./StoreLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useStoreVisibility } from "@/hooks/useStoreVisibility";
@@ -16,21 +16,22 @@ export const StorePageLayout = ({ children }: StorePageLayoutProps) => {
   const location = useLocation();
   const [loading, setLoading] = useState(false);
   const { shouldShowComingSoon, loading: visibilityLoading, isOwner } = useStoreVisibility({ storeId });
-
-  // Redirect logic (unchanged)
+  
+  // Redirect logic remains the same...
   useEffect(() => {
     const redirectToStoreRoute = async () => {
       if (!storeId && !location.pathname.startsWith('/store/')) {
         try {
           setLoading(true);
+          
           const currentPath = location.pathname.substring(1);
-
+          
           const { data: storeData, error } = await supabase
             .from('stores')
             .select('slug')
             .limit(1)
             .single();
-
+            
           if (error) {
             console.error("Error fetching store:", error);
             toast.error("Navigation error", {
@@ -39,7 +40,7 @@ export const StorePageLayout = ({ children }: StorePageLayoutProps) => {
             setLoading(false);
             return;
           }
-
+          
           if (storeData && storeData.slug) {
             const storeUrl = `/store/${storeData.slug}${currentPath ? `/${currentPath}` : ''}`;
             console.log(`Redirecting to store route: ${storeUrl}`);
@@ -55,33 +56,32 @@ export const StorePageLayout = ({ children }: StorePageLayoutProps) => {
         }
       }
     };
-
+    
     redirectToStoreRoute();
   }, [storeId, location.pathname, navigate]);
-
-  // Loading state (unchanged)
+  
   if (loading || visibilityLoading) {
     return (
-      <div className="container mx-auto px-4 py-12 flex items-center justify-center min-h-[60vh]">
-        <div className="animate-pulse flex flex-col items-center">
-          <div className="h-8 w-40 bg-muted rounded mb-4"></div>
-          <div className="h-4 w-60 bg-muted rounded"></div>
+      <StoreLayout>
+        <div className="container mx-auto px-4 py-12 flex items-center justify-center min-h-[60vh]">
+          <div className="animate-pulse flex flex-col items-center">
+            <div className="h-8 w-40 bg-muted rounded mb-4"></div>
+            <div className="h-4 w-60 bg-muted rounded"></div>
+          </div>
         </div>
-      </div>
+      </StoreLayout>
     );
   }
-
-  // Coming Soon page (NO StoreLayout wrapper)
+  
+  // FIXED: Show Coming Soon WITHOUT StoreLayout (no header/footer)
   if (shouldShowComingSoon) {
     console.log("Showing Coming Soon page for private store");
     return <ComingSoon />;
   }
-
-  // FIX: Return children directly (StoreLayout is already in Storefront.tsx)
-  return <>{children}</>;
+  
+  return <StoreLayout>{children}</StoreLayout>;
 };
 
-// HOC remains unchanged
 export const withStoreLayout = (Component: React.ComponentType<any>) => {
   return (props: any) => (
     <StorePageLayout>
