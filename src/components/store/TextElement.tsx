@@ -1,3 +1,4 @@
+import parse from 'html-react-parser';
 
 interface TextElementProps {
   element: {
@@ -20,16 +21,14 @@ export const TextElement = ({ element }: TextElementProps) => {
         backgroundColor: element.settings?.backgroundColor || ""
       }}
     >
-      <div className="max-w-3xl mx-auto text-center">
-        <p 
-          className="text-lg"
-          style={{
-            color: element.settings?.textColor || "",
-            textAlign: element.settings?.alignment as any || "center"
-          }}
-        >
-          {element.settings?.content || ""}
-        </p>
+      <div 
+        className="max-w-3xl mx-auto text-center"
+        style={{
+          color: element.settings?.textColor || "",
+          textAlign: element.settings?.alignment as any || "center"
+        }}
+      >
+        {parse(element.settings?.content || "")}
       </div>
     </div>
   );
