@@ -1,5 +1,5 @@
 
-import { ShopLayout } from "@/components/layout/ShopLayout";
+
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { ProductCard, Product } from "@/components/shop/ProductCard";
@@ -42,7 +42,7 @@ const featuredProducts: Product[] = [
 
 const Home = () => {
   return (
-    <ShopLayout>
+    
       {/* Hero Section */}
       <section className="py-16 md:py-24 bg-accent">
         <div className="container mx-auto px-4">
@@ -138,7 +138,7 @@ const Home = () => {
           </div>
         </div>
       </section>
-    </ShopLayout>
+    
   );
 };
 
