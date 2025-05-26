@@ -16,7 +16,7 @@ export const StorePageLayout = ({ children }: StorePageLayoutProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [loading, setLoading] = useState(false);
-  const { shouldShowComingSoon, loading: visibilityLoading } = useStoreVisibility({ storeId });
+  const { shouldShowComingSoon, loading: visibilityLoading, isOwner } = useStoreVisibility({ storeId });
   
   // If we're on a non-store route (e.g. /about instead of /store/slug/about),
   // try to redirect to the first store we find
@@ -81,7 +81,9 @@ export const StorePageLayout = ({ children }: StorePageLayoutProps) => {
   }
 
   // Show Coming Soon page if store is private and user is not owner
+  // This applies to ALL store routes, not just the homepage
   if (shouldShowComingSoon) {
+    console.log("Showing Coming Soon page for private store");
     return <ComingSoon />;
   }
   

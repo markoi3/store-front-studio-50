@@ -2,6 +2,7 @@
 import { useParams } from "react-router-dom";
 import { useStoreData } from "@/hooks/useStoreData";
 import { useAuth } from "@/contexts/AuthContext";
+import { PageElementRenderer } from "@/components/store/PageElementRenderer";
 
 const ComingSoon = () => {
   const { storeId } = useParams();
@@ -24,29 +25,53 @@ const ComingSoon = () => {
   // Get logo from store settings
   const logo = store?.settings?.logo || null;
   const storeName = store?.name || "Store";
+  
+  // Get custom coming soon elements if they exist
+  const comingSoonElements = store?.settings?.comingSoonElements || [];
+
+  // Default elements if no custom ones are set
+  const defaultElements = [
+    {
+      id: 'coming-soon-logo',
+      type: 'image',
+      settings: {
+        src: logo?.url || '',
+        alt: logo?.alt || storeName,
+        width: 200,
+        height: 80,
+        alignment: 'center',
+        className: 'mb-8'
+      }
+    },
+    {
+      id: 'coming-soon-title',
+      type: 'text',
+      settings: {
+        content: '<h1 class="text-4xl md:text-6xl font-bold text-foreground mb-4">Coming Soon</h1>',
+        alignment: 'center'
+      }
+    },
+    {
+      id: 'coming-soon-description',
+      type: 'text',
+      settings: {
+        content: '<p class="text-muted-foreground text-lg">We\'re working on something amazing. Stay tuned!</p>',
+        alignment: 'center'
+      }
+    }
+  ];
+
+  const elementsToRender = comingSoonElements.length > 0 ? comingSoonElements : defaultElements;
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center px-4">
       <div className="text-center max-w-md mx-auto">
-        {/* Store Logo or Name */}
-        {logo && logo.url ? (
-          <img 
-            src={logo.url} 
-            alt={logo.alt || storeName} 
-            className="h-16 mb-8 mx-auto max-w-[200px] object-contain" 
-          />
-        ) : (
-          <h2 className="text-2xl font-bold mb-8 text-foreground">{storeName}</h2>
-        )}
-        
-        {/* Coming Soon Message */}
-        <h1 className="text-4xl md:text-6xl font-bold text-foreground mb-4">
-          Coming Soon
-        </h1>
-        
-        <p className="text-muted-foreground text-lg">
-          We're working on something amazing. Stay tuned!
-        </p>
+        <PageElementRenderer 
+          elements={elementsToRender}
+          products={[]}
+          storeId={storeId || ''}
+          onNavigate={() => {}}
+        />
       </div>
     </div>
   );

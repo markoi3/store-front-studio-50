@@ -6,6 +6,8 @@ import { PageElementRenderer } from "@/components/store/PageElementRenderer";
 import { useStoreData } from "@/hooks/useStoreData";
 import { getDefaultProducts } from "@/components/store/DefaultProducts";
 import { useAuth } from "@/contexts/AuthContext";
+import { useStoreVisibility } from "@/hooks/useStoreVisibility";
+import ComingSoon from "@/pages/ComingSoon";
 
 const Storefront = () => {
   const { storeId } = useParams();
@@ -15,6 +17,7 @@ const Storefront = () => {
     storeId, 
     currentUserId: user?.id 
   });
+  const { shouldShowComingSoon } = useStoreVisibility({ storeId });
   
   if (loading) {
     return (
@@ -29,6 +32,11 @@ const Storefront = () => {
         </div>
       </StoreLayout>
     );
+  }
+  
+  // Show Coming Soon page if store is private and user is not owner
+  if (shouldShowComingSoon) {
+    return <ComingSoon />;
   }
   
   if (!store) {

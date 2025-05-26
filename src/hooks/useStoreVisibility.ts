@@ -45,6 +45,8 @@ export const useStoreVisibility = ({ storeId }: UseStoreVisibilityParams) => {
   return {
     shouldShowComingSoon,
     loading,
-    store
+    store,
+    isOwner: user && store && user.id === store.user_id,
+    isPrivate: store ? !store.settings.is_public : false
   };
 };

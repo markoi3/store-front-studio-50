@@ -13,6 +13,7 @@ export interface StoreSettings {
   privacyPolicy?: string;
   contactInfo?: string;
   pageElements?: any[];
+  comingSoonElements?: any[];
   is_public: boolean;
   storeSettings?: any;
   paymentSettings?: any;

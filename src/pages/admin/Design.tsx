@@ -21,7 +21,7 @@ const Design = () => {
     // Extract tab name from URL if present
     const searchParams = new URLSearchParams(location.search);
     const tab = searchParams.get("tab");
-    if (tab && (tab === "builder" || tab === "menu" || tab === "logo" || tab === "custom")) {
+    if (tab && (tab === "builder" || tab === "menu" || tab === "logo" || tab === "custom" || tab === "coming-soon")) {
       setActiveTab(tab);
     }
   }, [location]);
@@ -44,6 +44,7 @@ const Design = () => {
             <TabsTrigger value="menu">Meni</TabsTrigger>
             <TabsTrigger value="logo">Logo</TabsTrigger>
             <TabsTrigger value="custom">Custom Pages</TabsTrigger>
+            <TabsTrigger value="coming-soon">Coming Soon</TabsTrigger>
           </TabsList>
           
           <TabsContent value="builder" className="space-y-4">
@@ -60,6 +61,10 @@ const Design = () => {
           
           <TabsContent value="custom" className="space-y-4">
             <CustomPagesEditor />
+          </TabsContent>
+          
+          <TabsContent value="coming-soon" className="space-y-4">
+            <ComingSoonEditor />
           </TabsContent>
         </Tabs>
       </div>
@@ -593,6 +598,291 @@ const CustomPagesEditor = () => {
                   </div>
                 </div>
               )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+// Coming Soon editor component
+const ComingSoonEditor = () => {
+  const { user, updateStoreSettings } = useAuth();
+  const [elements, setElements] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  
+  useEffect(() => {
+    // Load existing coming soon elements
+    if (user?.store?.settings?.comingSoonElements) {
+      setElements(user.store.settings.comingSoonElements);
+    } else {
+      // Set default elements
+      setElements([
+        {
+          id: 'coming-soon-logo',
+          type: 'image',
+          settings: {
+            src: user?.store?.settings?.logo?.url || '',
+            alt: user?.store?.settings?.logo?.alt || user?.store?.name || 'Store',
+            width: 200,
+            height: 80,
+            alignment: 'center',
+            className: 'mb-8'
+          }
+        },
+        {
+          id: 'coming-soon-title',
+          type: 'text',
+          settings: {
+            content: '<h1 class="text-4xl md:text-6xl font-bold text-foreground mb-4">Coming Soon</h1>',
+            alignment: 'center'
+          }
+        },
+        {
+          id: 'coming-soon-description',
+          type: 'text',
+          settings: {
+            content: '<p class="text-muted-foreground text-lg">We\'re working on something amazing. Stay tuned!</p>',
+            alignment: 'center'
+          }
+        }
+      ]);
+    }
+  }, [user]);
+  
+  const handleSaveElements = async () => {
+    try {
+      setLoading(true);
+      await updateStoreSettings({
+        ...user?.store?.settings,
+        comingSoonElements: elements
+      });
+      
+      toast.success("Coming Soon page saved successfully");
+    } catch (error) {
+      console.error("Error saving coming soon elements:", error);
+      toast.error("Failed to save Coming Soon page");
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const handleAddElement = (type: string) => {
+    const newElement = {
+      id: `element-${Date.now()}`,
+      type: type,
+      settings: getDefaultElementSettings(type)
+    };
+    
+    setElements([...elements, newElement]);
+  };
+  
+  const handleUpdateElement = (id: string, newSettings: any) => {
+    setElements(elements.map(el => 
+      el.id === id ? { ...el, settings: newSettings } : el
+    ));
+  };
+  
+  const handleRemoveElement = (id: string) => {
+    setElements(elements.filter(el => el.id !== id));
+  };
+  
+  const getDefaultElementSettings = (type: string) => {
+    switch (type) {
+      case 'text':
+        return {
+          content: '<p>New text element</p>',
+          alignment: 'center'
+        };
+      case 'image':
+        return {
+          src: '',
+          alt: 'Image',
+          width: 200,
+          height: 200,
+          alignment: 'center'
+        };
+      case 'hero':
+        return {
+          title: 'Coming Soon',
+          subtitle: 'We\'re working on something amazing',
+          buttonText: '',
+          buttonLink: '',
+          backgroundImage: ''
+        };
+      default:
+        return {};
+    }
+  };
+  
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-lg font-medium">Coming Soon Page</h3>
+              <p className="text-muted-foreground">
+                Customize the page that visitors see when your store is set to Private.
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => handleAddElement('text')}
+                className="flex items-center gap-1"
+              >
+                <Plus className="h-4 w-4" /> Add Text
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => handleAddElement('image')}
+                className="flex items-center gap-1"
+              >
+                <Plus className="h-4 w-4" /> Add Image
+              </Button>
+              <Button 
+                onClick={handleSaveElements}
+                disabled={loading}
+              >
+                {loading ? 'Saving...' : 'Save Changes'}
+              </Button>
+            </div>
+          </div>
+          
+          {elements.length === 0 ? (
+            <div className="text-center py-8 border border-dashed rounded-md text-muted-foreground">
+              No elements yet. Add text or images to customize your Coming Soon page.
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {elements.map((element, index) => (
+                <div key={element.id} className="border rounded-md p-4">
+                  <div className="flex justify-between items-start mb-3">
+                    <div className="font-medium capitalize">{element.type} Element</div>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => {
+                          const newElements = [...elements];
+                          if (index > 0) {
+                            [newElements[index], newElements[index - 1]] = [newElements[index - 1], newElements[index]];
+                            setElements(newElements);
+                          }
+                        }}
+                        disabled={index === 0}
+                      >
+                        ↑
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => {
+                          const newElements = [...elements];
+                          if (index < elements.length - 1) {
+                            [newElements[index], newElements[index + 1]] = [newElements[index + 1], newElements[index]];
+                            setElements(newElements);
+                          }
+                        }}
+                        disabled={index === elements.length - 1}
+                      >
+                        ↓
+                      </Button>
+                      <Button 
+                        variant="destructive" 
+                        size="sm"
+                        onClick={() => handleRemoveElement(element.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  {element.type === 'text' && (
+                    <div className="space-y-3">
+                      <div>
+                        <Label>Content (HTML allowed)</Label>
+                        <Textarea
+                          value={element.settings.content || ''}
+                          onChange={(e) => handleUpdateElement(element.id, {
+                            ...element.settings,
+                            content: e.target.value
+                          })}
+                          rows={3}
+                        />
+                      </div>
+                      <div>
+                        <Label>Alignment</Label>
+                        <select
+                          value={element.settings.alignment || 'center'}
+                          onChange={(e) => handleUpdateElement(element.id, {
+                            ...element.settings,
+                            alignment: e.target.value
+                          })}
+                          className="w-full px-3 py-2 border rounded-md"
+                        >
+                          <option value="left">Left</option>
+                          <option value="center">Center</option>
+                          <option value="right">Right</option>
+                        </select>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {element.type === 'image' && (
+                    <div className="space-y-3">
+                      <div>
+                        <Label>Image URL</Label>
+                        <Input
+                          value={element.settings.src || ''}
+                          onChange={(e) => handleUpdateElement(element.id, {
+                            ...element.settings,
+                            src: e.target.value
+                          })}
+                          placeholder="https://example.com/image.jpg"
+                        />
+                      </div>
+                      <div>
+                        <Label>Alt Text</Label>
+                        <Input
+                          value={element.settings.alt || ''}
+                          onChange={(e) => handleUpdateElement(element.id, {
+                            ...element.settings,
+                            alt: e.target.value
+                          })}
+                          placeholder="Image description"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <Label>Width (px)</Label>
+                          <Input
+                            type="number"
+                            value={element.settings.width || 200}
+                            onChange={(e) => handleUpdateElement(element.id, {
+                              ...element.settings,
+                              width: parseInt(e.target.value) || 200
+                            })}
+                          />
+                        </div>
+                        <div>
+                          <Label>Height (px)</Label>
+                          <Input
+                            type="number"
+                            value={element.settings.height || 200}
+                            onChange={(e) => handleUpdateElement(element.id, {
+                              ...element.settings,
+                              height: parseInt(e.target.value) || 200
+                            })}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
           )}
         </CardContent>
