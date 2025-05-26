@@ -1,4 +1,4 @@
-import { Toaster } from "@/components/ui/toaster";
+mport { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { CartProvider } from "@/contexts/CartContext";
 import { AdminLayout } from "@/components/layout/AdminLayout";
+import { withStoreLayout } from "@/components/layout/StorePageLayout";
 
 // Public Pages
 import SaasHome from "./pages/SaasHome";
@@ -15,7 +16,7 @@ import ProductDetail from "./pages/ProductDetail";
 import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 import ThankYou from "./pages/ThankYou";
-import About from "./pages/About"; // Already wrapped with withStoreLayout
+import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
@@ -56,6 +57,20 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+// Create wrapped components
+const WrappedStorefront = withStoreLayout(Storefront);
+const WrappedShop = withStoreLayout(Shop);
+const WrappedProductDetail = withStoreLayout(ProductDetail);
+const WrappedCart = withStoreLayout(Cart);
+const WrappedCheckout = withStoreLayout(Checkout);
+const WrappedThankYou = withStoreLayout(ThankYou);
+const WrappedAbout = withStoreLayout(About);
+const WrappedContact = withStoreLayout(Contact);
+const WrappedCustomPage = withStoreLayout(CustomPage);
+const WrappedTerms = withStoreLayout(Terms);
+const WrappedPrivacy = withStoreLayout(Privacy);
+const WrappedComingSoon = withStoreLayout(ComingSoon);
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
@@ -68,19 +83,19 @@ const App = () => (
               {/* SaaS Platform Home */}
               <Route path="/" element={<SaasHome />} />
               
-              {/* Store Routes - Components already wrapped with withStoreLayout */}
-              <Route path="/store/:storeId" element={<Storefront />} />
-              <Route path="/store/:storeId/shop" element={<Shop />} />
-              <Route path="/store/:storeId/product/:slug" element={<ProductDetail />} />
-              <Route path="/store/:storeId/cart" element={<Cart />} />
-              <Route path="/store/:storeId/checkout" element={<Checkout />} />
-              <Route path="/store/:storeId/thank-you" element={<ThankYou />} />
-              <Route path="/store/:storeId/about" element={<About />} />
-              <Route path="/store/:storeId/contact" element={<Contact />} />
-              <Route path="/store/:storeId/page/:pageSlug" element={<CustomPage />} />
-              <Route path="/store/:storeId/terms" element={<Terms />} />
-              <Route path="/store/:storeId/privacy" element={<Privacy />} />
-              <Route path="/store/:storeId/coming-soon" element={<ComingSoon />} />
+              {/* Store Routes - All wrapped with StorePageLayout */}
+              <Route path="/store/:storeId" element={<WrappedStorefront />} />
+              <Route path="/store/:storeId/shop" element={<WrappedShop />} />
+              <Route path="/store/:storeId/product/:slug" element={<WrappedProductDetail />} />
+              <Route path="/store/:storeId/cart" element={<WrappedCart />} />
+              <Route path="/store/:storeId/checkout" element={<WrappedCheckout />} />
+              <Route path="/store/:storeId/thank-you" element={<WrappedThankYou />} />
+              <Route path="/store/:storeId/about" element={<WrappedAbout />} />
+              <Route path="/store/:storeId/contact" element={<WrappedContact />} />
+              <Route path="/store/:storeId/page/:pageSlug" element={<WrappedCustomPage />} />
+              <Route path="/store/:storeId/terms" element={<WrappedTerms />} />
+              <Route path="/store/:storeId/privacy" element={<WrappedPrivacy />} />
+              <Route path="/store/:storeId/coming-soon" element={<WrappedComingSoon />} />
               
               {/* Demo Store Routes (for testing) - Redirect to proper store URLs */}
               <Route path="/home" element={<Navigate to="/store" replace />} />
