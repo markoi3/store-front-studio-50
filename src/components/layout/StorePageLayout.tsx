@@ -73,14 +73,10 @@ export const StorePageLayout = ({ children }: StorePageLayoutProps) => {
     );
   }
   
-  // FIXED: Show Coming Soon WITHIN StoreLayout to prevent duplicates
+  // FIXED: Show Coming Soon WITHOUT StoreLayout (no header/footer)
   if (shouldShowComingSoon) {
     console.log("Showing Coming Soon page for private store");
-    return (
-      <StoreLayout>
-        <ComingSoon />
-      </StoreLayout>
-    );
+    return <ComingSoon />;
   }
   
   return <StoreLayout>{children}</StoreLayout>;
