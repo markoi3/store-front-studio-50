@@ -1,6 +1,5 @@
 
 import { useState } from "react";
-import { withStoreLayout } from "@/components/layout/StorePageLayout";
 import { useCart } from "@/contexts/CartContext";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -536,4 +535,4 @@ const Checkout = () => {
   );
 };
 
-export default withStoreLayout(Checkout);
+export default (Checkout);
