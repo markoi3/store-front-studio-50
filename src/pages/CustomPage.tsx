@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { withStoreLayout } from "@/components/layout/StorePageLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { StoreSettings } from "@/hooks/useStore";
 import { PageElementRenderer } from "@/components/store/PageElementRenderer";
@@ -228,4 +227,4 @@ const CustomPage = () => {
 };
 
 // Export the component with the StorePageLayout wrapper
-export default withStoreLayout(CustomPage);
+export default (CustomPage);
