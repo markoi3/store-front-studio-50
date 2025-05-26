@@ -8,6 +8,22 @@ import { CartProvider } from "@/contexts/CartContext";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { withStoreLayout } from "@/components/layout/StorePageLayout";
 
+// In your router configuration (likely App.tsx or similar)
+import { StoreLayout } from "./components/layout/StoreLayout";
+import Storefront from "./pages/Storefront";
+
+const router = createBrowserRouter([
+  {
+    path: "/store/:storeId",
+    element: (
+      <StoreLayout>  {/* Apply layout HERE */}
+        <Storefront />
+      </StoreLayout>
+    ),
+  },
+  // ... other routes
+]);
+
 // Public Pages
 import SaasHome from "./pages/SaasHome";
 import Home from "./pages/Home";
