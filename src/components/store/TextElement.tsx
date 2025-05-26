@@ -12,27 +12,6 @@ interface TextElementProps {
 }
 
 export const TextElement = ({ element }: TextElementProps) => {
-  // Funkcija za dekodiranje HTML entities
-  const decodeHtmlEntities = (str: string) => {
-    const element = document.createElement('div');
-    element.innerHTML = str;
-    return element.textContent || element.innerText || '';
-  };
-  
-  // Funkcija za dekodiranje HTML tagova
-  const decodeHtml = (html: string) => {
-    const txt = document.createElement('textarea');
-    txt.innerHTML = html;
-    return txt.value;
-  };
-  
-  let processedContent = element.settings?.content || "";
-  
-  // Pokušajte oba načina dekodiranja
-  if (processedContent.includes('&lt;') || processedContent.includes('&gt;')) {
-    processedContent = decodeHtml(processedContent);
-  }
-  
   return (
     <div 
       className="container mx-auto px-4 py-12"
@@ -46,10 +25,11 @@ export const TextElement = ({ element }: TextElementProps) => {
           color: element.settings?.textColor || "",
           textAlign: element.settings?.alignment as any || "center"
         }}
-        dangerouslySetInnerHTML={{ 
-          __html: processedContent
-        }}
-      />
+      >
+        {/* Hardkodovano za test */}
+        <h1 className="text-4xl md:text-6xl font-bold text-foreground mb-4">Coming Soon</h1>
+        <p className="text-muted-foreground text-lg">We're working on something amazing. Stay tuned!</p>
+      </div>
     </div>
   );
 };
