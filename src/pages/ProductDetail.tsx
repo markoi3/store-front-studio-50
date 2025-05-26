@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { withStoreLayout } from "@/components/layout/StorePageLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useCart } from "@/contexts/CartContext";
 
@@ -196,4 +195,4 @@ const ProductDetail = () => {
   );
 };
 
-export default withStoreLayout(ProductDetail);
+export default (ProductDetail);
