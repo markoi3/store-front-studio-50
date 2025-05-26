@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { ProductCard, Product } from "@/components/shop/ProductCard";
-
+import { ShopLayout } from "@/components/layout/ShopLayout";
 import { useSearchParams, useParams } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
