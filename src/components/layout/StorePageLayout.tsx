@@ -8,30 +8,24 @@ import ComingSoon from "@/pages/ComingSoon";
 
 type StorePageLayoutProps = {
   children: ReactNode;
+  showHeaderFooter?: boolean; // New prop
 };
 
-export const StorePageLayout = ({ children }: StorePageLayoutProps) => {
+export const StorePageLayout = ({ children, showHeaderFooter = true }: StorePageLayoutProps) => {
   const { storeId } = useParams<{ storeId?: string }>();
   const navigate = useNavigate();
   const location = useLocation();
   const [loading, setLoading] = useState(false);
-  const { shouldShowComingSoon, loading: visibilityLoading, isOwner } = useStoreVisibility({ storeId });
-  
-  // Redirect logic remains the same...
+  const { shouldShowComingSoon, loading: visibilityLoading } = useStoreVisibility({ storeId });
+
   useEffect(() => {
     const redirectToStoreRoute = async () => {
       if (!storeId && !location.pathname.startsWith('/store/')) {
         try {
           setLoading(true);
-          
           const currentPath = location.pathname.substring(1);
-          
-          const { data: storeData, error } = await supabase
-            .from('stores')
-            .select('slug')
-            .limit(1)
-            .single();
-            
+          const { data: storeData, error } = await supabase.from('stores').select('slug').limit(1).single();
+
           if (error) {
             console.error("Error fetching store:", error);
             toast.error("Navigation error", {
@@ -40,7 +34,7 @@ export const StorePageLayout = ({ children }: StorePageLayoutProps) => {
             setLoading(false);
             return;
           }
-          
+
           if (storeData && storeData.slug) {
             const storeUrl = `/store/${storeData.slug}${currentPath ? `/${currentPath}` : ''}`;
             console.log(`Redirecting to store route: ${storeUrl}`);
@@ -56,10 +50,10 @@ export const StorePageLayout = ({ children }: StorePageLayoutProps) => {
         }
       }
     };
-    
+
     redirectToStoreRoute();
   }, [storeId, location.pathname, navigate]);
-  
+
   if (loading || visibilityLoading) {
     return (
       <StoreLayout>
@@ -72,20 +66,17 @@ export const StorePageLayout = ({ children }: StorePageLayoutProps) => {
       </StoreLayout>
     );
   }
-  
-  // FIXED: Show Coming Soon WITHOUT StoreLayout (no header/footer)
+
   if (shouldShowComingSoon) {
     console.log("Showing Coming Soon page for private store");
     return <ComingSoon />;
   }
-  
-  return <StoreLayout>{children}</StoreLayout>;
-};
 
-export const withStoreLayout = (Component: React.ComponentType<any>) => {
-  return (props: any) => (
-    <StorePageLayout>
-      <Component {...props} />
-    </StorePageLayout>
+  return (
+    <StoreLayout>
+      {showHeaderFooter && <StoreHeader />}
+      <main className="flex-1">{children}</main>
+      {showHeaderFooter && <Footer />}
+    </StoreLayout>
   );
 };
