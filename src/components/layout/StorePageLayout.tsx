@@ -1,5 +1,6 @@
 import { ReactNode, useEffect, useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { StoreLayout } from "./StoreLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useStoreVisibility } from "@/hooks/useStoreVisibility";
@@ -16,7 +17,7 @@ export const StorePageLayout = ({ children }: StorePageLayoutProps) => {
   const [loading, setLoading] = useState(false);
   const { shouldShowComingSoon, loading: visibilityLoading, isOwner } = useStoreVisibility({ storeId });
 
-  // Redirect logic
+  // Redirect logic remains unchanged
   useEffect(() => {
     const redirectToStoreRoute = async () => {
       if (!storeId && !location.pathname.startsWith('/store/')) {
@@ -60,22 +61,23 @@ export const StorePageLayout = ({ children }: StorePageLayoutProps) => {
 
   if (loading || visibilityLoading) {
     return (
-      <div className="container mx-auto px-4 py-12 flex items-center justify-center min-h-[60vh]">
-        <div className="animate-pulse flex flex-col items-center">
-          <div className="h-8 w-40 bg-muted rounded mb-4"></div>
-          <div className="h-4 w-60 bg-muted rounded"></div>
+      <StoreLayout>
+        <div className="container mx-auto px-4 py-12 flex items-center justify-center min-h-[60vh]">
+          <div className="animate-pulse flex flex-col items-center">
+            <div className="h-8 w-40 bg-muted rounded mb-4"></div>
+            <div className="h-4 w-60 bg-muted rounded"></div>
+          </div>
         </div>
-      </div>
+      </StoreLayout>
     );
   }
 
   if (shouldShowComingSoon) {
     console.log("Showing Coming Soon page for private store");
-    return <ComingSoon />;
+    return <ComingSoon />; // This remains unwrapped intentionally
   }
 
-  // This is the key fix - return children directly without any layout wrappers
-  return children;
+  return <StoreLayout>{children}</StoreLayout>;
 };
 
 export const withStoreLayout = (Component: React.ComponentType<any>) => {
