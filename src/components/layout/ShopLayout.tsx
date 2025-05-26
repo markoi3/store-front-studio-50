@@ -1,8 +1,5 @@
-
 import { ReactNode } from "react";
-import { Header } from "./Header";
-import { Footer } from "./Footer";
-
+// Uklanjamo sve header/footer iz ShopLayout jer withStoreLayout već ih dodaje
 type ShopLayoutProps = {
   children: ReactNode;
 };
@@ -10,11 +7,11 @@ type ShopLayoutProps = {
 export const ShopLayout = ({ children }: ShopLayoutProps) => {
   return (
     <div className="flex flex-col min-h-screen bg-background">
-      <Header />
+      {/* Nema header-a - withStoreLayout ga dodaje */}
       <main className="flex-1">
         {children}
       </main>
-      <Footer />
+      {/* Nema footer-a - withStoreLayout ga dodaje */}
     </div>
   );
 };
