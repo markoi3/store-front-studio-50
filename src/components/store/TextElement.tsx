@@ -1,5 +1,3 @@
-import parse from 'html-react-parser';
-
 interface TextElementProps {
   element: {
     id: string;
@@ -27,9 +25,10 @@ export const TextElement = ({ element }: TextElementProps) => {
           color: element.settings?.textColor || "",
           textAlign: element.settings?.alignment as any || "center"
         }}
-      >
-        {parse(element.settings?.content || "")}
-      </div>
+        dangerouslySetInnerHTML={{ 
+          __html: element.settings?.content || "" 
+        }}
+      />
     </div>
   );
 };
