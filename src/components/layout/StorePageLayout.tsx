@@ -1,82 +1,84 @@
-import { ReactNode, useEffect, useState } from "react";
-import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { StoreLayout } from "./StoreLayout";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
-import { useStoreVisibility } from "@/hooks/useStoreVisibility";
-import ComingSoon from "@/pages/ComingSoon";
+import { useParams, useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { PageElementRenderer } from "@/components/store/PageElementRenderer";
+import { useStoreData } from "@/hooks/useStoreData";
+import { getDefaultProducts } from "@/components/store/DefaultProducts";
+import { useAuth } from "@/contexts/AuthContext";
 
-type StorePageLayoutProps = {
-  children: ReactNode;
-  showHeaderFooter?: boolean; // New prop
-};
-
-export const StorePageLayout = ({ children, showHeaderFooter = true }: StorePageLayoutProps) => {
-  const { storeId } = useParams<{ storeId?: string }>();
+const Storefront = () => {
+  const { storeId } = useParams();
   const navigate = useNavigate();
-  const location = useLocation();
-  const [loading, setLoading] = useState(false);
-  const { shouldShowComingSoon, loading: visibilityLoading } = useStoreVisibility({ storeId });
-
-  useEffect(() => {
-    const redirectToStoreRoute = async () => {
-      if (!storeId && !location.pathname.startsWith('/store/')) {
-        try {
-          setLoading(true);
-          const currentPath = location.pathname.substring(1);
-          const { data: storeData, error } = await supabase.from('stores').select('slug').limit(1).single();
-
-          if (error) {
-            console.error("Error fetching store:", error);
-            toast.error("Navigation error", {
-              description: "Could not load store information. Please try again.",
-            });
-            setLoading(false);
-            return;
-          }
-
-          if (storeData && storeData.slug) {
-            const storeUrl = `/store/${storeData.slug}${currentPath ? `/${currentPath}` : ''}`;
-            console.log(`Redirecting to store route: ${storeUrl}`);
-            navigate(storeUrl);
-          }
-        } catch (error) {
-          console.error("Error redirecting to store route:", error);
-          toast.error("Navigation error", {
-            description: "Could not redirect to store route. Please try again.",
-          });
-        } finally {
-          setLoading(false);
-        }
-      }
-    };
-
-    redirectToStoreRoute();
-  }, [storeId, location.pathname, navigate]);
-
-  if (loading || visibilityLoading) {
+  const { user } = useAuth();
+  const { store, loading, storeProducts, error } = useStoreData({ 
+    storeId, 
+    currentUserId: user?.id 
+  });
+  
+  if (loading) {
     return (
-      <StoreLayout>
-        <div className="container mx-auto px-4 py-12 flex items-center justify-center min-h-[60vh]">
+      <div className="container mx-auto px-4 py-12">
+        <div className="flex justify-center items-center min-h-[60vh]">
           <div className="animate-pulse flex flex-col items-center">
             <div className="h-8 w-40 bg-muted rounded mb-4"></div>
             <div className="h-4 w-60 bg-muted rounded"></div>
           </div>
         </div>
-      </StoreLayout>
+      </div>
     );
   }
-
-  if (shouldShowComingSoon) {
-    console.log("Showing Coming Soon page for private store");
-    return <ComingSoon />;
+  
+  if (!store) {
+    return (
+      <div className="container mx-auto px-4 py-12">
+        <div className="flex justify-center items-center min-h-[60vh]">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold mb-2">Prodavnica nije dostupna</h1>
+            <p className="text-muted-foreground mb-6">
+              {error || "Prodavnica koju tražite ne postoji ili više nije dostupna."}
+            </p>
+            <Button asChild>
+              <a href="/">Povratak na početnu</a>
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
   }
+  
+  const displayProducts = storeProducts.length > 0 ? storeProducts : getDefaultProducts(storeId);
 
+  const handleNavigate = (path: string) => {
+    if (path.startsWith('/')) {
+      const fullPath = `/store/${storeId}${path}`;
+      navigate(fullPath);
+    } else {
+      navigate(path);
+    }
+  };
+  
   return (
-    <StoreLayout>
-      {showHeaderFooter && <StoreHeader />}
-      <main className="flex-1">{children}</main>
-      {showHeaderFooter && <Footer />}
-    </StoreLayout>
+    <div className="space-y-12">
+      {/* Page Content */}
+      <PageElementRenderer 
+        elements={store.elements}
+        products={displayProducts}
+        storeId={storeId || ''}
+        onNavigate={handleNavigate}
+      />
+      
+      {/* Privacy Policy Section (if exists) */}
+      {store?.settings.privacyPolicy && (
+        <div className="container mx-auto px-4 py-12 border-t">
+          <div className="max-w-3xl mx-auto">
+            <h2 className="text-2xl font-bold mb-4">Politika privatnosti</h2>
+            <div className="prose">
+              {store.settings.privacyPolicy}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
+
+export default Storefront;
