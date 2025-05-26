@@ -146,5 +146,38 @@ const App = () => (
     </AuthProvider>
   </QueryClientProvider>
 );
+import { useIsWrappedInStoreLayout } from "@/components/layout/StorePageLayout";
+import { StoreHeader } from "@/components/layout/StoreHeader";
+import { Footer } from "@/components/layout/Footer";
 
+const About = () => {
+  const isWrappedInStoreLayout = useIsWrappedInStoreLayout();
+
+  const content = (
+    <div className="container mx-auto px-4 py-12">
+      <h1 className="text-4xl font-bold mb-8">About Us</h1>
+      <div className="prose max-w-none">
+        <p>Your about content here...</p>
+      </div>
+    </div>
+  );
+
+  // If already wrapped in StoreLayout, don't render header/footer
+  if (isWrappedInStoreLayout) {
+    return content;
+  }
+
+  // If not wrapped (standalone use), render with header/footer
+  return (
+    <div className="min-h-screen flex flex-col">
+      <StoreHeader />
+      <main className="flex-1">
+        {content}
+      </main>
+      <Footer />
+    </div>
+  );
+};
+
+export default About;
 export default App;
