@@ -25,10 +25,11 @@ export const TextElement = ({ element }: TextElementProps) => {
           color: element.settings?.textColor || "",
           textAlign: element.settings?.alignment as any || "center"
         }}
-        dangerouslySetInnerHTML={{ 
-          __html: element.settings?.content || "" 
-        }}
-      />
+      >
+        {/* Hardkodovano za test */}
+        <h1 className="text-4xl md:text-6xl font-bold text-foreground mb-4">Coming Soon</h1>
+        <p className="text-muted-foreground text-lg">We're working on something amazing. Stay tuned!</p>
+      </div>
     </div>
   );
 };
