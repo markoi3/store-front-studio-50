@@ -1,11 +1,14 @@
-
-import { ReactNode, useEffect, useState } from "react";
+import { ReactNode, useEffect, useState, createContext, useContext } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { StoreLayout } from "./StoreLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useStoreVisibility } from "@/hooks/useStoreVisibility";
 import ComingSoon from "@/pages/ComingSoon";
+
+// Context to tell child components they're already wrapped in StoreLayout
+const StoreLayoutContext = createContext(false);
+export const useIsWrappedInStoreLayout = () => useContext(StoreLayoutContext);
 
 type StorePageLayoutProps = {
   children: ReactNode;
@@ -79,7 +82,7 @@ export const StorePageLayout = ({ children }: StorePageLayoutProps) => {
       </StoreLayout>
     );
   }
-
+  
   // Show Coming Soon page if store is private and user is not owner
   // This applies to ALL store routes, not just the homepage
   if (shouldShowComingSoon) {
@@ -87,7 +90,11 @@ export const StorePageLayout = ({ children }: StorePageLayoutProps) => {
     return <ComingSoon />;
   }
   
-  return <StoreLayout>{children}</StoreLayout>;
+  return (
+    <StoreLayoutContext.Provider value={true}>
+      <StoreLayout>{children}</StoreLayout>
+    </StoreLayoutContext.Provider>
+  );
 };
 
 // Higher Order Component wrapper for store pages
