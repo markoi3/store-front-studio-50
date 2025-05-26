@@ -1,7 +1,6 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { withStoreLayout } from "@/components/layout/StorePageLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { StoreSettings } from "@/hooks/useStore";
 
@@ -121,4 +120,4 @@ const AboutPage = () => {
 };
 
 // Export the component with the StorePageLayout wrapper
-export default withStoreLayout(AboutPage);
+export default (AboutPage);
