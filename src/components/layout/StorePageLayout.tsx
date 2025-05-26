@@ -1,4 +1,3 @@
-
 import { ReactNode, useEffect, useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { StoreLayout } from "./StoreLayout";
@@ -18,18 +17,15 @@ export const StorePageLayout = ({ children }: StorePageLayoutProps) => {
   const [loading, setLoading] = useState(false);
   const { shouldShowComingSoon, loading: visibilityLoading, isOwner } = useStoreVisibility({ storeId });
   
-  // If we're on a non-store route (e.g. /about instead of /store/slug/about),
-  // try to redirect to the first store we find
+  // Redirect logic remains the same...
   useEffect(() => {
     const redirectToStoreRoute = async () => {
       if (!storeId && !location.pathname.startsWith('/store/')) {
         try {
           setLoading(true);
           
-          // Get the current path without leading slash
           const currentPath = location.pathname.substring(1);
           
-          // Fetch the first available store
           const { data: storeData, error } = await supabase
             .from('stores')
             .select('slug')
@@ -46,11 +42,8 @@ export const StorePageLayout = ({ children }: StorePageLayoutProps) => {
           }
           
           if (storeData && storeData.slug) {
-            // Construct the proper store-specific URL
             const storeUrl = `/store/${storeData.slug}${currentPath ? `/${currentPath}` : ''}`;
             console.log(`Redirecting to store route: ${storeUrl}`);
-            
-            // Redirect to the store-specific route
             navigate(storeUrl);
           }
         } catch (error) {
@@ -79,18 +72,20 @@ export const StorePageLayout = ({ children }: StorePageLayoutProps) => {
       </StoreLayout>
     );
   }
-
-  // Show Coming Soon page if store is private and user is not owner
-  // This applies to ALL store routes, not just the homepage
+  
+  // FIXED: Show Coming Soon WITHIN StoreLayout to prevent duplicates
   if (shouldShowComingSoon) {
     console.log("Showing Coming Soon page for private store");
-    return <ComingSoon />;
+    return (
+      <StoreLayout>
+        <ComingSoon />
+      </StoreLayout>
+    );
   }
   
   return <StoreLayout>{children}</StoreLayout>;
 };
 
-// Higher Order Component wrapper for store pages
 export const withStoreLayout = (Component: React.ComponentType<any>) => {
   return (props: any) => (
     <StorePageLayout>
