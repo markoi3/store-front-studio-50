@@ -1,3 +1,4 @@
+
 interface TextElementProps {
   element: {
     id: string;
@@ -19,16 +20,16 @@ export const TextElement = ({ element }: TextElementProps) => {
         backgroundColor: element.settings?.backgroundColor || ""
       }}
     >
-      <div 
-        className="max-w-3xl mx-auto text-center"
-        style={{
-          color: element.settings?.textColor || "",
-          textAlign: element.settings?.alignment as any || "center"
-        }}
-      >
-        {/* Hardkodovano za test */}
-        <h1 className="text-4xl md:text-6xl font-bold text-foreground mb-4">Coming Soon</h1>
-        <p className="text-muted-foreground text-lg">We're working on something amazing. Stay tuned!</p>
+      <div className="max-w-3xl mx-auto text-center">
+        <p 
+          className="text-lg"
+          style={{
+            color: element.settings?.textColor || "",
+            textAlign: element.settings?.alignment as any || "center"
+          }}
+        >
+          {element.settings?.content || ""}
+        </p>
       </div>
     </div>
   );
