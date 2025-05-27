@@ -1,5 +1,6 @@
 
 import { Json } from "@/integrations/supabase/types";
+import { FooterSettings } from "./footer";
 
 export interface StoreMenuItem {
   id: string;
@@ -19,6 +20,7 @@ export interface StoreSettings {
   paymentSettings?: any;
   shippingSettings?: any;
   taxSettings?: any;
+  footer?: FooterSettings;
   logo?: {
     url?: string;
     alt?: string;

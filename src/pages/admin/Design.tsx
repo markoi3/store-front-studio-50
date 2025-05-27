@@ -1,3 +1,4 @@
+
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { StoreBuilder } from "@/components/design/StoreBuilder";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -11,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Trash2, Plus, ExternalLink } from "lucide-react";
+import FooterEditor from "@/components/design/FooterEditor";
 
 const Design = () => {
   const navigate = useNavigate();
@@ -21,7 +23,7 @@ const Design = () => {
     // Extract tab name from URL if present
     const searchParams = new URLSearchParams(location.search);
     const tab = searchParams.get("tab");
-    if (tab && (tab === "builder" || tab === "menu" || tab === "logo" || tab === "custom" || tab === "coming-soon")) {
+    if (tab && (tab === "builder" || tab === "menu" || tab === "logo" || tab === "custom" || tab === "coming-soon" || tab === "footer")) {
       setActiveTab(tab);
     }
   }, [location]);
@@ -43,6 +45,7 @@ const Design = () => {
             <TabsTrigger value="builder">Elementi stranice</TabsTrigger>
             <TabsTrigger value="menu">Meni</TabsTrigger>
             <TabsTrigger value="logo">Logo</TabsTrigger>
+            <TabsTrigger value="footer">Footer</TabsTrigger>
             <TabsTrigger value="custom">Custom Pages</TabsTrigger>
             <TabsTrigger value="coming-soon">Coming Soon</TabsTrigger>
           </TabsList>
@@ -57,6 +60,10 @@ const Design = () => {
           
           <TabsContent value="logo" className="space-y-4">
             <LogoEditor />
+          </TabsContent>
+          
+          <TabsContent value="footer" className="space-y-4">
+            <FooterEditor />
           </TabsContent>
           
           <TabsContent value="custom" className="space-y-4">
