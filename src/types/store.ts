@@ -1,6 +1,7 @@
 
 import { Json } from "@/integrations/supabase/types";
 import { FooterSettings } from "./footer";
+import { HeaderSettings } from "./header";
 
 export interface StoreMenuItem {
   id: string;
@@ -15,12 +16,20 @@ export interface StoreSettings {
   contactInfo?: string;
   pageElements?: any[];
   comingSoonElements?: any[];
+  customPages?: Array<{
+    id: string;
+    title: string;
+    slug: string;
+    content: string;
+    elements?: any[];
+  }>;
   is_public: boolean;
   storeSettings?: any;
   paymentSettings?: any;
   shippingSettings?: any;
   taxSettings?: any;
   footer?: FooterSettings;
+  header?: HeaderSettings;
   logo?: {
     url?: string;
     alt?: string;

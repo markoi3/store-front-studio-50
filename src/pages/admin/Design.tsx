@@ -1,4 +1,3 @@
-
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { StoreBuilder } from "@/components/design/StoreBuilder";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -13,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Trash2, Plus, ExternalLink } from "lucide-react";
 import FooterEditor from "@/components/design/FooterEditor";
+import HeaderMenuEditor from "@/components/design/HeaderMenuEditor";
 
 const Design = () => {
   const navigate = useNavigate();
@@ -43,8 +43,7 @@ const Design = () => {
         <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
           <TabsList>
             <TabsTrigger value="builder">Elementi stranice</TabsTrigger>
-            <TabsTrigger value="menu">Meni</TabsTrigger>
-            <TabsTrigger value="logo">Logo</TabsTrigger>
+            <TabsTrigger value="menu">Header & Menu</TabsTrigger>
             <TabsTrigger value="footer">Footer</TabsTrigger>
             <TabsTrigger value="custom">Custom Pages</TabsTrigger>
             <TabsTrigger value="coming-soon">Coming Soon</TabsTrigger>
@@ -55,11 +54,7 @@ const Design = () => {
           </TabsContent>
           
           <TabsContent value="menu" className="space-y-4">
-            <MenuEditor />
-          </TabsContent>
-          
-          <TabsContent value="logo" className="space-y-4">
-            <LogoEditor />
+            <HeaderMenuEditor />
           </TabsContent>
           
           <TabsContent value="footer" className="space-y-4">
