@@ -2,7 +2,9 @@
 export interface FooterColumn {
   id: string;
   title: string;
+  type: 'links' | 'html';
   links: FooterLink[];
+  htmlContent?: string;
 }
 
 export interface FooterLink {
@@ -26,6 +28,15 @@ export interface NewsletterSettings {
   successMessage: string;
 }
 
+export interface TrustBadge {
+  id: string;
+  type: 'payment' | 'security' | 'custom';
+  name: string;
+  icon?: string;
+  image?: string;
+  url?: string;
+}
+
 export interface FooterSettings {
   enabled: boolean;
   copyrightText: string;
@@ -38,7 +49,9 @@ export interface FooterSettings {
     phone: string;
     address: string;
   };
+  trustBadges: TrustBadge[];
   customHtml: string;
+  customJavascript: string;
   seoText: string;
   styling: {
     backgroundColor: string;

@@ -1,8 +1,8 @@
 
 import { Link } from "react-router-dom";
 import { useStore } from "@/hooks/useStore";
-import { Facebook, Twitter, Instagram, Youtube, Mail, Phone, MapPin } from "lucide-react";
-import { useState } from "react";
+import { Facebook, Twitter, Instagram, Youtube, Mail, Phone, MapPin, CreditCard, Shield, Award } from "lucide-react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
@@ -22,6 +22,20 @@ export const Footer = () => {
   
   // Get store name or fallback to default
   const storeName = store?.name || "E-Shop";
+  
+  useEffect(() => {
+    // Load custom JavaScript if present
+    if (footerSettings?.customJavascript) {
+      const script = document.createElement('script');
+      script.textContent = footerSettings.customJavascript;
+      document.body.appendChild(script);
+      
+      // Cleanup function
+      return () => {
+        document.body.removeChild(script);
+      };
+    }
+  }, [footerSettings?.customJavascript]);
   
   // Default footer structure if no custom footer is configured
   if (!footerSettings) {
@@ -130,6 +144,48 @@ export const Footer = () => {
     }
   };
 
+  const getTrustBadgeIcon = (badge: any) => {
+    if (badge.image) {
+      return (
+        <img 
+          src={badge.image} 
+          alt={badge.name} 
+          className="h-8 w-auto"
+          onError={(e) => {
+            (e.target as HTMLImageElement).style.display = 'none';
+          }}
+        />
+      );
+    }
+    
+    // Default icons for payment methods
+    if (badge.type === 'payment') {
+      switch (badge.name.toLowerCase()) {
+        case 'visa':
+          return <CreditCard className="h-6 w-6" />;
+        case 'mastercard':
+          return <CreditCard className="h-6 w-6" />;
+        case 'paypal':
+          return <CreditCard className="h-6 w-6" />;
+        default:
+          return <CreditCard className="h-6 w-6" />;
+      }
+    }
+    
+    // Default icons for security badges
+    if (badge.type === 'security') {
+      if (badge.name.toLowerCase().includes('ssl')) {
+        return <Shield className="h-6 w-6" />;
+      }
+      if (badge.name.toLowerCase().includes('guarantee')) {
+        return <Award className="h-6 w-6" />;
+      }
+      return <Shield className="h-6 w-6" />;
+    }
+    
+    return null;
+  };
+
   // Calculate grid columns based on content
   const hasContactInfo = footerSettings.contactInfo.enabled;
   const hasNewsletter = footerSettings.newsletter.enabled;
@@ -154,21 +210,28 @@ export const Footer = () => {
           {footerSettings.columns.map((column) => (
             <div key={column.id}>
               <h3 className="font-bold text-lg mb-4">{column.title}</h3>
-              <ul className="space-y-2">
-                {column.links.map((link) => (
-                  <li key={link.id}>
-                    <Link
-                      to={link.url.startsWith('/') ? getStoreUrl(link.url) : link.url}
-                      target={link.openInNewTab ? '_blank' : undefined}
-                      rel={link.openInNewTab ? 'noopener noreferrer' : undefined}
-                      className="hover:opacity-80 transition-opacity"
-                      style={{ color: footerSettings.styling.linkColor }}
-                    >
-                      {link.text}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
+              {column.type === 'links' ? (
+                <ul className="space-y-2">
+                  {column.links.map((link) => (
+                    <li key={link.id}>
+                      <Link
+                        to={link.url.startsWith('/') ? getStoreUrl(link.url) : link.url}
+                        target={link.openInNewTab ? '_blank' : undefined}
+                        rel={link.openInNewTab ? 'noopener noreferrer' : undefined}
+                        className="hover:opacity-80 transition-opacity"
+                        style={{ color: footerSettings.styling.linkColor }}
+                      >
+                        {link.text}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div 
+                  dangerouslySetInnerHTML={{ __html: column.htmlContent || '' }}
+                  className="text-sm"
+                />
+              )}
             </div>
           ))}
 
@@ -237,6 +300,36 @@ export const Footer = () => {
             </div>
           )}
         </div>
+
+        {/* Trust Badges */}
+        {footerSettings.trustBadges && footerSettings.trustBadges.length > 0 && (
+          <div className="flex flex-wrap justify-center gap-4 mt-8 pt-6 border-t" style={{ borderColor: footerSettings.styling.borderColor }}>
+            {footerSettings.trustBadges.map((badge) => (
+              <div key={badge.id} className="flex flex-col items-center gap-1">
+                {badge.url ? (
+                  <a
+                    href={badge.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:opacity-80 transition-opacity flex flex-col items-center gap-1"
+                  >
+                    {getTrustBadgeIcon(badge)}
+                    <span className="text-xs text-center" style={{ color: footerSettings.styling.textColor }}>
+                      {badge.name}
+                    </span>
+                  </a>
+                ) : (
+                  <>
+                    {getTrustBadgeIcon(badge)}
+                    <span className="text-xs text-center" style={{ color: footerSettings.styling.textColor }}>
+                      {badge.name}
+                    </span>
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Social Media Links */}
         {footerSettings.socialMedia.length > 0 && (
