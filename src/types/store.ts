@@ -7,6 +7,11 @@ export interface StoreMenuItem {
   id: string;
   label: string;
   url: string;
+  type?: 'link' | 'dropdown';
+  icon?: string;
+  openInNewTab?: boolean;
+  children?: StoreMenuItem[];
+  isActive?: boolean;
 }
 
 export interface StoreSettings {
