@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -26,12 +25,6 @@ import {
 import {
   BarChart,
   Bar,
-  Cell,
-  ReferenceLine,
-  ComposedChart,
-  Line,
-  Scatter,
-  Legend
 } from 'recharts';
 import { Skeleton } from "@/components/ui/skeleton";
 import { Calendar } from "@/components/ui/calendar"
@@ -40,7 +33,6 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns"
 import { CalendarIcon } from "lucide-react"
 import { DateRange } from "react-day-picker"
-import { Input } from "@/components/ui/input"
 import { addDays } from 'date-fns';
 import { useToast } from "@/components/ui/use-toast"
 import { useCart } from "@/contexts/CartContext";
@@ -191,6 +183,8 @@ const Dashboard = () => {
         return [];
       }
 
+      console.log("Dashboard: Fetching page views for store ID:", storeId);
+
       const { data, error } = await supabase
         .from('page_views')
         .select('*')
@@ -203,6 +197,7 @@ const Dashboard = () => {
         return [];
       }
       
+      console.log("Dashboard: Page views data:", data);
       return data || [];
     },
     enabled: !!storeId,
@@ -262,6 +257,7 @@ const Dashboard = () => {
     console.log("Dashboard: Total revenue from orders:", totalRevenue);
     console.log("Dashboard: Total sold from products:", totalSold);
     console.log("Dashboard: Total products:", products.length);
+    console.log("Dashboard: Total page views:", pageViews?.length || 0);
     
     return {
       totalRevenue: totalRevenue,
@@ -347,8 +343,8 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="container mx-auto py-10">
-      <div className="mb-4 flex items-center justify-between">
+    <div className="container mx-auto py-10 max-w-7xl">
+      <div className="mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <h1 className="text-3xl font-bold">Dashboard</h1>
         <Popover>
           <PopoverTrigger asChild>
@@ -459,15 +455,17 @@ const Dashboard = () => {
             {isLoadingOrders ? (
               <Skeleton className="h-[200px] w-full" />
             ) : (
-              <ResponsiveContainer width="100%" height={300}>
-                <AreaChart data={orders}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="created_at" tickFormatter={formatDate} />
-                  <YAxis />
-                  <RechartsTooltip labelFormatter={formatDate} formatter={(value) => formatChartValue(value)} />
-                  <Area type="monotone" dataKey="amount" stroke="#8884d8" fill="#8884d8" />
-                </AreaChart>
-              </ResponsiveContainer>
+              <div className="w-full overflow-hidden">
+                <ResponsiveContainer width="100%" height={300}>
+                  <AreaChart data={orders}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="created_at" tickFormatter={formatDate} />
+                    <YAxis />
+                    <RechartsTooltip labelFormatter={formatDate} formatter={(value) => formatChartValue(value)} />
+                    <Area type="monotone" dataKey="amount" stroke="#8884d8" fill="#8884d8" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -481,15 +479,17 @@ const Dashboard = () => {
             {isLoadingProducts ? (
               <Skeleton className="h-[200px] w-full" />
             ) : (
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={productRevenue}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <RechartsTooltip formatter={(value: any) => formatChartValue(value)} />
-                  <Bar dataKey="revenue" fill="#82ca9d" />
-                </BarChart>
-              </ResponsiveContainer>
+              <div className="w-full overflow-hidden">
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={productRevenue}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <RechartsTooltip formatter={(value: any) => formatChartValue(value)} />
+                    <Bar dataKey="revenue" fill="#82ca9d" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -505,24 +505,26 @@ const Dashboard = () => {
             {isLoadingOrders ? (
               <Skeleton className="h-[200px] w-full" />
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[100px]">ID porudžbine</TableHead>
-                    <TableHead>Iznos</TableHead>
-                    <TableHead>Datum</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {recentOrders.map((order) => (
-                    <TableRow key={order.id}>
-                      <TableCell className="font-medium">{order.id.substring(0, 8)}</TableCell>
-                      <TableCell>{formatCurrency(order.amount)}</TableCell>
-                      <TableCell>{formatDate(order.created_at)}</TableCell>
+              <div className="w-full overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[100px]">ID porudžbine</TableHead>
+                      <TableHead>Iznos</TableHead>
+                      <TableHead>Datum</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {recentOrders.map((order) => (
+                      <TableRow key={order.id}>
+                        <TableCell className="font-medium">{order.id.substring(0, 8)}</TableCell>
+                        <TableCell>{formatCurrency(order.amount)}</TableCell>
+                        <TableCell>{formatDate(order.created_at)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -536,24 +538,26 @@ const Dashboard = () => {
             {isLoadingCustomers ? (
               <Skeleton className="h-[200px] w-full" />
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[100px]">ID kupca</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Datum</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {newCustomers.map((customer) => (
-                    <TableRow key={customer.id}>
-                      <TableCell className="font-medium">{customer.id.substring(0, 8)}</TableCell>
-                      <TableCell>{customer.email}</TableCell>
-                      <TableCell>{formatDate(customer.created_at)}</TableCell>
+              <div className="w-full overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[100px]">ID kupca</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Datum</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {newCustomers.map((customer) => (
+                      <TableRow key={customer.id}>
+                        <TableCell className="font-medium">{customer.id.substring(0, 8)}</TableCell>
+                        <TableCell>{customer.email}</TableCell>
+                        <TableCell>{formatDate(customer.created_at)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             )}
           </CardContent>
         </Card>

@@ -43,7 +43,6 @@ export const StoreHeader = () => {
           id: `custom-page-${page.id}`,
           label: page.title,
           url: pageUrl,
-          type: 'link' as const
         });
       }
     });
@@ -102,7 +101,7 @@ export const StoreHeader = () => {
     if (item.type === 'dropdown' && item.children && item.children.length > 0) {
       return (
         <DropdownMenu key={item.id}>
-          <DropdownMenuTrigger className="flex items-center hover:text-primary px-2 py-1">
+          <DropdownMenuTrigger className="flex items-center px-2 py-1">
             {headerSettings.navigation.showIcons && item.icon && (
               <span className="mr-2">{item.icon}</span>
             )}
@@ -133,9 +132,7 @@ export const StoreHeader = () => {
       <Link 
         key={item.id} 
         to={getStoreUrl(item.url)} 
-        className="hover:text-primary px-2 py-1 flex items-center"
-        target={item.openInNewTab ? '_blank' : undefined}
-        rel={item.openInNewTab ? 'noopener noreferrer' : undefined}
+        className="px-2 py-1 flex items-center"
       >
         {headerSettings.navigation.showIcons && item.icon && (
           <span className="mr-2">{item.icon}</span>
@@ -272,10 +269,8 @@ export const StoreHeader = () => {
                 <Link
                   key={item.id}
                   to={getStoreUrl(item.url)}
-                  className="py-2 block hover:text-primary"
+                  className="py-2 block"
                   onClick={() => setMobileMenuOpen(false)}
-                  target={item.openInNewTab ? '_blank' : undefined}
-                  rel={item.openInNewTab ? 'noopener noreferrer' : undefined}
                 >
                   <div className="flex items-center">
                     {headerSettings.navigation.showIcons && item.icon && (
