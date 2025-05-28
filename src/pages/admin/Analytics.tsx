@@ -25,116 +25,193 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useState } from "react";
-
-// Sample data for charts
-const revenueData = [
-  { month: "Jan", revenue: 5000 },
-  { month: "Feb", revenue: 7500 },
-  { month: "Mar", revenue: 6800 },
-  { month: "Apr", revenue: 9200 },
-  { month: "May", revenue: 8100 },
-  { month: "Jun", revenue: 11500 },
-  { month: "Jul", revenue: 10200 },
-  { month: "Aug", revenue: 12500 },
-  { month: "Sep", revenue: 14000 },
-  { month: "Oct", revenue: 12700 },
-  { month: "Nov", revenue: 15500 },
-  { month: "Dec", revenue: 19000 },
-];
-
-const ordersData = [
-  { month: "Jan", orders: 45 },
-  { month: "Feb", orders: 62 },
-  { month: "Mar", orders: 58 },
-  { month: "Apr", orders: 78 },
-  { month: "May", orders: 71 },
-  { month: "Jun", orders: 98 },
-  { month: "Jul", orders: 87 },
-  { month: "Aug", orders: 104 },
-  { month: "Sep", orders: 112 },
-  { month: "Oct", orders: 98 },
-  { month: "Nov", orders: 121 },
-  { month: "Dec", orders: 142 },
-];
-
-const categoryData = [
-  { name: "Furniture", value: 45 },
-  { name: "Kitchen", value: 30 },
-  { name: "Lighting", value: 25 },
-];
-
-const productPerformanceData = [
-  { name: "Coffee Table", sales: 28, revenue: 5598.72 },
-  { name: "Office Chair", sales: 22, revenue: 5499.78 },
-  { name: "Ceramic Mug Set", sales: 58, revenue: 2319.42 },
-  { name: "Floor Lamp", sales: 19, revenue: 2469.81 },
-  { name: "Dining Chair", sales: 15, revenue: 2249.85 },
-  { name: "Pendant Light", sales: 12, revenue: 1079.88 },
-  { name: "Knife Set", sales: 25, revenue: 1999.75 },
-  { name: "Bookshelf", sales: 9, revenue: 1619.91 },
-];
-
-const customerData = [
-  { month: "Jan", new: 18, returning: 7 },
-  { month: "Feb", new: 25, returning: 9 },
-  { month: "Mar", new: 22, returning: 11 },
-  { month: "Apr", new: 30, returning: 14 },
-  { month: "May", new: 28, returning: 12 },
-  { month: "Jun", new: 35, returning: 19 },
-  { month: "Jul", new: 31, returning: 18 },
-  { month: "Aug", new: 38, returning: 22 },
-  { month: "Sep", new: 42, returning: 28 },
-  { month: "Oct", new: 36, returning: 23 },
-  { month: "Nov", new: 45, returning: 32 },
-  { month: "Dec", new: 52, returning: 39 },
-];
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { Skeleton } from "@/components/ui/skeleton";
+import { format, subDays, startOfDay, endOfDay } from "date-fns";
 
 const COLORS = ["#8884d8", "#82ca9d", "#ffc658", "#ff8042", "#0088fe"];
 
 const Analytics = () => {
   const [timeframe, setTimeframe] = useState("year");
+  const { user } = useAuth();
+  const storeId = user?.store?.id;
   
-  // Filter data based on selected timeframe
-  const getFilteredData = (data: any[]) => {
-    if (timeframe === "year") {
-      return data;
-    } else if (timeframe === "quarter") {
-      return data.slice(-3);
-    } else {
-      return data.slice(-1);
+  // Calculate date range based on timeframe
+  const getDateRange = () => {
+    const now = new Date();
+    switch (timeframe) {
+      case "month":
+        return { from: subDays(now, 30), to: now };
+      case "quarter":
+        return { from: subDays(now, 90), to: now };
+      default:
+        return { from: subDays(now, 365), to: now };
     }
   };
-  
-  const filteredRevenueData = getFilteredData(revenueData);
-  const filteredOrdersData = getFilteredData(ordersData);
-  const filteredCustomerData = getFilteredData(customerData);
-  
-  // Calculate summary values
-  const totalRevenue = revenueData.reduce((sum, item) => sum + item.revenue, 0);
-  const totalOrders = ordersData.reduce((sum, item) => sum + item.orders, 0);
-  const totalCustomers = customerData.reduce(
-    (sum, item) => sum + item.new + item.returning,
-    0
-  );
-  const averageOrderValue = totalRevenue / totalOrders;
-  
+
+  const dateRange = getDateRange();
+
+  // Fetch real data from database
+  const { data: orders, isLoading: isLoadingOrders } = useQuery({
+    queryKey: ['analytics-orders', storeId, timeframe],
+    queryFn: async () => {
+      if (!storeId) return [];
+      
+      const { data, error } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('store_id', storeId)
+        .gte('created_at', dateRange.from.toISOString())
+        .lte('created_at', dateRange.to.toISOString())
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!storeId,
+  });
+
+  const { data: products, isLoading: isLoadingProducts } = useQuery({
+    queryKey: ['analytics-products', storeId],
+    queryFn: async () => {
+      if (!storeId) return [];
+      
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .eq('store_id', storeId);
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!storeId,
+  });
+
+  const { data: customers, isLoading: isLoadingCustomers } = useQuery({
+    queryKey: ['analytics-customers', storeId, timeframe],
+    queryFn: async () => {
+      if (!storeId) return [];
+      
+      const { data, error } = await supabase
+        .from('customers')
+        .select('*')
+        .eq('store_id', storeId)
+        .gte('created_at', dateRange.from.toISOString())
+        .lte('created_at', dateRange.to.toISOString())
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!storeId,
+  });
+
+  const { data: pageViews, isLoading: isLoadingPageViews } = useQuery({
+    queryKey: ['analytics-pageviews', storeId, timeframe],
+    queryFn: async () => {
+      if (!storeId) return [];
+      
+      const { data, error } = await supabase
+        .from('page_views')
+        .select('*')
+        .eq('store_id', storeId)
+        .gte('created_at', dateRange.from.toISOString())
+        .lte('created_at', dateRange.to.toISOString())
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!storeId,
+  });
+
+  // Calculate metrics from real data
+  const totalRevenue = orders?.reduce((sum, order) => sum + (order.amount || 0), 0) || 0;
+  const totalOrders = orders?.length || 0;
+  const totalCustomers = customers?.length || 0;
+  const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+
+  // Process revenue data by month
+  const revenueData = orders?.reduce((acc: any[], order) => {
+    const month = format(new Date(order.created_at), 'MMM');
+    const existingMonth = acc.find(item => item.month === month);
+    
+    if (existingMonth) {
+      existingMonth.revenue += order.amount || 0;
+    } else {
+      acc.push({ month, revenue: order.amount || 0 });
+    }
+    
+    return acc;
+  }, []) || [];
+
+  // Process orders data by month
+  const ordersData = orders?.reduce((acc: any[], order) => {
+    const month = format(new Date(order.created_at), 'MMM');
+    const existingMonth = acc.find(item => item.month === month);
+    
+    if (existingMonth) {
+      existingMonth.orders += 1;
+    } else {
+      acc.push({ month, orders: 1 });
+    }
+    
+    return acc;
+  }, []) || [];
+
+  // Process product performance data
+  const productPerformanceData = products?.map(product => ({
+    name: product.name,
+    sales: product.sold_count || 0,
+    revenue: (product.price || 0) * (product.sold_count || 0),
+  })).sort((a, b) => b.revenue - a.revenue).slice(0, 8) || [];
+
+  // Process category data (if products have categories)
+  const categoryData = products?.reduce((acc: any[], product) => {
+    const category = product.category || 'Nekategorizovano';
+    const existingCategory = acc.find(item => item.name === category);
+    
+    if (existingCategory) {
+      existingCategory.value += product.sold_count || 0;
+    } else {
+      acc.push({ name: category, value: product.sold_count || 0 });
+    }
+    
+    return acc;
+  }, []) || [];
+
+  // Process customer data by month
+  const customerData = customers?.reduce((acc: any[], customer) => {
+    const month = format(new Date(customer.created_at), 'MMM');
+    const existingMonth = acc.find(item => item.month === month);
+    
+    if (existingMonth) {
+      existingMonth.new += 1;
+    } else {
+      acc.push({ month, new: 1, returning: 0 }); // We don't track returning customers yet
+    }
+    
+    return acc;
+  }, []) || [];
+
+  const isLoading = isLoadingOrders || isLoadingProducts || isLoadingCustomers || isLoadingPageViews;
+
   return (
     <AdminLayout>
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <h1 className="text-2xl font-bold">Analytics & Reporting</h1>
+          <h1 className="text-2xl font-bold">Analitika i Izveštaji</h1>
           
-          <Select
-            value={timeframe}
-            onValueChange={setTimeframe}
-          >
+          <Select value={timeframe} onValueChange={setTimeframe}>
             <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Select timeframe" />
+              <SelectValue placeholder="Izaberite period" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="year">Past 12 Months</SelectItem>
-              <SelectItem value="quarter">Past 3 Months</SelectItem>
-              <SelectItem value="month">Past Month</SelectItem>
+              <SelectItem value="year">Poslednih 12 meseci</SelectItem>
+              <SelectItem value="quarter">Poslednja 3 meseca</SelectItem>
+              <SelectItem value="month">Poslednji mesec</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -144,15 +221,19 @@ const Analytics = () => {
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                Total Revenue
+                Ukupni prihod
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
-                ${totalRevenue.toLocaleString()}
-              </div>
+              {isLoading ? (
+                <Skeleton className="h-8 w-24" />
+              ) : (
+                <div className="text-2xl font-bold">
+                  {totalRevenue.toLocaleString('sr-RS')} RSD
+                </div>
+              )}
               <p className="text-xs text-muted-foreground mt-1">
-                Lifetime total sales revenue
+                Ukupan prihod za period
               </p>
             </CardContent>
           </Card>
@@ -160,13 +241,17 @@ const Analytics = () => {
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                Total Orders
+                Ukupno porudžbina
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{totalOrders}</div>
+              {isLoading ? (
+                <Skeleton className="h-8 w-16" />
+              ) : (
+                <div className="text-2xl font-bold">{totalOrders}</div>
+              )}
               <p className="text-xs text-muted-foreground mt-1">
-                Lifetime total orders processed
+                Broj obrađenih porudžbina
               </p>
             </CardContent>
           </Card>
@@ -174,13 +259,17 @@ const Analytics = () => {
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                Total Customers
+                Ukupno kupaca
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{totalCustomers}</div>
+              {isLoading ? (
+                <Skeleton className="h-8 w-16" />
+              ) : (
+                <div className="text-2xl font-bold">{totalCustomers}</div>
+              )}
               <p className="text-xs text-muted-foreground mt-1">
-                Lifetime unique customers
+                Broj jedinstvenih kupaca
               </p>
             </CardContent>
           </Card>
@@ -188,15 +277,19 @@ const Analytics = () => {
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                Average Order Value
+                Prosečna vrednost porudžbine
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
-                ${averageOrderValue.toFixed(2)}
-              </div>
+              {isLoading ? (
+                <Skeleton className="h-8 w-24" />
+              ) : (
+                <div className="text-2xl font-bold">
+                  {averageOrderValue.toFixed(0)} RSD
+                </div>
+              )}
               <p className="text-xs text-muted-foreground mt-1">
-                Average value per order
+                Prosečna vrednost po porudžbini
               </p>
             </CardContent>
           </Card>
@@ -205,84 +298,41 @@ const Analytics = () => {
         {/* Charts */}
         <Tabs defaultValue="revenue">
           <TabsList>
-            <TabsTrigger value="revenue">Revenue</TabsTrigger>
-            <TabsTrigger value="orders">Orders</TabsTrigger>
-            <TabsTrigger value="products">Products</TabsTrigger>
-            <TabsTrigger value="customers">Customers</TabsTrigger>
+            <TabsTrigger value="revenue">Prihod</TabsTrigger>
+            <TabsTrigger value="orders">Porudžbine</TabsTrigger>
+            <TabsTrigger value="products">Proizvodi</TabsTrigger>
+            <TabsTrigger value="customers">Kupci</TabsTrigger>
           </TabsList>
           
           {/* Revenue Tab */}
           <TabsContent value="revenue">
             <Card>
               <CardHeader>
-                <CardTitle>Revenue Over Time</CardTitle>
+                <CardTitle>Prihod kroz vreme</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="h-[400px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={filteredRevenueData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="month" />
-                      <YAxis />
-                      <Tooltip formatter={(value) => [`$${value}`, "Revenue"]} />
-                      <Legend />
-                      <Line
-                        type="monotone"
-                        dataKey="revenue"
-                        stroke="#8884d8"
-                        strokeWidth={2}
-                        activeDot={{ r: 8 }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-                
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
-                  <div>
-                    <p className="text-sm text-muted-foreground">
-                      Highest Revenue
-                    </p>
-                    <p className="text-lg font-medium">
-                      ${Math.max(...filteredRevenueData.map((d) => d.revenue)).toLocaleString()}
-                    </p>
+                {isLoading ? (
+                  <Skeleton className="h-[400px] w-full" />
+                ) : (
+                  <div className="h-[400px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={revenueData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="month" />
+                        <YAxis />
+                        <Tooltip formatter={(value) => [`${value} RSD`, "Prihod"]} />
+                        <Legend />
+                        <Line
+                          type="monotone"
+                          dataKey="revenue"
+                          stroke="#8884d8"
+                          strokeWidth={2}
+                          activeDot={{ r: 8 }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
                   </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">
-                      Lowest Revenue
-                    </p>
-                    <p className="text-lg font-medium">
-                      ${Math.min(...filteredRevenueData.map((d) => d.revenue)).toLocaleString()}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">
-                      Average Monthly Revenue
-                    </p>
-                    <p className="text-lg font-medium">
-                      $
-                      {(
-                        filteredRevenueData.reduce((sum, item) => sum + item.revenue, 0) /
-                        filteredRevenueData.length
-                      ).toFixed(2)}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">
-                      Growth Rate
-                    </p>
-                    <p className="text-lg font-medium">
-                      {filteredRevenueData.length > 1
-                        ? (
-                            ((filteredRevenueData[filteredRevenueData.length - 1].revenue -
-                              filteredRevenueData[0].revenue) /
-                              filteredRevenueData[0].revenue) *
-                            100
-                          ).toFixed(2)
-                        : "0"}
-                      %
-                    </p>
-                  </div>
-                </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -291,58 +341,64 @@ const Analytics = () => {
           <TabsContent value="orders">
             <Card>
               <CardHeader>
-                <CardTitle>Orders Over Time</CardTitle>
+                <CardTitle>Porudžbine kroz vreme</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="h-[400px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={filteredOrdersData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="month" />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
-                      <Bar dataKey="orders" fill="#82ca9d" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-                
-                <div className="mt-6">
-                  <h3 className="text-lg font-medium mb-4">
-                    Sales by Category
-                  </h3>
-                  <div className="h-[300px]">
+                {isLoading ? (
+                  <Skeleton className="h-[400px] w-full" />
+                ) : (
+                  <div className="h-[400px]">
                     <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={categoryData}
-                          cx="50%"
-                          cy="50%"
-                          labelLine={false}
-                          outerRadius={100}
-                          fill="#8884d8"
-                          dataKey="value"
-                          label={({ name, percent }) =>
-                            `${name}: ${(percent * 100).toFixed(0)}%`
-                          }
-                        >
-                          {categoryData.map((entry, index) => (
-                            <Cell
-                              key={`cell-${index}`}
-                              fill={COLORS[index % COLORS.length]}
-                            />
-                          ))}
-                        </Pie>
-                        <Tooltip
-                          formatter={(value, name, props) => [
-                            `${value} orders`,
-                            props.payload.name,
-                          ]}
-                        />
-                      </PieChart>
+                      <BarChart data={ordersData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="month" />
+                        <YAxis />
+                        <Tooltip />
+                        <Legend />
+                        <Bar dataKey="orders" fill="#82ca9d" />
+                      </BarChart>
                     </ResponsiveContainer>
                   </div>
-                </div>
+                )}
+                
+                {categoryData.length > 0 && (
+                  <div className="mt-6">
+                    <h3 className="text-lg font-medium mb-4">
+                      Prodaja po kategorijama
+                    </h3>
+                    <div className="h-[300px]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={categoryData}
+                            cx="50%"
+                            cy="50%"
+                            labelLine={false}
+                            outerRadius={100}
+                            fill="#8884d8"
+                            dataKey="value"
+                            label={({ name, percent }) =>
+                              `${name}: ${(percent * 100).toFixed(0)}%`
+                            }
+                          >
+                            {categoryData.map((entry, index) => (
+                              <Cell
+                                key={`cell-${index}`}
+                                fill={COLORS[index % COLORS.length]}
+                              />
+                            ))}
+                          </Pie>
+                          <Tooltip
+                            formatter={(value, name, props) => [
+                              `${value} prodaja`,
+                              props.payload.name,
+                            ]}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -351,69 +407,73 @@ const Analytics = () => {
           <TabsContent value="products">
             <Card>
               <CardHeader>
-                <CardTitle>Product Performance</CardTitle>
+                <CardTitle>Performanse proizvoda</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-border">
-                        <th className="text-left text-xs font-medium text-muted-foreground p-3">
-                          Product
-                        </th>
-                        <th className="text-left text-xs font-medium text-muted-foreground p-3">
-                          Units Sold
-                        </th>
-                        <th className="text-left text-xs font-medium text-muted-foreground p-3">
-                          Revenue
-                        </th>
-                        <th className="text-left text-xs font-medium text-muted-foreground p-3">
-                          Avg. Price
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {productPerformanceData.map((product) => (
-                        <tr key={product.name} className="border-b border-border">
-                          <td className="p-3 font-medium">{product.name}</td>
-                          <td className="p-3">{product.sales}</td>
-                          <td className="p-3">${product.revenue.toFixed(2)}</td>
-                          <td className="p-3">
-                            ${(product.revenue / product.sales).toFixed(2)}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                
-                <div className="mt-6">
-                  <h3 className="text-lg font-medium mb-4">
-                    Top Selling Products
-                  </h3>
-                  <div className="h-[300px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart
-                        data={productPerformanceData
-                          .sort((a, b) => b.sales - a.sales)
-                          .slice(0, 5)}
-                        layout="vertical"
-                      >
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis type="number" />
-                        <YAxis
-                          dataKey="name"
-                          type="category"
-                          width={100}
-                          tick={{ fontSize: 12 }}
-                        />
-                        <Tooltip />
-                        <Legend />
-                        <Bar dataKey="sales" fill="#8884d8" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </div>
+                {isLoading ? (
+                  <Skeleton className="h-[400px] w-full" />
+                ) : (
+                  <>
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="border-b border-border">
+                            <th className="text-left text-xs font-medium text-muted-foreground p-3">
+                              Proizvod
+                            </th>
+                            <th className="text-left text-xs font-medium text-muted-foreground p-3">
+                              Prodano jedinica
+                            </th>
+                            <th className="text-left text-xs font-medium text-muted-foreground p-3">
+                              Prihod
+                            </th>
+                            <th className="text-left text-xs font-medium text-muted-foreground p-3">
+                              Pros. cena
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {productPerformanceData.map((product) => (
+                            <tr key={product.name} className="border-b border-border">
+                              <td className="p-3 font-medium">{product.name}</td>
+                              <td className="p-3">{product.sales}</td>
+                              <td className="p-3">{product.revenue.toFixed(2)} RSD</td>
+                              <td className="p-3">
+                                {product.sales > 0 ? (product.revenue / product.sales).toFixed(2) : '0'} RSD
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    
+                    <div className="mt-6">
+                      <h3 className="text-lg font-medium mb-4">
+                        Najbolji proizvodi
+                      </h3>
+                      <div className="h-[300px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart
+                            data={productPerformanceData.slice(0, 5)}
+                            layout="vertical"
+                          >
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis type="number" />
+                            <YAxis
+                              dataKey="name"
+                              type="category"
+                              width={100}
+                              tick={{ fontSize: 12 }}
+                            />
+                            <Tooltip />
+                            <Legend />
+                            <Bar dataKey="sales" fill="#8884d8" />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+                  </>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -422,38 +482,42 @@ const Analytics = () => {
           <TabsContent value="customers">
             <Card>
               <CardHeader>
-                <CardTitle>Customer Growth</CardTitle>
+                <CardTitle>Rast broja kupaca</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="h-[400px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={filteredCustomerData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="month" />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
-                      <Bar dataKey="new" fill="#8884d8" name="New Customers" />
-                      <Bar
-                        dataKey="returning"
-                        fill="#82ca9d"
-                        name="Returning Customers"
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
+                {isLoading ? (
+                  <Skeleton className="h-[400px] w-full" />
+                ) : (
+                  <div className="h-[400px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={customerData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="month" />
+                        <YAxis />
+                        <Tooltip />
+                        <Legend />
+                        <Bar dataKey="new" fill="#8884d8" name="Novi kupci" />
+                        <Bar
+                          dataKey="returning"
+                          fill="#82ca9d"
+                          name="Vraćeni kupci"
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
                 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
                   <Card>
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm font-medium text-muted-foreground">
-                        Customer Retention Rate
+                        Stopa zadržavanja kupaca
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-bold">48%</div>
+                      <div className="text-2xl font-bold">N/A</div>
                       <p className="text-xs text-muted-foreground mt-1">
-                        Of customers make repeat purchases
+                        Potrebno implementirati praćenje
                       </p>
                     </CardContent>
                   </Card>
@@ -461,13 +525,13 @@ const Analytics = () => {
                   <Card>
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm font-medium text-muted-foreground">
-                        Customer Acquisition Cost
+                        Cena privlačenja kupca
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-bold">$32.50</div>
+                      <div className="text-2xl font-bold">N/A</div>
                       <p className="text-xs text-muted-foreground mt-1">
-                        Average cost to acquire a new customer
+                        Potrebno implementirati marketing troškove
                       </p>
                     </CardContent>
                   </Card>
@@ -475,13 +539,15 @@ const Analytics = () => {
                   <Card>
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm font-medium text-muted-foreground">
-                        Customer Lifetime Value
+                        Životna vrednost kupca
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-bold">$254.80</div>
+                      <div className="text-2xl font-bold">
+                        {totalCustomers > 0 ? (totalRevenue / totalCustomers).toFixed(2) : '0'} RSD
+                      </div>
                       <p className="text-xs text-muted-foreground mt-1">
-                        Average revenue per customer over time
+                        Prosečan prihod po kupcu
                       </p>
                     </CardContent>
                   </Card>

@@ -43,7 +43,7 @@ export const StoreHeader = () => {
           id: `custom-page-${page.id}`,
           label: page.title,
           url: pageUrl,
-          type: 'link'
+          type: 'link' as const
         });
       }
     });

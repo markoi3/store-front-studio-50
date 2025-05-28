@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -182,6 +183,31 @@ const Dashboard = () => {
     enabled: !!storeId,
   });
 
+  // Fetch page views for analytics
+  const { data: pageViews, isLoading: isLoadingPageViews } = useQuery({
+    queryKey: ['pageViews', date?.from, date?.to, storeId],
+    queryFn: async () => {
+      if (!date?.from || !date?.to || !storeId) {
+        return [];
+      }
+
+      const { data, error } = await supabase
+        .from('page_views')
+        .select('*')
+        .eq('store_id', storeId)
+        .gte('created_at', date.from.toISOString())
+        .lte('created_at', date.to.toISOString());
+
+      if (error) {
+        console.error("Dashboard: Error fetching page views:", error);
+        return [];
+      }
+      
+      return data || [];
+    },
+    enabled: !!storeId,
+  });
+
   useEffect(() => {
     if (productsError) {
       console.error("Dashboard: Products error:", productsError);
@@ -215,42 +241,43 @@ const Dashboard = () => {
     }
   }, [customersError, toast]);
 
-  const calculateMetrics = (products: Product[]) => {
+  const calculateMetrics = (orders: Order[], products: Product[]) => {
+    console.log("Dashboard: Calculating metrics for orders:", orders);
     console.log("Dashboard: Calculating metrics for products:", products);
     
+    // Calculate total revenue from actual orders
+    const totalRevenue = orders.reduce((sum, order) => {
+      const amount = typeof order.amount === 'number' ? order.amount : 0;
+      console.log(`Dashboard: Order ${order.id} amount: ${amount}`);
+      return sum + amount;
+    }, 0);
+    
+    // Calculate total sold from products
     const totalSold = products.reduce((sum, product) => {
       const soldCount = product.sold_count || 0;
       console.log(`Dashboard: Product ${product.name} sold count: ${soldCount}`);
       return sum + soldCount;
     }, 0);
     
-    const revenue = products.reduce((total, product) => {
-      const price = typeof product.price === 'number' ? product.price : 0;
-      const soldCount = product.sold_count || 0;
-      const productRevenue = price * soldCount;
-      console.log(`Dashboard: Product ${product.name} revenue: ${price} x ${soldCount} = ${productRevenue}`);
-      return total + productRevenue;
-    }, 0);
-    
-    console.log("Dashboard: Total sold:", totalSold);
-    console.log("Dashboard: Total revenue:", revenue);
+    console.log("Dashboard: Total revenue from orders:", totalRevenue);
+    console.log("Dashboard: Total sold from products:", totalSold);
     console.log("Dashboard: Total products:", products.length);
     
     return {
-      totalRevenue: revenue,
+      totalRevenue: totalRevenue,
       totalSold: totalSold,
       totalProducts: products.length,
+      totalOrders: orders.length,
+      totalPageViews: pageViews?.length || 0,
     };
   };
 
-  const metrics = products ? calculateMetrics(products) : null;
+  const metrics = orders && products ? calculateMetrics(orders, products) : null;
 
   const productRevenue = products?.map(product => ({
     name: product.name,
     revenue: product.price * product.sold_count,
   })).sort((a, b) => b.revenue - a.revenue).slice(0, 5);
-
-  const orderAmounts = orders?.map(order => order.amount) || [];
 
   // RSD formatter for Serbian locale
   const formatCurrency = (value: any): string => {
@@ -356,14 +383,14 @@ const Dashboard = () => {
         </Popover>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <Card>
           <CardHeader>
             <CardTitle>Ukupni prihod</CardTitle>
-            <CardDescription>Ukupno ostvareni prihod</CardDescription>
+            <CardDescription>Ukupno ostvareni prihod iz porudžbina</CardDescription>
           </CardHeader>
           <CardContent>
-            {isLoadingProducts ? (
+            {isLoadingOrders ? (
               <Skeleton className="h-6 w-32" />
             ) : (
               <div className="text-2xl font-bold">
@@ -404,6 +431,22 @@ const Dashboard = () => {
             )}
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Pregledi stranica</CardTitle>
+            <CardDescription>Ukupan broj pregleda stranica</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoadingPageViews ? (
+              <Skeleton className="h-6 w-32" />
+            ) : (
+              <div className="text-2xl font-bold">
+                {metrics ? metrics.totalPageViews.toLocaleString('sr-RS') : 'N/A'}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
@@ -431,28 +474,6 @@ const Dashboard = () => {
 
         <Card className="col-span-1">
           <CardHeader>
-            <CardTitle>Iznosi porudžbina</CardTitle>
-            <CardDescription>Distribucija iznosa porudžbina</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isLoadingOrders ? (
-              <Skeleton className="h-[200px] w-full" />
-            ) : (
-              <div className="h-[200px] flex items-center justify-center">
-                {orderAmounts.length > 0 ? (
-                  <p>Grafikon iznosa porudžbina</p>
-                ) : (
-                  <p className="text-muted-foreground">Nema podataka o porudžbinama</p>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Card className="col-span-1">
-          <CardHeader>
             <CardTitle>Najbolji proizvodi</CardTitle>
             <CardDescription>Top 5 proizvoda po prihodu</CardDescription>
           </CardHeader>
@@ -472,7 +493,9 @@ const Dashboard = () => {
             )}
           </CardContent>
         </Card>
+      </div>
 
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <Card className="col-span-1">
           <CardHeader>
             <CardTitle>Nedavne porudžbine</CardTitle>
@@ -503,9 +526,7 @@ const Dashboard = () => {
             )}
           </CardContent>
         </Card>
-      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-6">
         <Card className="col-span-1">
           <CardHeader>
             <CardTitle>Novi kupci</CardTitle>
