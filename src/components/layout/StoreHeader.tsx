@@ -273,8 +273,8 @@ export const StoreHeader = () => {
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   <div className="flex items-center">
-                    {headerSettings.navigation.showIcons && item.icon && (
-                      <span className="mr-2">{item.icon}</span>
+                    {headerSettings.navigation.showIcons && (item as any).icon && (
+  <span className="mr-2">{(item as any).icon}</span>
                     )}
                     {item.label}
                   </div>
