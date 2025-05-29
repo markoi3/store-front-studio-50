@@ -270,7 +270,19 @@ export const StoreBuilder = () => {
           return element;
         });
       });
-
+const handleShowElementPopup = (columnId: string, columnIndex: number, event: React.MouseEvent) => {
+  const rect = (event.target as HTMLElement).getBoundingClientRect();
+  
+  setElementPopup({
+    isOpen: true,
+    columnId: columnId,
+    columnIndex: columnIndex,
+    position: {
+      x: rect.left + rect.width / 2,
+      y: rect.bottom + 10
+    }
+  });
+};
       // Close popup
       setElementPopup(null);
 
