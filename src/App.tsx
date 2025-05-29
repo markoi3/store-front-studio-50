@@ -4,33 +4,54 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { CartProvider } from "@/contexts/CartContext";
-import Home from "@/pages/Home";
-import Login from "@/pages/Login";
-import Register from "@/pages/Register";
-import Products from "@/pages/admin/Products";
-import ProductDetails from "@/pages/ProductDetails";
-import Cart from "@/pages/Cart";
-import Checkout from "@/pages/Checkout";
-import OrderConfirmation from "@/pages/OrderConfirmation";
-import NotFound from "@/pages/NotFound";
-import Dashboard from "@/pages/admin/Dashboard";
-import NewProduct from "@/pages/admin/NewProduct";
-import EditProduct from "@/pages/admin/EditProduct";
-import Orders from "@/pages/admin/Orders";
-import Customers from "@/pages/admin/Customers";
-import Analytics from "@/pages/admin/Analytics";
-import Design from "@/pages/admin/Design";
-import Settings from "@/pages/admin/Settings";
-import Profile from "@/pages/admin/Profile";
-import Racunovodstvo from "@/pages/admin/Racunovodstvo";
-import Fakture from "@/pages/admin/Fakture";
-import NovaFaktura from "@/pages/admin/NovaFaktura";
-import NoviPredracun from "@/pages/admin/NoviPredracun";
-import NoviObracun from "@/pages/admin/NoviObracun";
-import Transakcije from "@/pages/admin/Transakcije";
-import BrziLink from "@/pages/admin/BrziLink";
-import Storefront from "@/pages/Storefront";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
+
+// Public Pages
+import SaasHome from "./pages/SaasHome";
+import Home from "./pages/Home";
+import Shop from "./pages/Shop";
+import ProductDetail from "./pages/ProductDetail";
+import Cart from "./pages/Cart";
+import Checkout from "./pages/Checkout";
+import ThankYou from "./pages/ThankYou";
+import About from "./pages/About";
+import Contact from "./pages/Contact";
+import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import CustomPage from "./pages/CustomPage";
+import ComingSoon from "./pages/ComingSoon";
+
+// Admin Pages
+import Dashboard from "./pages/admin/Dashboard";
+import Products from "./pages/admin/Products";
+import NewProduct from "./pages/admin/NewProduct";
+import EditProduct from "./pages/admin/EditProduct";
+import Orders from "./pages/admin/Orders";
+import Settings from "./pages/admin/Settings";
+import Design from "./pages/admin/Design";
+import Analytics from "./pages/admin/Analytics";
+import Profile from "./pages/admin/Profile";
+import Racunovodstvo from "./pages/admin/Racunovodstvo";
+import BrziLink from "./pages/admin/BrziLink";
+import Fakture from "./pages/admin/Fakture";
+import NovaFaktura from "./pages/admin/NovaFaktura";
+import NoviPredracun from "./pages/admin/NoviPredracun";
+import NoviObracun from "./pages/admin/NoviObracun";
+import Transakcije from "./pages/admin/Transakcije";
+import Customers from "./pages/admin/Customers";
+
+// Store Pages
+import Storefront from "./pages/store/Storefront";
+
+// Payment Pages
+import PaymentLink from "./pages/payment/PaymentLink";
+
+// Public Document Pages
+import PublicDocument from "./pages/public/PublicDocument";
+
+import NotFound from "./pages/NotFound";
+
 import PLReport from "@/pages/admin/PLReport";
 import BalanceSheet from "@/pages/admin/BalanceSheet";
 
