@@ -73,7 +73,7 @@ function App() {
                 <Route path="/products/:id" element={<ProductDetail />} />
                 <Route path="/cart" element={<Cart />} />
                 <Route path="/checkout" element={<Checkout />} />
-                <Route path="/order-confirmation" element={<OrderConfirmation />} />
+                <Route path="/thankyou" element={<ThankYou />} />
                 <Route path="/store/:storeSlug" element={<Storefront />} />
 
                 {/* Admin Routes */}
