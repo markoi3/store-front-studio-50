@@ -2,7 +2,7 @@
 import React from 'react';
 import { DragDropContext, Draggable, Droppable } from '@hello-pangea/dnd';
 import { Button } from "@/components/ui/button";
-import { GripVertical, X, Eye, EyeOff } from "lucide-react";
+import { GripVertical, X, Eye, EyeOff, Plus } from "lucide-react";
 
 interface BuilderElement {
   id: string;
@@ -18,6 +18,7 @@ interface PageBuilderCanvasProps {
   selectedElement: BuilderElement | null;
   previewMode: boolean;
   zoom: number;
+  onAddElementToColumn?: (columnId: string, columnIndex: number, elementType: string) => void;
 }
 
 export const PageBuilderCanvas: React.FC<PageBuilderCanvasProps> = ({
@@ -27,7 +28,8 @@ export const PageBuilderCanvas: React.FC<PageBuilderCanvasProps> = ({
   onSelectElement,
   selectedElement,
   previewMode,
-  zoom
+  zoom,
+  onAddElementToColumn
 }) => {
   const getFontSize = (size: string) => {
     switch(size) {
@@ -36,6 +38,13 @@ export const PageBuilderCanvas: React.FC<PageBuilderCanvasProps> = ({
       case 'large': return '1.25rem';
       case 'xlarge': return '1.5rem';
       default: return '1rem';
+    }
+  };
+
+  const addElementToColumn = (columnElementId: string, columnIndex: number) => {
+    // For now, add a simple text element to the column
+    if (onAddElementToColumn) {
+      onAddElementToColumn(columnElementId, columnIndex, 'text');
     }
   };
 
@@ -112,20 +121,59 @@ export const PageBuilderCanvas: React.FC<PageBuilderCanvasProps> = ({
         );
         
       case 'columns':
+        const columnCount = element.settings.columnCount || 2;
+        const children = element.settings.children || [];
+        
         return (
           <div>
-            <h3 className="font-medium mb-2">Column Layout ({element.settings.columnCount} columns)</h3>
+            <h3 className="font-medium mb-2">Column Layout ({columnCount} columns)</h3>
             <div 
               className="grid gap-2"
               style={{
-                gridTemplateColumns: `repeat(${element.settings.columnCount || 2}, 1fr)`
+                gridTemplateColumns: `repeat(${columnCount}, 1fr)`
               }}
             >
-              {Array(element.settings.columnCount || 2).fill(0).map((_, i) => (
-                <div key={i} className="min-h-[80px] bg-accent/50 rounded-md border-2 border-dashed border-accent flex items-center justify-center text-sm text-muted-foreground">
-                  Column {i + 1}
-                </div>
-              ))}
+              {Array(columnCount).fill(0).map((_, i) => {
+                const columnChildren = children.filter((child: any) => child.columnIndex === i);
+                
+                return (
+                  <div 
+                    key={i} 
+                    className="min-h-[80px] bg-accent/20 rounded-md border-2 border-dashed border-accent/60 p-2 relative group"
+                  >
+                    {!previewMode && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6 p-0"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          addElementToColumn(element.id, i);
+                        }}
+                      >
+                        <Plus className="h-3 w-3" />
+                      </Button>
+                    )}
+                    
+                    {columnChildren.length > 0 ? (
+                      <div className="space-y-2">
+                        {columnChildren.map((child: any, childIndex: number) => (
+                          <div key={childIndex} className="text-xs text-muted-foreground bg-background/50 p-2 rounded">
+                            {child.type} element
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
+                        Column {i + 1}
+                        {!previewMode && (
+                          <span className="block text-xs mt-1">Click + to add element</span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         );
@@ -201,7 +249,7 @@ export const PageBuilderCanvas: React.FC<PageBuilderCanvasProps> = ({
   };
 
   return (
-    <div className="flex-1 bg-white border rounded-lg overflow-hidden">
+    <div className="flex-1 bg-white border rounded-lg overflow-hidden h-full">
       <div className="bg-accent/30 border-b px-4 py-2 flex items-center justify-between">
         <span className="text-sm font-medium">Canvas Preview</span>
         <div className="flex items-center gap-2">

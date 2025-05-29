@@ -172,7 +172,8 @@ export const StoreBuilder = () => {
       type: 'columns',
       settings: {
         columnCount: 2,
-        gap: 'medium'
+        gap: 'medium',
+        children: []
       }
     },
     categories: {
@@ -470,7 +471,7 @@ export const StoreBuilder = () => {
 
   // Main page builder interface
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col w-full">
       {renderPageSelector()}
       
       <CanvasToolbar
@@ -483,14 +484,14 @@ export const StoreBuilder = () => {
         onSave={saveChanges}
       />
       
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden w-full">
         {/* Left Sidebar - Element Palette */}
-        <div className="w-80 border-r bg-background overflow-auto">
+        <div className="w-72 border-r bg-background overflow-auto flex-shrink-0">
           <ElementPalette onAddElement={addElement} />
         </div>
         
         {/* Center - Canvas */}
-        <div className="flex-1 flex flex-col overflow-hidden bg-accent/20">
+        <div className="flex-1 flex flex-col overflow-hidden bg-accent/20 min-w-0">
           <PageBuilderCanvas
             elements={elements}
             onDragEnd={handleDragEnd}
@@ -503,7 +504,7 @@ export const StoreBuilder = () => {
         </div>
         
         {/* Right Sidebar - Properties Panel */}
-        <div className="w-80 border-l bg-background overflow-auto">
+        <div className="w-72 border-l bg-background overflow-auto flex-shrink-0">
           <PropertiesPanel
             selectedElement={selectedElement}
             onUpdateElement={updateElementSettings}
