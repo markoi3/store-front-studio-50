@@ -13,6 +13,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Trash2, Plus, ExternalLink } from "lucide-react";
 import FooterEditor from "@/components/design/FooterEditor";
 import HeaderMenuEditor from "@/components/design/HeaderMenuEditor";
+import FontSelector from "@/components/design/FontSelector";
 
 const Design = () => {
   const navigate = useNavigate();
@@ -23,7 +24,7 @@ const Design = () => {
     // Extract tab name from URL if present
     const searchParams = new URLSearchParams(location.search);
     const tab = searchParams.get("tab");
-    if (tab && (tab === "builder" || tab === "menu" || tab === "logo" || tab === "custom" || tab === "coming-soon" || tab === "footer")) {
+    if (tab && (tab === "builder" || tab === "menu" || tab === "logo" || tab === "custom" || tab === "coming-soon" || tab === "footer" || tab === "fonts")) {
       setActiveTab(tab);
     }
   }, [location]);
@@ -45,6 +46,7 @@ const Design = () => {
             <TabsTrigger value="builder">Elementi stranice</TabsTrigger>
             <TabsTrigger value="menu">Header & Menu</TabsTrigger>
             <TabsTrigger value="footer">Footer</TabsTrigger>
+            <TabsTrigger value="fonts">Fonts</TabsTrigger>
             <TabsTrigger value="custom">Custom Pages</TabsTrigger>
             <TabsTrigger value="coming-soon">Coming Soon</TabsTrigger>
           </TabsList>
@@ -59,6 +61,10 @@ const Design = () => {
           
           <TabsContent value="footer" className="space-y-4">
             <FooterEditor />
+          </TabsContent>
+          
+          <TabsContent value="fonts" className="space-y-4">
+            <FontSelector />
           </TabsContent>
           
           <TabsContent value="custom" className="space-y-4">
@@ -457,8 +463,6 @@ const CustomPagesEditor = () => {
       [field]: value
     };
     
-    // If title is updated, preview the slug but don't update it yet
-    // It will be updated on save
     setCurrentPage(updatedPage);
     setFormChanged(true);
   };

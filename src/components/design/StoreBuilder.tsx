@@ -239,6 +239,41 @@ export const StoreBuilder = () => {
     }
   };
 
+  const addElementToColumn = (columnElementId: string, columnIndex: number, elementType: ElementType) => {
+    try {
+      const newElement = {
+        id: `element-${Date.now()}`,
+        ...elementTemplates[elementType],
+        parentId: columnElementId,
+        columnIndex: columnIndex
+      };
+
+      // Update the column element to include this child element
+      setElements(prevElements => {
+        return prevElements.map(element => {
+          if (element.id === columnElementId && element.type === 'columns') {
+            const updatedChildren = [...(element.settings.children || []), newElement];
+            return {
+              ...element,
+              settings: {
+                ...element.settings,
+                children: updatedChildren
+              }
+            };
+          }
+          return element;
+        });
+      });
+
+      toast.success("Element added to column", {
+        description: `Added ${elementType} element to column ${columnIndex + 1}.`
+      });
+    } catch (error) {
+      console.error("Error adding element to column:", error);
+      toast.error("Failed to add element to column");
+    }
+  };
+
   const removeElement = (id: string) => {
     try {
       setElements(elements.filter(el => el.id !== id));
@@ -281,6 +316,11 @@ export const StoreBuilder = () => {
       console.error("Error updating element settings:", error);
       toast.error("Failed to update element settings");
     }
+  };
+
+  // Handle element selection with proper typing
+  const handleSelectElement = (element: BuilderElement | null) => {
+    setSelectedElement(element);
   };
 
   const saveChanges = async () => {
@@ -338,6 +378,16 @@ export const StoreBuilder = () => {
     } catch (error) {
       console.error("Error updating legal page:", error);
       toast.error("Failed to update legal page");
+    }
+  };
+
+  // Get canvas width based on device
+  const getCanvasWidth = () => {
+    switch (device) {
+      case 'mobile': return '375px';
+      case 'tablet': return '768px';
+      case 'desktop': return '100%';
+      default: return '100%';
     }
   };
   
@@ -471,7 +521,7 @@ export const StoreBuilder = () => {
 
   // Main page builder interface
   return (
-    <div className="h-full flex flex-col w-full">
+    <div className="h-full flex flex-col">
       {renderPageSelector()}
       
       <CanvasToolbar
@@ -484,22 +534,30 @@ export const StoreBuilder = () => {
         onSave={saveChanges}
       />
       
-      <div className="flex-1 flex overflow-hidden w-full">
+      <div className="flex-1 flex h-0">
         {/* Left Sidebar - Element Palette */}
         <div className="w-72 border-r bg-background overflow-auto flex-shrink-0">
           <ElementPalette onAddElement={addElement} />
         </div>
         
         {/* Center - Canvas */}
-        <div className="flex-1 flex flex-col overflow-hidden bg-accent/20 min-w-0">
+        <div 
+          className="flex-1 flex flex-col bg-accent/20 overflow-hidden"
+          style={{ 
+            width: getCanvasWidth(),
+            maxWidth: getCanvasWidth(),
+            margin: device !== 'desktop' ? '0 auto' : undefined
+          }}
+        >
           <PageBuilderCanvas
             elements={elements}
             onDragEnd={handleDragEnd}
             onRemoveElement={removeElement}
-            onSelectElement={setSelectedElement}
+            onSelectElement={handleSelectElement}
             selectedElement={selectedElement}
             previewMode={previewMode}
             zoom={zoom}
+            onAddElementToColumn={addElementToColumn}
           />
         </div>
         
