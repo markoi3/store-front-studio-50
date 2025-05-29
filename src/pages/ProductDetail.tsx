@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -56,9 +57,19 @@ const ProductDetail = () => {
             images: Array.isArray(data.images) 
               ? data.images.map(img => typeof img === 'string' ? img : String(img))
               : [],
-            // Properly cast variants from Json[] to ProductVariant[]
+            // Properly convert variants from Json[] to ProductVariant[]
             variants: Array.isArray(data.variants) 
-              ? data.variants.map(variant => variant as ProductVariant)
+              ? data.variants.map(variant => {
+                  // Convert each variant object to ProductVariant
+                  const variantObj = variant as any;
+                  return {
+                    id: variantObj.id || '',
+                    name: variantObj.name || '',
+                    price: Number(variantObj.price || 0),
+                    stock: Number(variantObj.stock || 0),
+                    options: variantObj.options || undefined
+                  } as ProductVariant;
+                })
               : []
           };
           
