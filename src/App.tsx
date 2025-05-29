@@ -7,7 +7,7 @@ import { CartProvider } from "@/contexts/CartContext";
 import Home from "@/pages/Home";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
-import Products from "@/pages/Products";
+import Products from "@/pages/admin/Products";
 import ProductDetails from "@/pages/ProductDetails";
 import Cart from "@/pages/Cart";
 import Checkout from "@/pages/Checkout";
