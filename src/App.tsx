@@ -54,7 +54,7 @@ import NotFound from "./pages/NotFound";
 
 import PLReport from "@/pages/admin/PLReport";
 import BalanceSheet from "@/pages/admin/BalanceSheet";
-
+import { AdminLayout } from '@/components/layout/AdminLayout';
 const queryClient = new QueryClient();
 
 function App() {
