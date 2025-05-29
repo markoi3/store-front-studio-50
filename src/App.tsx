@@ -1,9 +1,13 @@
-import { Toaster } from "@/components/ui/sonner";
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { CartProvider } from "@/contexts/CartContext";
+import { AdminLayout } from "@/components/layout/AdminLayout";
+import { withStoreLayout } from "@/components/layout/StorePageLayout";
+
 
 // Public Pages
 import SaasHome from "./pages/SaasHome";
@@ -52,62 +56,99 @@ import PublicDocument from "./pages/public/PublicDocument";
 
 import NotFound from "./pages/NotFound";
 
-import PLReport from "@/pages/admin/PLReport";
-import BalanceSheet from "@/pages/admin/BalanceSheet";
-import { AdminLayout } from '@/components/layout/AdminLayout';
-
 const queryClient = new QueryClient();
 
-function App() {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <AuthProvider>
-          <CartProvider>
-            <Toaster />
-            <BrowserRouter>
-              <Routes>
-                {/* Public Routes */}
-                <Route path="/" element={<Home />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
-                <Route path="/shop" element={<Shop />} />
-                <Route path="/shop/:id" element={<ProductDetail />} />
-                <Route path="/cart" element={<Cart />} />
-                <Route path="/checkout" element={<Checkout />} />
-                <Route path="/thankyou" element={<ThankYou />} />
-                <Route path="/store/:storeSlug" element={<Storefront />} />
+// Create wrapped components - EXCLUDING Storefront (jer već ima svoj StoreLayout)
+// Create wrapped components
+const WrappedStorefront = withStoreLayout(Storefront);
+const WrappedShop = withStoreLayout(Shop);
+const WrappedProductDetail = withStoreLayout(ProductDetail);
+const WrappedCart = withStoreLayout(Cart);
+const WrappedCheckout = withStoreLayout(Checkout);
+const WrappedThankYou = withStoreLayout(ThankYou);
+const WrappedAbout = withStoreLayout(About);
+const WrappedContact = withStoreLayout(Contact);
+const WrappedCustomPage = withStoreLayout(CustomPage);
+const WrappedTerms = withStoreLayout(Terms);
+const WrappedPrivacy = withStoreLayout(Privacy);
+const WrappedComingSoon = withStoreLayout(ComingSoon);
 
-                {/* Admin Routes - All wrapped in AdminLayout */}
-                <Route path="/dashboard" element={<AdminLayout><Dashboard /></AdminLayout>} />
-                <Route path="/admin/products" element={<AdminLayout><Products /></AdminLayout>} />
-                <Route path="/admin/products/new" element={<AdminLayout><NewProduct /></AdminLayout>} />
-                <Route path="/admin/products/:id" element={<AdminLayout><EditProduct /></AdminLayout>} />
-                <Route path="/orders" element={<AdminLayout><Orders /></AdminLayout>} />
-                <Route path="/orders/:id" element={<AdminLayout><Transakcije /></AdminLayout>} />
-                <Route path="/customers" element={<AdminLayout><Customers /></AdminLayout>} />
-                <Route path="/transakcije/:id" element={<AdminLayout><Transakcije /></AdminLayout>} />
-                <Route path="/settings" element={<AdminLayout><Settings /></AdminLayout>} />
-                <Route path="/design" element={<AdminLayout><Design /></AdminLayout>} />
-                <Route path="/analytics" element={<AdminLayout><Analytics /></AdminLayout>} />
-                <Route path="/profile" element={<AdminLayout><Profile /></AdminLayout>} />
-                <Route path="/racunovodstvo" element={<AdminLayout><Racunovodstvo /></AdminLayout>} />
-                <Route path="/brzi-link" element={<AdminLayout><BrziLink /></AdminLayout>} />
-                <Route path="/fakture" element={<AdminLayout><Fakture /></AdminLayout>} />
-                <Route path="/fakture/nova" element={<AdminLayout><NovaFaktura /></AdminLayout>} />
-                <Route path="/predracun/novi" element={<AdminLayout><NoviPredracun /></AdminLayout>} />
-                <Route path="/obracun/novi" element={<AdminLayout><NoviObracun /></AdminLayout>} />
-                <Route path="/racunovodstvo/pl-report" element={<AdminLayout><PLReport /></AdminLayout>} />
-                <Route path="/racunovodstvo/balance-sheet" element={<AdminLayout><BalanceSheet /></AdminLayout>} />
-                
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </BrowserRouter>
-          </CartProvider>
-        </AuthProvider>
-      </TooltipProvider>
-    </QueryClientProvider>
-  );
-}
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <AuthProvider>
+      <CartProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              {/* SaaS Platform Home */}
+              <Route path="/" element={<SaasHome />} />
+
+              {/* Store Routes - Storefront handled separately */}
+              <Route path="/store/:storeId" element={<Storefront />} />
+              {/* Store Routes - All wrapped with StorePageLayout */}
+              <Route path="/store/:storeId" element={<WrappedStorefront />} />
+              <Route path="/store/:storeId/shop" element={<WrappedShop />} />
+              <Route path="/store/:storeId/product/:slug" element={<WrappedProductDetail />} />
+              <Route path="/store/:storeId/cart" element={<WrappedCart />} />
+              <Route path="/store/:storeId/checkout" element={<WrappedCheckout />} />
+              <Route path="/store/:storeId/thank-you" element={<WrappedThankYou />} />
+              <Route path="/store/:storeId/about" element={<WrappedAbout />} />
+              <Route path="/store/:storeId/contact" element={<WrappedContact />} />
+              <Route path="/store/:storeId/page/:pageSlug" element={<WrappedCustomPage />} />
+              <Route path="/store/:storeId/terms" element={<WrappedTerms />} />
+              <Route path="/store/:storeId/privacy" element={<WrappedPrivacy />} />
+              <Route path="/store/:storeId/coming-soon" element={<WrappedComingSoon />} />
+
+              {/* Demo Store Routes (for testing) - Redirect to proper store URLs */}
+              <Route path="/home" element={<Navigate to="/store" replace />} />
+              <Route path="/shop" element={<Navigate to="/store" replace />} />
+              <Route path="/product/:slug" element={<Navigate to="/store" replace />} />
+              <Route path="/cart" element={<Navigate to="/store" replace />} />
+              <Route path="/checkout" element={<Navigate to="/store" replace />} />
+              <Route path="/thank-you" element={<Navigate to="/store" replace />} />
+              <Route path="/about" element={<Navigate to="/store" replace />} />
+              <Route path="/contact" element={<Navigate to="/store" replace />} />
+              <Route path="/terms" element={<Navigate to="/store" replace />} />
+              <Route path="/privacy" element={<Navigate to="/store" replace />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+
+              {/* Admin Routes - All wrapped in AdminLayout */}
+              <Route path="/dashboard" element={<AdminLayout><Dashboard /></AdminLayout>} />
+              <Route path="/products" element={<AdminLayout><Products /></AdminLayout>} />
+              <Route path="/products/new" element={<AdminLayout><NewProduct /></AdminLayout>} />
+              <Route path="/products/:id" element={<AdminLayout><EditProduct /></AdminLayout>} />
+              <Route path="/orders" element={<AdminLayout><Orders /></AdminLayout>} />
+              <Route path="/orders/:id" element={<AdminLayout><Transakcije /></AdminLayout>} />
+              <Route path="/customers" element={<AdminLayout><Customers /></AdminLayout>} />
+              <Route path="/transakcije/:id" element={<AdminLayout><Transakcije /></AdminLayout>} />
+              <Route path="/settings" element={<AdminLayout><Settings /></AdminLayout>} />
+              <Route path="/design" element={<AdminLayout><Design /></AdminLayout>} />
+              <Route path="/analytics" element={<AdminLayout><Analytics /></AdminLayout>} />
+              <Route path="/profile" element={<AdminLayout><Profile /></AdminLayout>} />
+              <Route path="/racunovodstvo" element={<AdminLayout><Racunovodstvo /></AdminLayout>} />
+              <Route path="/brzi-link" element={<AdminLayout><BrziLink /></AdminLayout>} />
+              <Route path="/fakture" element={<AdminLayout><Fakture /></AdminLayout>} />
+              <Route path="/fakture/nova" element={<AdminLayout><NovaFaktura /></AdminLayout>} />
+              <Route path="/predracun/novi" element={<AdminLayout><NoviPredracun /></AdminLayout>} />
+              <Route path="/obracun/novi" element={<AdminLayout><NoviObracun /></AdminLayout>} />
+
+              {/* Payment Links */}
+              <Route path="/pay/:linkId" element={<PaymentLink />} />
+
+              {/* Public Document Pages */}
+              <Route path="/public/:docType/:docId" element={<PublicDocument />} />
+
+              {/* 404 Route */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </CartProvider>
+    </AuthProvider>
+  </QueryClientProvider>
+);
 
 export default App;
