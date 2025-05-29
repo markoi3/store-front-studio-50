@@ -165,6 +165,7 @@ const ProductDetail = () => {
         variant: selectedVariant ? {
           id: selectedVariant.id,
           name: selectedVariant.name,
+          price: selectedVariant.price,
           ...(selectedVariant.options && { options: selectedVariant.options })
         } : undefined
       });
