@@ -114,4 +114,6 @@ return (
       </main>
     </div>
   );
+
+  export default AdminLayout;
 };
