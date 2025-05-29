@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,7 +8,7 @@ interface ProductVariant {
   name: string;
   price: number;
   stock: number;
-  options: Record<string, string>;
+  options?: Record<string, string>;
 }
 
 interface ProductData {
@@ -57,7 +56,10 @@ const ProductDetail = () => {
             images: Array.isArray(data.images) 
               ? data.images.map(img => typeof img === 'string' ? img : String(img))
               : [],
-            variants: Array.isArray(data.variants) ? data.variants : []
+            // Properly cast variants from Json[] to ProductVariant[]
+            variants: Array.isArray(data.variants) 
+              ? data.variants.map(variant => variant as ProductVariant)
+              : []
           };
           
           setProduct(productData);
@@ -116,7 +118,7 @@ const ProductDetail = () => {
       if (!variant.options) return false;
       
       return Object.keys(newSelectedOptions).every(key => 
-        variant.options[key] === newSelectedOptions[key]
+        variant.options![key] === newSelectedOptions[key]
       );
     });
 
