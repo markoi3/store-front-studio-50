@@ -55,6 +55,7 @@ import NotFound from "./pages/NotFound";
 import PLReport from "@/pages/admin/PLReport";
 import BalanceSheet from "@/pages/admin/BalanceSheet";
 import { AdminLayout } from '@/components/layout/AdminLayout';
+
 const queryClient = new QueryClient();
 
 function App() {
@@ -66,39 +67,38 @@ function App() {
             <Toaster />
             <BrowserRouter>
               <Routes>
+                {/* Public Routes */}
                 <Route path="/" element={<Home />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
-                <Route path="/products" element={<Products />} />
-                <Route path="/products/:id" element={<ProductDetail />} />
+                <Route path="/shop" element={<Shop />} />
+                <Route path="/shop/:id" element={<ProductDetail />} />
                 <Route path="/cart" element={<Cart />} />
                 <Route path="/checkout" element={<Checkout />} />
                 <Route path="/thankyou" element={<ThankYou />} />
                 <Route path="/store/:storeSlug" element={<Storefront />} />
 
                 {/* Admin Routes - All wrapped in AdminLayout */}
-              <Route path="/dashboard" element={<AdminLayout><Dashboard /></AdminLayout>} />
-              <Route path="/products" element={<AdminLayout><Products /></AdminLayout>} />
-              <Route path="/products/new" element={<AdminLayout><NewProduct /></AdminLayout>} />
-              <Route path="/products/:id" element={<AdminLayout><EditProduct /></AdminLayout>} />
-              <Route path="/orders" element={<AdminLayout><Orders /></AdminLayout>} />
-              <Route path="/orders/:id" element={<AdminLayout><Transakcije /></AdminLayout>} />
-              <Route path="/customers" element={<AdminLayout><Customers /></AdminLayout>} />
-              <Route path="/transakcije/:id" element={<AdminLayout><Transakcije /></AdminLayout>} />
-              <Route path="/settings" element={<AdminLayout><Settings /></AdminLayout>} />
-              <Route path="/design" element={<AdminLayout><Design /></AdminLayout>} />
-              <Route path="/analytics" element={<AdminLayout><Analytics /></AdminLayout>} />
-              <Route path="/profile" element={<AdminLayout><Profile /></AdminLayout>} />
-              <Route path="/racunovodstvo" element={<AdminLayout><Racunovodstvo /></AdminLayout>} />
-              <Route path="/brzi-link" element={<AdminLayout><BrziLink /></AdminLayout>} />
-              <Route path="/fakture" element={<AdminLayout><Fakture /></AdminLayout>} />
-              <Route path="/fakture/nova" element={<AdminLayout><NovaFaktura /></AdminLayout>} />
-              <Route path="/predracun/novi" element={<AdminLayout><NoviPredracun /></AdminLayout>} />
-              <Route path="/obracun/novi" element={<AdminLayout><NoviObracun /></AdminLayout>} />
-               
+                <Route path="/dashboard" element={<AdminLayout><Dashboard /></AdminLayout>} />
+                <Route path="/admin/products" element={<AdminLayout><Products /></AdminLayout>} />
+                <Route path="/admin/products/new" element={<AdminLayout><NewProduct /></AdminLayout>} />
+                <Route path="/admin/products/:id" element={<AdminLayout><EditProduct /></AdminLayout>} />
+                <Route path="/orders" element={<AdminLayout><Orders /></AdminLayout>} />
+                <Route path="/orders/:id" element={<AdminLayout><Transakcije /></AdminLayout>} />
+                <Route path="/customers" element={<AdminLayout><Customers /></AdminLayout>} />
+                <Route path="/transakcije/:id" element={<AdminLayout><Transakcije /></AdminLayout>} />
+                <Route path="/settings" element={<AdminLayout><Settings /></AdminLayout>} />
+                <Route path="/design" element={<AdminLayout><Design /></AdminLayout>} />
+                <Route path="/analytics" element={<AdminLayout><Analytics /></AdminLayout>} />
+                <Route path="/profile" element={<AdminLayout><Profile /></AdminLayout>} />
+                <Route path="/racunovodstvo" element={<AdminLayout><Racunovodstvo /></AdminLayout>} />
+                <Route path="/brzi-link" element={<AdminLayout><BrziLink /></AdminLayout>} />
+                <Route path="/fakture" element={<AdminLayout><Fakture /></AdminLayout>} />
+                <Route path="/fakture/nova" element={<AdminLayout><NovaFaktura /></AdminLayout>} />
+                <Route path="/predracun/novi" element={<AdminLayout><NoviPredracun /></AdminLayout>} />
+                <Route path="/obracun/novi" element={<AdminLayout><NoviObracun /></AdminLayout>} />
                 <Route path="/racunovodstvo/pl-report" element={<AdminLayout><PLReport /></AdminLayout>} />
                 <Route path="/racunovodstvo/balance-sheet" element={<AdminLayout><BalanceSheet /></AdminLayout>} />
-                
                 
                 <Route path="*" element={<NotFound />} />
               </Routes>
