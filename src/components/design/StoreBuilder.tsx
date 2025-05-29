@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -15,6 +14,7 @@ import { PageBuilderCanvas } from "./PageBuilderCanvas";
 import { ElementPalette } from "./ElementPalette";
 import { PropertiesPanel } from "./PropertiesPanel";
 import { CanvasToolbar } from "./CanvasToolbar";
+import { ElementPopup } from "./ElementPopup";
 
 type ElementType = 'hero' | 'products' | 'text' | 'image' | 'categories' | 'testimonials' | 'cta' | 'customHTML' | 'customCSS' | 'columns';
 
@@ -57,6 +57,12 @@ export const StoreBuilder = () => {
   const [previewMode, setPreviewMode] = useState<boolean>(false);
   const [zoom, setZoom] = useState<number>(1);
   const [device, setDevice] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
+  const [elementPopup, setElementPopup] = useState<{
+    isOpen: boolean;
+    columnId: string;
+    columnIndex: number;
+    position: { x: number; y: number };
+  } | null>(null);
   
   // Get page type and ID from URL params
   useEffect(() => {
@@ -264,6 +270,9 @@ export const StoreBuilder = () => {
           return element;
         });
       });
+
+      // Close popup
+      setElementPopup(null);
 
       toast.success("Element added to column", {
         description: `Added ${elementType} element to column ${columnIndex + 1}.`
@@ -535,14 +544,14 @@ export const StoreBuilder = () => {
       />
       
       <div className="flex-1 flex h-0">
-        {/* Left Sidebar - Element Palette */}
+        {/* Left Sidebar - Element Palette - Reduced padding */}
         <div className="w-72 border-r bg-background overflow-auto flex-shrink-0">
           <ElementPalette onAddElement={addElement} />
         </div>
         
-        {/* Center - Canvas */}
+        {/* Center - Canvas - Reduced left padding */}
         <div 
-          className="flex-1 flex flex-col bg-accent/20 overflow-hidden"
+          className="flex-1 flex flex-col bg-accent/20 overflow-hidden pl-4"
           style={{ 
             width: getCanvasWidth(),
             maxWidth: getCanvasWidth(),
@@ -557,7 +566,7 @@ export const StoreBuilder = () => {
             selectedElement={selectedElement}
             previewMode={previewMode}
             zoom={zoom}
-            onAddElementToColumn={addElementToColumn}
+            onShowElementPopup={handleShowElementPopup}
           />
         </div>
         
@@ -569,6 +578,18 @@ export const StoreBuilder = () => {
           />
         </div>
       </div>
+
+      {/* Element Popup */}
+      {elementPopup && (
+        <ElementPopup
+          isOpen={elementPopup.isOpen}
+          position={elementPopup.position}
+          onClose={() => setElementPopup(null)}
+          onSelectElement={(elementType) => 
+            addElementToColumn(elementPopup.columnId, elementPopup.columnIndex, elementType)
+          }
+        />
+      )}
     </div>
   );
 };

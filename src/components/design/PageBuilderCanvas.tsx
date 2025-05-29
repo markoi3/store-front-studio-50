@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { DragDropContext, Draggable, Droppable } from '@hello-pangea/dnd';
 import { Button } from "@/components/ui/button";
@@ -18,7 +17,7 @@ interface PageBuilderCanvasProps {
   selectedElement: BuilderElement | null;
   previewMode: boolean;
   zoom: number;
-  onAddElementToColumn?: (columnId: string, columnIndex: number, elementType: string) => void;
+  onShowElementPopup?: (columnId: string, columnIndex: number, position: { x: number; y: number }) => void;
 }
 
 export const PageBuilderCanvas: React.FC<PageBuilderCanvasProps> = ({
@@ -29,7 +28,7 @@ export const PageBuilderCanvas: React.FC<PageBuilderCanvasProps> = ({
   selectedElement,
   previewMode,
   zoom,
-  onAddElementToColumn
+  onShowElementPopup
 }) => {
   const getFontSize = (size: string) => {
     switch(size) {
@@ -38,6 +37,16 @@ export const PageBuilderCanvas: React.FC<PageBuilderCanvasProps> = ({
       case 'large': return '1.25rem';
       case 'xlarge': return '1.5rem';
       default: return '1rem';
+    }
+  };
+
+  const showElementPopup = (columnElementId: string, columnIndex: number, event: React.MouseEvent) => {
+    if (onShowElementPopup) {
+      const rect = (event.target as HTMLElement).getBoundingClientRect();
+      onShowElementPopup(columnElementId, columnIndex, {
+        x: rect.left,
+        y: rect.bottom + 5
+      });
     }
   };
 
@@ -148,7 +157,7 @@ export const PageBuilderCanvas: React.FC<PageBuilderCanvasProps> = ({
                         className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6 p-0"
                         onClick={(e) => {
                           e.stopPropagation();
-                          addElementToColumn(element.id, i);
+                          showElementPopup(element.id, i, e);
                         }}
                       >
                         <Plus className="h-3 w-3" />
