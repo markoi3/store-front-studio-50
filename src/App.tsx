@@ -22,7 +22,7 @@ import Design from "@/pages/admin/Design";
 import Settings from "@/pages/admin/Settings";
 import Profile from "@/pages/admin/Profile";
 import Racunovodstvo from "@/pages/admin/Racunovodstvo";
-import Fakture from "@/pages/admin/Fakture";
+import FaktureFixed from "@/pages/admin/FaktureFixed";
 import NovaFaktura from "@/pages/admin/NovaFaktura";
 import NoviPredracun from "@/pages/admin/NoviPredracun";
 import NoviObracun from "@/pages/admin/NoviObracun";
@@ -31,6 +31,7 @@ import BrziLink from "@/pages/admin/BrziLink";
 import PLReport from "@/pages/admin/PLReport";
 import BalanceSheet from "@/pages/admin/BalanceSheet";
 import Storefront from "@/pages/store/Storefront";
+import PublicDocument from "@/pages/public/PublicDocument";
 import { withStoreLayout } from "@/components/layout/StorePageLayout";
 
 const queryClient = new QueryClient();
@@ -53,6 +54,12 @@ function App() {
                 <Route path="/cart" element={<Cart />} />
                 <Route path="/checkout" element={<Checkout />} />
 
+                {/* Public Document Routes */}
+                <Route path="/faktura/:docId" element={<PublicDocument />} />
+                <Route path="/predracun/:docId" element={<PublicDocument />} />
+                <Route path="/obracun/:docId" element={<PublicDocument />} />
+                <Route path="/:docType/:docId" element={<PublicDocument />} />
+
                 {/* Admin Routes */}
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/products" element={<Navigate to="/admin/products" replace />} />
@@ -69,7 +76,7 @@ function App() {
                 <Route path="/racunovodstvo/pl-report" element={<PLReport />} />
                 <Route path="/racunovodstvo/balance-sheet" element={<BalanceSheet />} />
                 <Route path="/fakture" element={<Navigate to="/racunovodstvo/fakture" replace />} />
-                <Route path="/racunovodstvo/fakture" element={<Fakture />} />
+                <Route path="/racunovodstvo/fakture" element={<FaktureFixed />} />
                 <Route path="/racunovodstvo/nova-faktura" element={<NovaFaktura />} />
                 <Route path="/racunovodstvo/novi-predracun" element={<NoviPredracun />} />
                 <Route path="/racunovodstvo/novi-obracun" element={<NoviObracun />} />
