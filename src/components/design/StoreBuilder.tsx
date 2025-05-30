@@ -1,20 +1,22 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-import { DragDropContext, Draggable, Droppable } from '@hello-pangea/dnd';
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Minus, GripVertical, X, Save, Eye, Palette, PenTool } from "lucide-react";
-import { toast } from "sonner";
-import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-type ElementType = 'hero' | 'products' | 'text' | 'image' | 'categories' | 'testimonials' | 'cta' | 'customHTML' | 'customCSS';
+// Import the new components
+import { PageBuilderCanvas } from "./PageBuilderCanvas";
+import { ElementPalette } from "./ElementPalette";
+import { PropertiesPanel } from "./PropertiesPanel";
+import { CanvasToolbar } from "./CanvasToolbar";
+import { ElementPopup } from "./ElementPopup";
+
+type ElementType = 'hero' | 'products' | 'text' | 'image' | 'categories' | 'testimonials' | 'cta' | 'customHTML' | 'customCSS' | 'columns';
 
 interface BuilderElement {
   id: string;
@@ -24,7 +26,6 @@ interface BuilderElement {
 
 type PageType = 'homepage' | 'about' | 'contact' | 'legal' | 'custom';
 
-// Define a type for legal pages
 interface LegalPageType {
   title: string;
   content: string;
@@ -40,27 +41,28 @@ interface LegalPagesType {
 export const StoreBuilder = () => {
   const { user, updateStoreSettings } = useAuth();
   const navigate = useNavigate();
-  const [activeSection, setActiveSection] = useState<string>("homepage");
-  const [previewMode, setPreviewMode] = useState<boolean>(false);
   const [selectedPageType, setSelectedPageType] = useState<PageType>('homepage');
   const [selectedCustomPage, setSelectedCustomPage] = useState<string>('');
   const [selectedLegalPage, setSelectedLegalPage] = useState<string>('privacy');
   const [elements, setElements] = useState<BuilderElement[]>([]);
+  const [selectedElement, setSelectedElement] = useState<BuilderElement | null>(null);
   const [customPages, setCustomPages] = useState<Array<{id: string; title: string; slug: string; content: string; elements?: BuilderElement[]}>>([]);
   const [legalPages, setLegalPages] = useState<LegalPagesType>({
-    privacy: {
-      title: "Privacy Policy",
-      content: "Your privacy policy content here..."
-    },
-    terms: {
-      title: "Terms of Service",
-      content: "Your terms of service content here..."
-    },
-    shipping: {
-      title: "Shipping Policy",
-      content: "Your shipping policy content here..."
-    }
+    privacy: { title: "Privacy Policy", content: "Your privacy policy content here..." },
+    terms: { title: "Terms of Service", content: "Your terms of service content here..." },
+    shipping: { title: "Shipping Policy", content: "Your shipping policy content here..." }
   });
+  
+  // UI State
+  const [previewMode, setPreviewMode] = useState<boolean>(false);
+  const [zoom, setZoom] = useState<number>(1);
+  const [device, setDevice] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
+  const [elementPopup, setElementPopup] = useState<{
+    isOpen: boolean;
+    columnId: string;
+    columnIndex: number;
+    position: { x: number; y: number };
+  } | null>(null);
   
   // Get page type and ID from URL params
   useEffect(() => {
@@ -86,29 +88,24 @@ export const StoreBuilder = () => {
     
     let elementsToLoad: BuilderElement[] = [];
     
-    // Load elements based on selected page type
     if (selectedPageType === 'homepage') {
-      // Load homepage elements
       if (user.store.settings.pageElements && Array.isArray(user.store.settings.pageElements)) {
         elementsToLoad = [...user.store.settings.pageElements];
         console.log(`Loaded ${elementsToLoad.length} homepage elements`);
       }
     } 
     else if (selectedPageType === 'custom' && selectedCustomPage) {
-      // Load custom page elements
       const customPage = user.store.settings.customPages?.find(page => page.id === selectedCustomPage);
       if (customPage?.elements && Array.isArray(customPage.elements)) {
         elementsToLoad = [...customPage.elements];
         console.log(`Loaded ${elementsToLoad.length} custom page elements for ${customPage.title}`);
       }
       
-      // Update custom pages state
       if (user.store.settings.customPages && Array.isArray(user.store.settings.customPages)) {
         setCustomPages(user.store.settings.customPages);
       }
     }
     else if (selectedPageType === 'legal') {
-      // Load legal page settings
       if (user.store.settings.legalPages) {
         setLegalPages(prevPages => ({
           ...prevPages,
@@ -117,15 +114,13 @@ export const StoreBuilder = () => {
       }
     }
     
-    // Set elements state
     setElements(elementsToLoad);
+    setSelectedElement(null); // Clear selection when switching pages
     
-    // Load custom pages if available
     if (user.store.settings.customPages && Array.isArray(user.store.settings.customPages)) {
       setCustomPages(user.store.settings.customPages);
     }
     
-    // Load legal pages if available
     if (user.store.settings.legalPages) {
       setLegalPages(prevPages => ({
         ...prevPages,
@@ -138,10 +133,10 @@ export const StoreBuilder = () => {
     hero: {
       type: 'hero',
       settings: {
-        title: 'Section Title',
-        subtitle: 'Section subtitle goes here',
-        buttonText: 'Click Me',
-        buttonLink: '#',
+        title: 'Welcome to Our Store',
+        subtitle: 'Discover amazing products and services',
+        buttonText: 'Shop Now',
+        buttonLink: '/shop',
         backgroundColor: '#000000',
         textColor: '#ffffff',
         buttonColor: '#3b82f6',
@@ -152,7 +147,7 @@ export const StoreBuilder = () => {
     products: {
       type: 'products',
       settings: {
-        title: 'Products',
+        title: 'Featured Products',
         count: 4,
         layout: 'grid',
         backgroundColor: '#ffffff',
@@ -162,7 +157,7 @@ export const StoreBuilder = () => {
     text: {
       type: 'text',
       settings: {
-        content: 'Add your text here',
+        content: 'Add your text content here. You can use this space to describe your products, services, or share your story.',
         alignment: 'left',
         backgroundColor: 'transparent',
         textColor: '#000000',
@@ -173,10 +168,18 @@ export const StoreBuilder = () => {
       type: 'image',
       settings: {
         src: 'https://images.unsplash.com/photo-1588345921523-c2dcdb7f1dcd?w=800&auto=format&fit=crop',
-        alt: 'Image description',
+        alt: 'Beautiful image',
         width: '100%',
         height: 'auto',
-        borderRadius: '4px'
+        borderRadius: '8px'
+      }
+    },
+    columns: {
+      type: 'columns',
+      settings: {
+        columnCount: 2,
+        gap: 'medium',
+        children: []
       }
     },
     categories: {
@@ -211,13 +214,13 @@ export const StoreBuilder = () => {
     customHTML: {
       type: 'customHTML',
       settings: {
-        content: '<p>Your custom HTML content here...</p>'
+        content: '<div class="text-center p-4"><h3>Custom HTML Content</h3><p>Add your custom HTML here...</p></div>'
       }
     },
     customCSS: {
       type: 'customCSS',
       settings: {
-        content: '<style>Your custom CSS content here...</style>'
+        content: '<style>\n.custom-element {\n  color: #3b82f6;\n  font-weight: bold;\n}\n</style>'
       }
     }
   };
@@ -230,6 +233,7 @@ export const StoreBuilder = () => {
       };
       
       setElements(prev => [...prev, newElement]);
+      setSelectedElement(newElement); // Auto-select new element
       toast.success("Element added", {
         description: `Added new ${type} element to your page.`
       });
@@ -241,9 +245,50 @@ export const StoreBuilder = () => {
     }
   };
 
+  const addElementToColumn = (columnElementId: string, columnIndex: number, elementType: ElementType) => {
+    try {
+      const newElement = {
+        id: `element-${Date.now()}`,
+        ...elementTemplates[elementType],
+        parentId: columnElementId,
+        columnIndex: columnIndex
+      };
+
+      // Update the column element to include this child element
+      setElements(prevElements => {
+        return prevElements.map(element => {
+          if (element.id === columnElementId && element.type === 'columns') {
+            const updatedChildren = [...(element.settings.children || []), newElement];
+            return {
+              ...element,
+              settings: {
+                ...element.settings,
+                children: updatedChildren
+              }
+            };
+          }
+          return element;
+        });
+      });
+
+      // Close popup
+      setElementPopup(null);
+
+      toast.success("Element added to column", {
+        description: `Added ${elementType} element to column ${columnIndex + 1}.`
+      });
+    } catch (error) {
+      console.error("Error adding element to column:", error);
+      toast.error("Failed to add element to column");
+    }
+  };
+
   const removeElement = (id: string) => {
     try {
       setElements(elements.filter(el => el.id !== id));
+      if (selectedElement?.id === id) {
+        setSelectedElement(null);
+      }
       toast.success("Element removed");
     } catch (error) {
       console.error("Error removing element:", error);
@@ -271,10 +316,20 @@ export const StoreBuilder = () => {
       setElements(elements.map(el => 
         el.id === id ? { ...el, settings: { ...el.settings, ...settings } } : el
       ));
+      
+      // Update selected element if it's the one being updated
+      if (selectedElement?.id === id) {
+        setSelectedElement({ ...selectedElement, settings: { ...selectedElement.settings, ...settings } });
+      }
     } catch (error) {
       console.error("Error updating element settings:", error);
       toast.error("Failed to update element settings");
     }
+  };
+
+  // Handle element selection with proper typing
+  const handleSelectElement = (element: BuilderElement | null) => {
+    setSelectedElement(element);
   };
 
   const saveChanges = async () => {
@@ -286,16 +341,12 @@ export const StoreBuilder = () => {
       
       let updatedSettings = { ...user.store.settings || {} };
       
-      // Save elements based on selected page type
       if (selectedPageType === 'homepage') {
         updatedSettings.pageElements = elements;
         console.log(`Saving ${elements.length} homepage elements`);
       }
       else if (selectedPageType === 'custom' && selectedCustomPage) {
-        // Get current custom pages
         const currentCustomPages = [...(updatedSettings.customPages || [])];
-        
-        // Find and update the selected custom page
         const pageIndex = currentCustomPages.findIndex(page => page.id === selectedCustomPage);
         
         if (pageIndex >= 0) {
@@ -303,18 +354,14 @@ export const StoreBuilder = () => {
             ...currentCustomPages[pageIndex],
             elements: elements
           };
-          
-          // Update custom pages in settings
           updatedSettings.customPages = currentCustomPages;
           console.log(`Saving ${elements.length} elements for custom page: ${currentCustomPages[pageIndex].title}`);
         }
       }
       else if (selectedPageType === 'legal') {
-        // Save legal pages
         updatedSettings.legalPages = legalPages;
       }
       
-      // Save to Supabase via AuthContext
       await updateStoreSettings(updatedSettings);
       
       toast.success("Changes saved", {
@@ -342,744 +389,207 @@ export const StoreBuilder = () => {
       toast.error("Failed to update legal page");
     }
   };
+
+  // Get canvas width based on device
+  const getCanvasWidth = () => {
+    switch (device) {
+      case 'mobile': return '375px';
+      case 'tablet': return '768px';
+      case 'desktop': return '100%';
+      default: return '100%';
+    }
+  };
   
   const renderPageSelector = () => {
     return (
-      <div className="mb-6 flex flex-col sm:flex-row gap-4 items-start sm:items-end">
-        <div className="space-y-2 min-w-[200px]">
-          <Label htmlFor="pageTypeSelect">Page Type</Label>
-          <Select
-            value={selectedPageType}
-            onValueChange={(value) => setSelectedPageType(value as PageType)}
-          >
-            <SelectTrigger id="pageTypeSelect">
-              <SelectValue placeholder="Select page type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="homepage">Homepage</SelectItem>
-              <SelectItem value="custom">Custom Page</SelectItem>
-              <SelectItem value="legal">Legal Page</SelectItem>
-            </SelectContent>
-          </Select>
+      <div className="border-b bg-background px-6 py-4">
+        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-end">
+          <div className="space-y-2 min-w-[200px]">
+            <Label htmlFor="pageTypeSelect">Page Type</Label>
+            <Select
+              value={selectedPageType}
+              onValueChange={(value) => setSelectedPageType(value as PageType)}
+            >
+              <SelectTrigger id="pageTypeSelect">
+                <SelectValue placeholder="Select page type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="homepage">Homepage</SelectItem>
+                <SelectItem value="custom">Custom Page</SelectItem>
+                <SelectItem value="legal">Legal Page</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          {selectedPageType === 'custom' && (
+            <div className="space-y-2 min-w-[200px]">
+              <Label htmlFor="customPageSelect">Custom Page</Label>
+              <Select
+                value={selectedCustomPage}
+                onValueChange={setSelectedCustomPage}
+                disabled={!customPages.length}
+              >
+                <SelectTrigger id="customPageSelect">
+                  <SelectValue placeholder="Select a custom page" />
+                </SelectTrigger>
+                <SelectContent>
+                  {customPages.length ? (
+                    customPages.map((page) => (
+                      <SelectItem key={page.id} value={page.id}>{page.title}</SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="" disabled>No custom pages</SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          
+          {selectedPageType === 'legal' && (
+            <div className="space-y-2 min-w-[200px]">
+              <Label htmlFor="legalPageSelect">Legal Page</Label>
+              <Select
+                value={selectedLegalPage}
+                onValueChange={(value) => setSelectedLegalPage(value)}
+              >
+                <SelectTrigger id="legalPageSelect">
+                  <SelectValue placeholder="Select a legal page" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="privacy">Privacy Policy</SelectItem>
+                  <SelectItem value="terms">Terms of Service</SelectItem>
+                  <SelectItem value="shipping">Shipping Policy</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </div>
-        
-        {selectedPageType === 'custom' && (
-          <div className="space-y-2 min-w-[200px]">
-            <Label htmlFor="customPageSelect">Custom Page</Label>
-            <Select
-              value={selectedCustomPage}
-              onValueChange={setSelectedCustomPage}
-              disabled={!customPages.length}
-            >
-              <SelectTrigger id="customPageSelect">
-                <SelectValue placeholder="Select a custom page" />
-              </SelectTrigger>
-              <SelectContent>
-                {customPages.length ? (
-                  customPages.map((page) => (
-                    <SelectItem key={page.id} value={page.id}>{page.title}</SelectItem>
-                  ))
-                ) : (
-                  <SelectItem value="" disabled>No custom pages</SelectItem>
-                )}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
-        
-        {selectedPageType === 'legal' && (
-          <div className="space-y-2 min-w-[200px]">
-            <Label htmlFor="legalPageSelect">Legal Page</Label>
-            <Select
-              value={selectedLegalPage}
-              onValueChange={(value) => setSelectedLegalPage(value)}
-            >
-              <SelectTrigger id="legalPageSelect">
-                <SelectValue placeholder="Select a legal page" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="privacy">Privacy Policy</SelectItem>
-                <SelectItem value="terms">Terms of Service</SelectItem>
-                <SelectItem value="shipping">Shipping Policy</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        )}
       </div>
     );
   };
 
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Store Design</h1>
-        <div className="flex items-center space-x-2">
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => setPreviewMode(!previewMode)} 
-            className="flex items-center"
-          >
-            <Eye className="h-4 w-4 mr-1" />
-            {previewMode ? 'Edit Mode' : 'Preview'}
-          </Button>
-          <Button onClick={saveChanges} className="flex items-center">
-            <Save className="h-4 w-4 mr-1" />
-            Save Changes
-          </Button>
+  // Legal page editor
+  if (selectedPageType === 'legal') {
+    return (
+      <div className="h-full flex flex-col">
+        {renderPageSelector()}
+        <div className="flex-1 p-6">
+          <Card>
+            <CardContent className="p-6">
+              <div className="space-y-4">
+                <h2 className="text-lg font-medium">{legalPages[selectedLegalPage]?.title || "Legal Page"}</h2>
+                <div>
+                  <Label htmlFor="legal-title">Page Title</Label>
+                  <Input
+                    id="legal-title"
+                    value={legalPages[selectedLegalPage]?.title || ""}
+                    onChange={(e) => updateLegalPage(selectedLegalPage, 'title', e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="legal-content">Content</Label>
+                  <Textarea
+                    id="legal-content"
+                    value={legalPages[selectedLegalPage]?.content || ""}
+                    onChange={(e) => updateLegalPage(selectedLegalPage, 'content', e.target.value)}
+                    rows={10}
+                  />
+                </div>
+                <Button onClick={saveChanges}>Save Changes</Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
-      
-      {/* Add page selector */}
+    );
+  }
+
+  // Custom page not selected or doesn't exist
+  if (selectedPageType === 'custom' && (!selectedCustomPage || !customPages.length)) {
+    return (
+      <div className="h-full flex flex-col">
+        {renderPageSelector()}
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center py-12 border border-dashed rounded-lg max-w-md">
+            <p className="text-muted-foreground mb-4">
+              {customPages.length
+                ? "Select a custom page to edit"
+                : "No custom pages created yet. Please create a custom page first."}
+            </p>
+            <Button
+              variant="outline"
+              onClick={() => navigate("/design?tab=custom")}
+            >
+              Go to Custom Pages
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Main page builder interface
+  return (
+    <div className="h-full flex flex-col">
       {renderPageSelector()}
       
-      {selectedPageType === 'legal' ? (
-        <Card>
-          <CardContent className="p-6">
-            <div className="space-y-4">
-              <h2 className="text-lg font-medium">{legalPages[selectedLegalPage]?.title || "Legal Page"}</h2>
-              <div>
-                <Label htmlFor="legal-title">Page Title</Label>
-                <Input
-                  id="legal-title"
-                  value={legalPages[selectedLegalPage]?.title || ""}
-                  onChange={(e) => updateLegalPage(selectedLegalPage, 'title', e.target.value)}
-                />
-              </div>
-              <div>
-                <Label htmlFor="legal-content">Content</Label>
-                <Textarea
-                  id="legal-content"
-                  value={legalPages[selectedLegalPage]?.content || ""}
-                  onChange={(e) => updateLegalPage(selectedLegalPage, 'content', e.target.value)}
-                  rows={10}
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      ) : selectedPageType === 'custom' && (!selectedCustomPage || !customPages.length) ? (
-        <div className="text-center py-12 border border-dashed rounded-lg">
-          <p className="text-muted-foreground mb-4">
-            {customPages.length
-              ? "Select a custom page to edit"
-              : "No custom pages created yet. Please create a custom page first."}
-          </p>
-          <Button
-            variant="outline"
-            onClick={() => {
-              navigate("/design?tab=custom");
-            }}
-          >
-            Go to Custom Pages
-          </Button>
+      <CanvasToolbar
+        previewMode={previewMode}
+        onTogglePreview={() => setPreviewMode(!previewMode)}
+        zoom={zoom}
+        onZoomChange={setZoom}
+        device={device}
+        onDeviceChange={setDevice}
+        onSave={saveChanges}
+      />
+      
+      <div className="flex-1 flex h-0">
+        {/* Left Sidebar - Element Palette - Reduced padding */}
+        <div className="w-72 border-r bg-background overflow-auto flex-shrink-0">
+          <ElementPalette onAddElement={addElement} />
         </div>
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Builder Panel */}
-          <div className="col-span-1">
-            <Card>
-              <CardContent className="p-4">
-                <h2 className="text-lg font-medium mb-4">Add Elements</h2>
-                <div className="grid grid-cols-2 gap-2">
-                  <Button variant="outline" className="justify-start" onClick={() => addElement('hero')}>
-                    <Plus className="h-4 w-4 mr-1" />
-                    Hero Section
-                  </Button>
-                  <Button variant="outline" className="justify-start" onClick={() => addElement('products')}>
-                    <Plus className="h-4 w-4 mr-1" />
-                    Products
-                  </Button>
-                  <Button variant="outline" className="justify-start" onClick={() => addElement('text')}>
-                    <Plus className="h-4 w-4 mr-1" />
-                    Text Block
-                  </Button>
-                  <Button variant="outline" className="justify-start" onClick={() => addElement('image')}>
-                    <Plus className="h-4 w-4 mr-1" />
-                    Image
-                  </Button>
-                  <Button variant="outline" className="justify-start" onClick={() => addElement('categories')}>
-                    <Plus className="h-4 w-4 mr-1" />
-                    Categories
-                  </Button>
-                  <Button variant="outline" className="justify-start" onClick={() => addElement('testimonials')}>
-                    <Plus className="h-4 w-4 mr-1" />
-                    Testimonials
-                  </Button>
-                  <Button variant="outline" className="justify-start" onClick={() => addElement('cta')}>
-                    <Plus className="h-4 w-4 mr-1" />
-                    Call to Action
-                  </Button>
-                  <Button variant="outline" className="justify-start" onClick={() => addElement('customHTML')}>
-                    <Plus className="h-4 w-4 mr-1" />
-                    Custom HTML
-                  </Button>
-                  <Button variant="outline" className="justify-start" onClick={() => addElement('customCSS')}>
-                    <Plus className="h-4 w-4 mr-1" />
-                    Custom CSS
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-          
-          {/* Preview Panel */}
-          <div className="col-span-1 lg:col-span-2">
-            <Card className="border-primary/20">
-              <CardContent className="p-0 relative">
-                <div className="bg-accent/50 text-center py-1.5 text-xs font-medium border-b border-border/30">
-                  Preview: {selectedPageType === 'homepage' ? 'Homepage' : 
-                           selectedPageType === 'custom' ? customPages.find(p => p.id === selectedCustomPage)?.title || 'Custom Page' :
-                           'Page'}
-                </div>
-                <div className={`bg-white rounded-b-lg ${previewMode ? 'p-0' : 'p-4'}`}>
-                  <DragDropContext onDragEnd={handleDragEnd}>
-                    <Droppable droppableId="elements">
-                      {(provided) => (
-                        <div
-                          {...provided.droppableProps}
-                          ref={provided.innerRef}
-                          className="space-y-4 min-h-[200px]"
-                        >
-                          {elements.map((element, index) => (
-                            <Draggable key={element.id} draggableId={element.id} index={index} isDragDisabled={previewMode}>
-                              {(provided) => (
-                                <div
-                                  ref={provided.innerRef}
-                                  {...provided.draggableProps}
-                                  className={`border ${previewMode ? 'border-transparent' : 'border-dashed border-muted-foreground/50'} rounded-lg p-4 bg-card relative`}
-                                  style={{
-                                    backgroundColor: element.settings.backgroundColor || 'transparent',
-                                    color: element.settings.textColor || 'inherit',
-                                    ...provided.draggableProps.style
-                                  }}
-                                >
-                                  {!previewMode && (
-                                    <div className="absolute right-2 top-2 flex space-x-1">
-                                      <button 
-                                        className="p-1 rounded-sm bg-accent/50 hover:bg-accent"
-                                        onClick={() => removeElement(element.id)}
-                                      >
-                                        <X className="h-3.5 w-3.5" />
-                                      </button>
-                                      <div 
-                                        {...provided.dragHandleProps} 
-                                        className="p-1 rounded-sm bg-accent/50 hover:bg-accent cursor-move"
-                                      >
-                                        <GripVertical className="h-3.5 w-3.5" />
-                                      </div>
-                                    </div>
-                                  )}
-                                  
-                                  {/* Element preview */}
-                                  {element.type === 'hero' && (
-                                    <div className="relative h-40 overflow-hidden rounded-md mb-2">
-                                      <img 
-                                        src={element.settings.backgroundImage} 
-                                        alt="Hero background" 
-                                        className="absolute inset-0 w-full h-full object-cover" 
-                                      />
-                                      <div 
-                                        className="absolute inset-0 flex flex-col items-center justify-center p-4"
-                                        style={{
-                                          backgroundColor: `${element.settings.backgroundColor || '#000000'}80`,
-                                          color: element.settings.textColor || '#ffffff',
-                                        }}
-                                      >
-                                        <h2 className="font-bold text-xl">{element.settings.title}</h2>
-                                        <p className="text-sm mb-2">{element.settings.subtitle}</p>
-                                        <Button 
-                                          size="sm" 
-                                          variant="secondary"
-                                          style={{
-                                            backgroundColor: element.settings.buttonColor || '#3b82f6',
-                                            color: element.settings.buttonTextColor || '#ffffff'
-                                          }}
-                                        >
-                                          {element.settings.buttonText}
-                                        </Button>
-                                      </div>
-                                    </div>
-                                  )}
-                                  
-                                  {element.type === 'products' && (
-                                    <div>
-                                      <h3 className="font-medium mb-2">{element.settings.title}</h3>
-                                      <div className="grid grid-cols-2 gap-2">
-                                        {Array(Math.min(element.settings.count || 4, 4)).fill(0).map((_, i) => (
-                                          <div key={i} className="aspect-square bg-accent rounded-md"></div>
-                                        ))}
-                                      </div>
-                                    </div>
-                                  )}
-                                  
-                                  {element.type === 'text' && (
-                                    <div className={`text-${element.settings.alignment || 'left'}`}>
-                                      <p style={{fontSize: getFontSize(element.settings.fontSize || 'medium')}}>{element.settings.content}</p>
-                                    </div>
-                                  )}
-                                  
-                                  {element.type === 'image' && (
-                                    <div>
-                                      <img 
-                                        src={element.settings.src} 
-                                        alt={element.settings.alt || ''} 
-                                        className="max-w-full" 
-                                        style={{
-                                          borderRadius: element.settings.borderRadius || '4px',
-                                          width: element.settings.width || '100%',
-                                          height: element.settings.height || 'auto'
-                                        }}
-                                      />
-                                    </div>
-                                  )}
-                                  
-                                  {element.type === 'categories' && (
-                                    <div>
-                                      <h3 className="font-medium mb-2">{element.settings.title}</h3>
-                                      <div className="grid grid-cols-3 gap-2">
-                                        <div className="aspect-square bg-accent rounded-md"></div>
-                                        <div className="aspect-square bg-accent rounded-md"></div>
-                                        <div className="aspect-square bg-accent rounded-md"></div>
-                                      </div>
-                                    </div>
-                                  )}
-                                  
-                                  {element.type === 'testimonials' && (
-                                    <div>
-                                      <h3 className="font-medium mb-2">{element.settings.title}</h3>
-                                      <div className="grid grid-cols-2 gap-2">
-                                        <div className="p-3 bg-accent/50 rounded-md">
-                                          <p className="text-sm italic">"Great products and service!"</p>
-                                          <p className="text-xs font-medium mt-1">- Happy Customer</p>
-                                        </div>
-                                        <div className="p-3 bg-accent/50 rounded-md">
-                                          <p className="text-sm italic">"Highly recommended!"</p>
-                                          <p className="text-xs font-medium mt-1">- Satisfied Client</p>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  )}
-                                  
-                                  {element.type === 'cta' && (
-                                    <div className="text-center py-2">
-                                      <h3 className="font-medium mb-2">{element.settings.title}</h3>
-                                      <Button 
-                                        size="sm"
-                                        style={{
-                                          backgroundColor: element.settings.buttonColor || '#3b82f6',
-                                          color: element.settings.buttonTextColor || '#ffffff'
-                                        }}
-                                      >
-                                        {element.settings.buttonText}
-                                      </Button>
-                                    </div>
-                                  )}
-                                  
-                                  {element.type === 'customHTML' && (
-                                    <div className="text-center py-2">
-                                      <h3 className="font-medium mb-2">{element.settings.content}</h3>
-                                    </div>
-                                  )}
-                                  
-                                  {element.type === 'customCSS' && (
-                                    <div className="text-center py-2">
-                                      <h3 className="font-medium mb-2">{element.settings.content}</h3>
-                                    </div>
-                                  )}
-                                  
-                                  {!previewMode && (
-                                    <div className="mt-2 pt-2 border-t border-border/30">
-                                      <div className="flex items-center justify-between mb-1.5">
-                                        <h4 className="text-xs font-medium">Edit Settings</h4>
-                                        
-                                        <div className="flex gap-1">
-                                          <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            className="h-6 px-1"
-                                            onClick={() => {
-                                              const colorSection = document.getElementById(`${element.id}-colors`);
-                                              if (colorSection) {
-                                                colorSection.scrollIntoView({behavior: 'smooth'});
-                                              }
-                                            }}
-                                          >
-                                            <Palette className="h-3.5 w-3.5" />
-                                          </Button>
-                                        </div>
-                                      </div>
-                                      
-                                      {/* Element specific settings */}
-                                      {renderElementSettings(element)}
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-                            </Draggable>
-                          ))}
-                          {provided.placeholder}
-                          
-                          {elements.length === 0 && !previewMode && (
-                            <div className="text-center py-8 border border-dashed rounded-lg">
-                              <p className="text-muted-foreground">Add elements to your page and arrange them by dragging</p>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </Droppable>
-                  </DragDropContext>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+        
+        {/* Center - Canvas - Reduced left padding */}
+        <div 
+          className="flex-1 flex flex-col bg-accent/20 overflow-hidden pl-4"
+          style={{ 
+            width: getCanvasWidth(),
+            maxWidth: getCanvasWidth(),
+            margin: device !== 'desktop' ? '0 auto' : undefined
+          }}
+        >
+          <PageBuilderCanvas
+            elements={elements}
+            onDragEnd={handleDragEnd}
+            onRemoveElement={removeElement}
+            onSelectElement={handleSelectElement}
+            selectedElement={selectedElement}
+            previewMode={previewMode}
+            zoom={zoom}
+            onShowElementPopup={handleShowElementPopup}
+          />
         </div>
+        
+        {/* Right Sidebar - Properties Panel */}
+        <div className="w-72 border-l bg-background overflow-auto flex-shrink-0">
+          <PropertiesPanel
+            selectedElement={selectedElement}
+            onUpdateElement={updateElementSettings}
+          />
+        </div>
+      </div>
+
+      {/* Element Popup */}
+      {elementPopup && (
+        <ElementPopup
+          isOpen={elementPopup.isOpen}
+          position={elementPopup.position}
+          onClose={() => setElementPopup(null)}
+          onSelectElement={(elementType) => 
+            addElementToColumn(elementPopup.columnId, elementPopup.columnIndex, elementType)
+          }
+        />
       )}
     </div>
   );
-  
-  function getFontSize(size: string) {
-    switch(size) {
-      case 'small': return '0.875rem';
-      case 'medium': return '1rem';
-      case 'large': return '1.25rem';
-      case 'xlarge': return '1.5rem';
-      default: return '1rem';
-    }
-  }
-  
-  function renderElementSettings(element: BuilderElement) {
-    switch(element.type) {
-      case 'hero':
-        return (
-          <div className="space-y-3">
-            <div>
-              <Label htmlFor={`${element.id}-title`} className="text-xs">Title</Label>
-              <Input
-                id={`${element.id}-title`}
-                value={element.settings.title}
-                onChange={(e) => updateElementSettings(element.id, { title: e.target.value })}
-                className="h-7 text-sm"
-              />
-            </div>
-            <div>
-              <Label htmlFor={`${element.id}-subtitle`} className="text-xs">Subtitle</Label>
-              <Input
-                id={`${element.id}-subtitle`}
-                value={element.settings.subtitle}
-                onChange={(e) => updateElementSettings(element.id, { subtitle: e.target.value })}
-                className="h-7 text-sm"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <Label htmlFor={`${element.id}-buttonText`} className="text-xs">Button Text</Label>
-                <Input
-                  id={`${element.id}-buttonText`}
-                  value={element.settings.buttonText}
-                  onChange={(e) => updateElementSettings(element.id, { buttonText: e.target.value })}
-                  className="h-7 text-sm"
-                />
-              </div>
-              <div>
-                <Label htmlFor={`${element.id}-buttonLink`} className="text-xs">Button Link</Label>
-                <Input
-                  id={`${element.id}-buttonLink`}
-                  value={element.settings.buttonLink}
-                  onChange={(e) => updateElementSettings(element.id, { buttonLink: e.target.value })}
-                  className="h-7 text-sm"
-                />
-              </div>
-            </div>
-            <div>
-              <Label htmlFor={`${element.id}-backgroundImage`} className="text-xs">Background Image URL</Label>
-              <Input
-                id={`${element.id}-backgroundImage`}
-                value={element.settings.backgroundImage}
-                onChange={(e) => updateElementSettings(element.id, { backgroundImage: e.target.value })}
-                className="h-7 text-sm"
-              />
-            </div>
-            
-            <div id={`${element.id}-colors`}>
-              <h4 className="text-xs font-medium mt-4 mb-2">Colors</h4>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <Label htmlFor={`${element.id}-backgroundColor`} className="text-xs">Background</Label>
-                  <div className="flex mt-1">
-                    <input 
-                      type="color" 
-                      id={`${element.id}-backgroundColor`}
-                      value={element.settings.backgroundColor || '#000000'} 
-                      onChange={(e) => updateElementSettings(element.id, { backgroundColor: e.target.value })}
-                      className="w-8 h-7 p-0 rounded-l-md border-r-0"
-                    />
-                    <Input
-                      value={element.settings.backgroundColor || '#000000'}
-                      onChange={(e) => updateElementSettings(element.id, { backgroundColor: e.target.value })}
-                      className="h-7 text-sm rounded-l-none flex-1"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <Label htmlFor={`${element.id}-textColor`} className="text-xs">Text</Label>
-                  <div className="flex mt-1">
-                    <input 
-                      type="color" 
-                      id={`${element.id}-textColor`}
-                      value={element.settings.textColor || '#ffffff'} 
-                      onChange={(e) => updateElementSettings(element.id, { textColor: e.target.value })}
-                      className="w-8 h-7 p-0 rounded-l-md border-r-0"
-                    />
-                    <Input
-                      value={element.settings.textColor || '#ffffff'}
-                      onChange={(e) => updateElementSettings(element.id, { textColor: e.target.value })}
-                      className="h-7 text-sm rounded-l-none flex-1"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <Label htmlFor={`${element.id}-buttonColor`} className="text-xs">Button</Label>
-                  <div className="flex mt-1">
-                    <input 
-                      type="color" 
-                      id={`${element.id}-buttonColor`}
-                      value={element.settings.buttonColor || '#3b82f6'} 
-                      onChange={(e) => updateElementSettings(element.id, { buttonColor: e.target.value })}
-                      className="w-8 h-7 p-0 rounded-l-md border-r-0"
-                    />
-                    <Input
-                      value={element.settings.buttonColor || '#3b82f6'}
-                      onChange={(e) => updateElementSettings(element.id, { buttonColor: e.target.value })}
-                      className="h-7 text-sm rounded-l-none flex-1"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <Label htmlFor={`${element.id}-buttonTextColor`} className="text-xs">Button Text</Label>
-                  <div className="flex mt-1">
-                    <input 
-                      type="color" 
-                      id={`${element.id}-buttonTextColor`}
-                      value={element.settings.buttonTextColor || '#ffffff'} 
-                      onChange={(e) => updateElementSettings(element.id, { buttonTextColor: e.target.value })}
-                      className="w-8 h-7 p-0 rounded-l-md border-r-0"
-                    />
-                    <Input
-                      value={element.settings.buttonTextColor || '#ffffff'}
-                      onChange={(e) => updateElementSettings(element.id, { buttonTextColor: e.target.value })}
-                      className="h-7 text-sm rounded-l-none flex-1"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-        
-      case 'text':
-        return (
-          <div className="space-y-3">
-            <div>
-              <Label htmlFor={`${element.id}-content`} className="text-xs">Content</Label>
-              <Textarea
-                id={`${element.id}-content`}
-                value={element.settings.content}
-                onChange={(e) => updateElementSettings(element.id, { content: e.target.value })}
-                className="text-sm"
-                rows={3}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <Label htmlFor={`${element.id}-alignment`} className="text-xs">Alignment</Label>
-                <Select
-                  value={element.settings.alignment || 'left'}
-                  onValueChange={(value) => updateElementSettings(element.id, { alignment: value })}
-                >
-                  <SelectTrigger id={`${element.id}-alignment`} className="h-7 text-xs">
-                    <SelectValue placeholder="Alignment" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="left">Left</SelectItem>
-                    <SelectItem value="center">Center</SelectItem>
-                    <SelectItem value="right">Right</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor={`${element.id}-fontSize`} className="text-xs">Font Size</Label>
-                <Select
-                  value={element.settings.fontSize || 'medium'}
-                  onValueChange={(value) => updateElementSettings(element.id, { fontSize: value })}
-                >
-                  <SelectTrigger id={`${element.id}-fontSize`} className="h-7 text-xs">
-                    <SelectValue placeholder="Size" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="small">Small</SelectItem>
-                    <SelectItem value="medium">Medium</SelectItem>
-                    <SelectItem value="large">Large</SelectItem>
-                    <SelectItem value="xlarge">X-Large</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div id={`${element.id}-colors`}>
-              <h4 className="text-xs font-medium mt-2 mb-1">Colors</h4>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <Label htmlFor={`${element.id}-textColor`} className="text-xs">Text</Label>
-                  <div className="flex mt-1">
-                    <input 
-                      type="color" 
-                      id={`${element.id}-textColor`}
-                      value={element.settings.textColor || '#000000'} 
-                      onChange={(e) => updateElementSettings(element.id, { textColor: e.target.value })}
-                      className="w-8 h-7 p-0 rounded-l-md border-r-0"
-                    />
-                    <Input
-                      value={element.settings.textColor || '#000000'}
-                      onChange={(e) => updateElementSettings(element.id, { textColor: e.target.value })}
-                      className="h-7 text-sm rounded-l-none flex-1"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <Label htmlFor={`${element.id}-backgroundColor`} className="text-xs">Background</Label>
-                  <div className="flex mt-1">
-                    <input 
-                      type="color" 
-                      id={`${element.id}-backgroundColor`}
-                      value={element.settings.backgroundColor || '#ffffff'} 
-                      onChange={(e) => updateElementSettings(element.id, { backgroundColor: e.target.value })}
-                      className="w-8 h-7 p-0 rounded-l-md border-r-0"
-                    />
-                    <Input
-                      value={element.settings.backgroundColor || '#ffffff'}
-                      onChange={(e) => updateElementSettings(element.id, { backgroundColor: e.target.value })}
-                      className="h-7 text-sm rounded-l-none flex-1"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-        
-      // Add other element type settings
-      case 'cta':
-        return (
-          <div className="space-y-3">
-            <div>
-              <Label htmlFor={`${element.id}-title`} className="text-xs">Title</Label>
-              <Input
-                id={`${element.id}-title`}
-                value={element.settings.title}
-                onChange={(e) => updateElementSettings(element.id, { title: e.target.value })}
-                className="h-7 text-sm"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <Label htmlFor={`${element.id}-buttonText`} className="text-xs">Button Text</Label>
-                <Input
-                  id={`${element.id}-buttonText`}
-                  value={element.settings.buttonText}
-                  onChange={(e) => updateElementSettings(element.id, { buttonText: e.target.value })}
-                  className="h-7 text-sm"
-                />
-              </div>
-              <div>
-                <Label htmlFor={`${element.id}-buttonLink`} className="text-xs">Button Link</Label>
-                <Input
-                  id={`${element.id}-buttonLink`}
-                  value={element.settings.buttonLink}
-                  onChange={(e) => updateElementSettings(element.id, { buttonLink: e.target.value })}
-                  className="h-7 text-sm"
-                />
-              </div>
-            </div>
-            <div id={`${element.id}-colors`}>
-              <h4 className="text-xs font-medium mt-2 mb-1">Colors</h4>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <Label htmlFor={`${element.id}-buttonColor`} className="text-xs">Button</Label>
-                  <div className="flex mt-1">
-                    <input 
-                      type="color" 
-                      id={`${element.id}-buttonColor`}
-                      value={element.settings.buttonColor || '#3b82f6'} 
-                      onChange={(e) => updateElementSettings(element.id, { buttonColor: e.target.value })}
-                      className="w-8 h-7 p-0 rounded-l-md border-r-0"
-                    />
-                    <Input
-                      value={element.settings.buttonColor || '#3b82f6'}
-                      onChange={(e) => updateElementSettings(element.id, { buttonColor: e.target.value })}
-                      className="h-7 text-sm rounded-l-none flex-1"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <Label htmlFor={`${element.id}-buttonTextColor`} className="text-xs">Button Text</Label>
-                  <div className="flex mt-1">
-                    <input 
-                      type="color" 
-                      id={`${element.id}-buttonTextColor`}
-                      value={element.settings.buttonTextColor || '#ffffff'} 
-                      onChange={(e) => updateElementSettings(element.id, { buttonTextColor: e.target.value })}
-                      className="w-8 h-7 p-0 rounded-l-md border-r-0"
-                    />
-                    <Input
-                      value={element.settings.buttonTextColor || '#ffffff'}
-                      onChange={(e) => updateElementSettings(element.id, { buttonTextColor: e.target.value })}
-                      className="h-7 text-sm rounded-l-none flex-1"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-        
-      case 'customHTML':
-        return (
-          <div className="space-y-3">
-            <div>
-              <Label htmlFor={`${element.id}-content`} className="text-xs">Content</Label>
-              <Textarea
-                id={`${element.id}-content`}
-                value={element.settings.content}
-                onChange={(e) => updateElementSettings(element.id, { content: e.target.value })}
-                className="text-sm"
-                rows={3}
-              />
-            </div>
-          </div>
-        );
-        
-      case 'customCSS':
-        return (
-          <div className="space-y-3">
-            <div>
-              <Label htmlFor={`${element.id}-content`} className="text-xs">Content</Label>
-              <Textarea
-                id={`${element.id}-content`}
-                value={element.settings.content}
-                onChange={(e) => updateElementSettings(element.id, { content: e.target.value })}
-                className="text-sm"
-                rows={3}
-              />
-            </div>
-          </div>
-        );
-        
-      default:
-        return (
-          <div className="text-center text-muted-foreground text-xs py-2">
-            Basic settings for this element type
-          </div>
-        );
-    }
-  }
 };
