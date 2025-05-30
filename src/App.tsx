@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -7,12 +8,10 @@ import { CartProvider } from "@/contexts/CartContext";
 import Home from "@/pages/Home";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
-import Products from "@/pages/Products";
 import Products from "@/pages/admin/Products";
-import ProductDetails from "@/pages/ProductDetails";
+import AdminProducts from "@/pages/admin/Products";
 import Cart from "@/pages/Cart";
 import Checkout from "@/pages/Checkout";
-import OrderConfirmation from "@/pages/OrderConfirmation";
 import NotFound from "@/pages/NotFound";
 import Dashboard from "@/pages/admin/Dashboard";
 import NewProduct from "@/pages/admin/NewProduct";
@@ -30,8 +29,6 @@ import NoviPredracun from "@/pages/admin/NoviPredracun";
 import NoviObracun from "@/pages/admin/NoviObracun";
 import Transakcije from "@/pages/admin/Transakcije";
 import BrziLink from "@/pages/admin/BrziLink";
-import Storefront from "@/pages/Storefront";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
 import PLReport from "@/pages/admin/PLReport";
 import BalanceSheet from "@/pages/admin/BalanceSheet";
 
@@ -49,33 +46,29 @@ function App() {
                 <Route path="/" element={<Home />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
-                <Route path="/products" element={<Products />} />
-                <Route path="/products/:id" element={<ProductDetails />} />
                 <Route path="/cart" element={<Cart />} />
                 <Route path="/checkout" element={<Checkout />} />
-                <Route path="/order-confirmation" element={<OrderConfirmation />} />
-                <Route path="/store/:storeSlug" element={<Storefront />} />
 
                 {/* Admin Routes */}
-                <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-                <Route path="/products" element={<ProtectedRoute><Products /></ProtectedRoute>} />
-                <Route path="/products/new" element={<ProtectedRoute><NewProduct /></ProtectedRoute>} />
-                <Route path="/products/:id/edit" element={<ProtectedRoute><EditProduct /></ProtectedRoute>} />
-                <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
-                <Route path="/customers" element={<ProtectedRoute><Customers /></ProtectedRoute>} />
-                <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
-                <Route path="/design" element={<ProtectedRoute><Design /></ProtectedRoute>} />
-                <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-                <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-                <Route path="/racunovodstvo" element={<ProtectedRoute><Racunovodstvo /></ProtectedRoute>} />
-                <Route path="/racunovodstvo/pl-report" element={<ProtectedRoute><PLReport /></ProtectedRoute>} />
-                <Route path="/racunovodstvo/balance-sheet" element={<ProtectedRoute><BalanceSheet /></ProtectedRoute>} />
-                <Route path="/racunovodstvo/fakture" element={<ProtectedRoute><Fakture /></ProtectedRoute>} />
-                <Route path="/racunovodstvo/nova-faktura" element={<ProtectedRoute><NovaFaktura /></ProtectedRoute>} />
-                <Route path="/racunovodstvo/novi-predracun" element={<ProtectedRoute><NoviPredracun /></ProtectedRoute>} />
-                <Route path="/racunovodstvo/novi-obracun" element={<ProtectedRoute><NoviObracun /></ProtectedRoute>} />
-                <Route path="/racunovodstvo/transakcije" element={<ProtectedRoute><Transakcije /></ProtectedRoute>} />
-                <Route path="/brzi-link" element={<ProtectedRoute><BrziLink /></ProtectedRoute>} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/admin/products" element={<AdminProducts />} />
+                <Route path="/products/new" element={<NewProduct />} />
+                <Route path="/products/:id/edit" element={<EditProduct />} />
+                <Route path="/orders" element={<Orders />} />
+                <Route path="/customers" element={<Customers />} />
+                <Route path="/analytics" element={<Analytics />} />
+                <Route path="/design" element={<Design />} />
+                <Route path="/settings" element={<Settings />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/racunovodstvo" element={<Racunovodstvo />} />
+                <Route path="/racunovodstvo/pl-report" element={<PLReport />} />
+                <Route path="/racunovodstvo/balance-sheet" element={<BalanceSheet />} />
+                <Route path="/racunovodstvo/fakture" element={<Fakture />} />
+                <Route path="/racunovodstvo/nova-faktura" element={<NovaFaktura />} />
+                <Route path="/racunovodstvo/novi-predracun" element={<NoviPredracun />} />
+                <Route path="/racunovodstvo/novi-obracun" element={<NoviObracun />} />
+                <Route path="/racunovodstvo/transakcije" element={<Transakcije />} />
+                <Route path="/brzi-link" element={<BrziLink />} />
 
                 <Route path="*" element={<NotFound />} />
               </Routes>
