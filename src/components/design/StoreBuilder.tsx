@@ -63,6 +63,16 @@ export const StoreBuilder = () => {
     columnIndex: number;
     position: { x: number; y: number };
   } | null>(null);
+
+  // Define handleShowElementPopup function before it's used
+  const handleShowElementPopup = (columnId: string, columnIndex: number, position: { x: number; y: number }) => {
+    setElementPopup({
+      isOpen: true,
+      columnId: columnId,
+      columnIndex: columnIndex,
+      position: position
+    });
+  };
   
   // Get page type and ID from URL params
   useEffect(() => {
@@ -270,19 +280,7 @@ export const StoreBuilder = () => {
           return element;
         });
       });
-const handleShowElementPopup = (columnId: string, columnIndex: number, event: React.MouseEvent) => {
-  const rect = (event.target as HTMLElement).getBoundingClientRect();
-  
-  setElementPopup({
-    isOpen: true,
-    columnId: columnId,
-    columnIndex: columnIndex,
-    position: {
-      x: rect.left + rect.width / 2,
-      y: rect.bottom + 10
-    }
-  });
-};
+
       // Close popup
       setElementPopup(null);
 
