@@ -26,7 +26,6 @@ import FaktureFixed from "@/pages/admin/FaktureFixed";
 import NovaFaktura from "@/pages/admin/NovaFaktura";
 import NoviPredracun from "@/pages/admin/NoviPredracun";
 import NoviObracun from "@/pages/admin/NoviObracun";
-import Transakcije from "@/pages/admin/Transakcije";
 import BrziLink from "@/pages/admin/BrziLink";
 import PLReport from "@/pages/admin/PLReport";
 import BalanceSheet from "@/pages/admin/BalanceSheet";
@@ -54,11 +53,10 @@ function App() {
                 <Route path="/cart" element={<Cart />} />
                 <Route path="/checkout" element={<Checkout />} />
 
-                {/* Public Document Routes */}
+                {/* Public Document Routes - These need to be BEFORE the catch-all store routes */}
                 <Route path="/faktura/:docId" element={<PublicDocument />} />
                 <Route path="/predracun/:docId" element={<PublicDocument />} />
                 <Route path="/obracun/:docId" element={<PublicDocument />} />
-                <Route path="/:docType/:docId" element={<PublicDocument />} />
 
                 {/* Admin Routes */}
                 <Route path="/dashboard" element={<Dashboard />} />
@@ -80,10 +78,9 @@ function App() {
                 <Route path="/racunovodstvo/nova-faktura" element={<NovaFaktura />} />
                 <Route path="/racunovodstvo/novi-predracun" element={<NoviPredracun />} />
                 <Route path="/racunovodstvo/novi-obracun" element={<NoviObracun />} />
-                <Route path="/racunovodstvo/transakcije" element={<Transakcije />} />
                 <Route path="/brzi-link" element={<BrziLink />} />
 
-                {/* Store Routes */}
+                {/* Store Routes - These should be at the end to avoid conflicts */}
                 <Route path="/store/:storeId" element={<StorefrontWithLayout />} />
                 <Route path="/store/:storeId/*" element={<StorefrontWithLayout />} />
 

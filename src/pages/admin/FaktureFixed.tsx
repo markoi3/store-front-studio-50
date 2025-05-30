@@ -53,6 +53,16 @@ const FaktureFixed = () => {
     return `${amount.toLocaleString('sr-RS')} RSD`;
   };
 
+  // Helper function to safely get data from document
+  const getDocumentData = (doc: any) => {
+    const data = doc.data as any;
+    return {
+      iznos: data?.iznos || 0,
+      klijent: data?.klijent || data?.primalac?.naziv || 'Nepoznat klijent',
+      napomena: data?.napomena || null
+    };
+  };
+
   if (error) {
     toast.error("Greška pri učitavanju dokumenata");
   }
@@ -85,46 +95,49 @@ const FaktureFixed = () => {
           </div>
         ) : documents && documents.length > 0 ? (
           <div className="grid gap-4">
-            {documents.map((doc) => (
-              <Card key={doc.id} className="hover:shadow-md transition-shadow">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <div className="flex items-center space-x-2">
-                    <FileText className="h-5 w-5" />
-                    <div>
-                      <CardTitle className="text-lg">
-                        {doc.type.charAt(0).toUpperCase() + doc.type.slice(1)} #{doc.number || doc.id.substring(0, 8)}
-                      </CardTitle>
-                      <CardDescription>
-                        Kreiran: {formatDate(doc.created_at)}
-                      </CardDescription>
+            {documents.map((doc) => {
+              const docData = getDocumentData(doc);
+              return (
+                <Card key={doc.id} className="hover:shadow-md transition-shadow">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <div className="flex items-center space-x-2">
+                      <FileText className="h-5 w-5" />
+                      <div>
+                        <CardTitle className="text-lg">
+                          {doc.type.charAt(0).toUpperCase() + doc.type.slice(1)} #{doc.number || doc.id.substring(0, 8)}
+                        </CardTitle>
+                        <CardDescription>
+                          Kreiran: {formatDate(doc.created_at)}
+                        </CardDescription>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-lg font-medium">
-                      {doc.data?.iznos ? formatCurrency(doc.data.iznos) : 'N/A'}
-                    </span>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleViewDocument(doc)}
-                    >
-                      <Eye className="h-4 w-4 mr-1" />
-                      Prikaži
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-sm text-muted-foreground">
-                    {doc.data?.klijent || doc.data?.primalac?.naziv || 'Nepoznat klijent'}
-                  </div>
-                  {doc.data?.napomena && (
-                    <div className="text-sm mt-1">
-                      {doc.data.napomena}
+                    <div className="flex items-center space-x-2">
+                      <span className="text-lg font-medium">
+                        {docData.iznos ? formatCurrency(docData.iznos) : 'N/A'}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleViewDocument(doc)}
+                      >
+                        <Eye className="h-4 w-4 mr-1" />
+                        Prikaži
+                      </Button>
                     </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-sm text-muted-foreground">
+                      {docData.klijent}
+                    </div>
+                    {docData.napomena && (
+                      <div className="text-sm mt-1">
+                        {docData.napomena}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         ) : (
           <Card>
