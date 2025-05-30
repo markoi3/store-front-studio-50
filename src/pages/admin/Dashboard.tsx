@@ -37,7 +37,6 @@ import { addDays } from 'date-fns';
 import { useToast } from "@/components/ui/use-toast"
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { AdminLayout } from "@/components/layout/AdminLayout";
 
 interface Product {
   id: string;
@@ -344,228 +343,226 @@ const Dashboard = () => {
   };
 
   return (
-    <AdminLayout>
-      <div className="container mx-auto py-10 max-w-7xl">
-        <div className="mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <h1 className="text-3xl font-bold">Dashboard</h1>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant={"outline"}
-                className={cn(
-                  "w-[300px] justify-start text-left font-normal",
-                  !date && "text-muted-foreground"
-                )}
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {date?.from ? (
-                  date.to ? (
-                    `${format(date.from, "MMM dd, yyyy")} - ${format(date.to, "MMM dd, yyyy")}`
-                  ) : (
-                    format(date.from, "MMM dd, yyyy")
-                  )
+    <div className="container mx-auto py-10 max-w-7xl">
+      <div className="mb-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <h1 className="text-3xl font-bold">Dashboard</h1>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant={"outline"}
+              className={cn(
+                "w-[300px] justify-start text-left font-normal",
+                !date && "text-muted-foreground"
+              )}
+            >
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {date?.from ? (
+                date.to ? (
+                  `${format(date.from, "MMM dd, yyyy")} - ${format(date.to, "MMM dd, yyyy")}`
                 ) : (
-                  <span>Pick a date</span>
-                )}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="end">
-              <Calendar
-                mode="range"
-                defaultMonth={date?.from}
-                selected={date}
-                onSelect={changeDateRange}
-                numberOfMonths={2}
-              />
-            </PopoverContent>
-          </Popover>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Ukupni prihod</CardTitle>
-              <CardDescription>Ukupno ostvareni prihod iz porudžbina</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isLoadingOrders ? (
-                <Skeleton className="h-6 w-32" />
+                  format(date.from, "MMM dd, yyyy")
+                )
               ) : (
-                <div className="text-2xl font-bold">
-                  {metrics ? formatCurrency(metrics.totalRevenue) : 'N/A'}
-                </div>
+                <span>Pick a date</span>
               )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Prodati proizvodi</CardTitle>
-              <CardDescription>Ukupan broj prodatih proizvoda</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isLoadingProducts ? (
-                <Skeleton className="h-6 w-32" />
-              ) : (
-                <div className="text-2xl font-bold">
-                  {metrics ? metrics.totalSold.toLocaleString('sr-RS') : 'N/A'}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Ukupno proizvoda</CardTitle>
-              <CardDescription>Broj dostupnih proizvoda</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isLoadingProducts ? (
-                <Skeleton className="h-6 w-32" />
-              ) : (
-                <div className="text-2xl font-bold">
-                  {metrics ? metrics.totalProducts.toLocaleString('sr-RS') : 'N/A'}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Pregledi stranica</CardTitle>
-              <CardDescription>Ukupan broj pregleda stranica</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isLoadingPageViews ? (
-                <Skeleton className="h-6 w-32" />
-              ) : (
-                <div className="text-2xl font-bold">
-                  {metrics ? metrics.totalPageViews.toLocaleString('sr-RS') : 'N/A'}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-          <Card className="col-span-1">
-            <CardHeader>
-              <CardTitle>Prihod kroz vreme</CardTitle>
-              <CardDescription>Prihod ostvaren u izabranom periodu</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isLoadingOrders ? (
-                <Skeleton className="h-[200px] w-full" />
-              ) : (
-                <div className="w-full overflow-hidden">
-                  <ResponsiveContainer width="100%" height={300}>
-                    <AreaChart data={orders}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="created_at" tickFormatter={formatDate} />
-                      <YAxis />
-                      <RechartsTooltip labelFormatter={formatDate} formatter={(value) => formatChartValue(value)} />
-                      <Area type="monotone" dataKey="amount" stroke="#8884d8" fill="#8884d8" />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card className="col-span-1">
-            <CardHeader>
-              <CardTitle>Najbolji proizvodi</CardTitle>
-              <CardDescription>Top 5 proizvoda po prihodu</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isLoadingProducts ? (
-                <Skeleton className="h-[200px] w-full" />
-              ) : (
-                <div className="w-full overflow-hidden">
-                  <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={productRevenue}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" />
-                      <YAxis />
-                      <RechartsTooltip formatter={(value: any) => formatChartValue(value)} />
-                      <Bar dataKey="revenue" fill="#82ca9d" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <Card className="col-span-1">
-            <CardHeader>
-              <CardTitle>Nedavne porudžbine</CardTitle>
-              <CardDescription>Poslednjih 5 porudžbina</CardDescription>
-            </CardHeader>
-            <CardContent className="overflow-auto">
-              {isLoadingOrders ? (
-                <Skeleton className="h-[200px] w-full" />
-              ) : (
-                <div className="w-full overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-[100px]">ID porudžbine</TableHead>
-                        <TableHead>Iznos</TableHead>
-                        <TableHead>Datum</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {recentOrders.map((order) => (
-                        <TableRow key={order.id}>
-                          <TableCell className="font-medium">{order.id.substring(0, 8)}</TableCell>
-                          <TableCell>{formatCurrency(order.amount)}</TableCell>
-                          <TableCell>{formatDate(order.created_at)}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card className="col-span-1">
-            <CardHeader>
-              <CardTitle>Novi kupci</CardTitle>
-              <CardDescription>Poslednjih 5 novih kupaca</CardDescription>
-            </CardHeader>
-            <CardContent className="overflow-auto">
-              {isLoadingCustomers ? (
-                <Skeleton className="h-[200px] w-full" />
-              ) : (
-                <div className="w-full overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-[100px]">ID kupca</TableHead>
-                        <TableHead>Email</TableHead>
-                        <TableHead>Datum</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {newCustomers.map((customer) => (
-                        <TableRow key={customer.id}>
-                          <TableCell className="font-medium">{customer.id.substring(0, 8)}</TableCell>
-                          <TableCell>{customer.email}</TableCell>
-                          <TableCell>{formatDate(customer.created_at)}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="end">
+            <Calendar
+              mode="range"
+              defaultMonth={date?.from}
+              selected={date}
+              onSelect={changeDateRange}
+              numberOfMonths={2}
+            />
+          </PopoverContent>
+        </Popover>
       </div>
-    </AdminLayout>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Ukupni prihod</CardTitle>
+            <CardDescription>Ukupno ostvareni prihod iz porudžbina</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoadingOrders ? (
+              <Skeleton className="h-6 w-32" />
+            ) : (
+              <div className="text-2xl font-bold">
+                {metrics ? formatCurrency(metrics.totalRevenue) : 'N/A'}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Prodati proizvodi</CardTitle>
+            <CardDescription>Ukupan broj prodatih proizvoda</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoadingProducts ? (
+              <Skeleton className="h-6 w-32" />
+            ) : (
+              <div className="text-2xl font-bold">
+                {metrics ? metrics.totalSold.toLocaleString('sr-RS') : 'N/A'}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Ukupno proizvoda</CardTitle>
+            <CardDescription>Broj dostupnih proizvoda</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoadingProducts ? (
+              <Skeleton className="h-6 w-32" />
+            ) : (
+              <div className="text-2xl font-bold">
+                {metrics ? metrics.totalProducts.toLocaleString('sr-RS') : 'N/A'}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Pregledi stranica</CardTitle>
+            <CardDescription>Ukupan broj pregleda stranica</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoadingPageViews ? (
+              <Skeleton className="h-6 w-32" />
+            ) : (
+              <div className="text-2xl font-bold">
+                {metrics ? metrics.totalPageViews.toLocaleString('sr-RS') : 'N/A'}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+        <Card className="col-span-1">
+          <CardHeader>
+            <CardTitle>Prihod kroz vreme</CardTitle>
+            <CardDescription>Prihod ostvaren u izabranom periodu</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoadingOrders ? (
+              <Skeleton className="h-[200px] w-full" />
+            ) : (
+              <div className="w-full overflow-hidden">
+                <ResponsiveContainer width="100%" height={300}>
+                  <AreaChart data={orders}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="created_at" tickFormatter={formatDate} />
+                    <YAxis />
+                    <RechartsTooltip labelFormatter={formatDate} formatter={(value) => formatChartValue(value)} />
+                    <Area type="monotone" dataKey="amount" stroke="#8884d8" fill="#8884d8" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="col-span-1">
+          <CardHeader>
+            <CardTitle>Najbolji proizvodi</CardTitle>
+            <CardDescription>Top 5 proizvoda po prihodu</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoadingProducts ? (
+              <Skeleton className="h-[200px] w-full" />
+            ) : (
+              <div className="w-full overflow-hidden">
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={productRevenue}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <RechartsTooltip formatter={(value: any) => formatChartValue(value)} />
+                    <Bar dataKey="revenue" fill="#82ca9d" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <Card className="col-span-1">
+          <CardHeader>
+            <CardTitle>Nedavne porudžbine</CardTitle>
+            <CardDescription>Poslednjih 5 porudžbina</CardDescription>
+          </CardHeader>
+          <CardContent className="overflow-auto">
+            {isLoadingOrders ? (
+              <Skeleton className="h-[200px] w-full" />
+            ) : (
+              <div className="w-full overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[100px]">ID porudžbine</TableHead>
+                      <TableHead>Iznos</TableHead>
+                      <TableHead>Datum</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {recentOrders.map((order) => (
+                      <TableRow key={order.id}>
+                        <TableCell className="font-medium">{order.id.substring(0, 8)}</TableCell>
+                        <TableCell>{formatCurrency(order.amount)}</TableCell>
+                        <TableCell>{formatDate(order.created_at)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="col-span-1">
+          <CardHeader>
+            <CardTitle>Novi kupci</CardTitle>
+            <CardDescription>Poslednjih 5 novih kupaca</CardDescription>
+          </CardHeader>
+          <CardContent className="overflow-auto">
+            {isLoadingCustomers ? (
+              <Skeleton className="h-[200px] w-full" />
+            ) : (
+              <div className="w-full overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[100px]">ID kupca</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Datum</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {newCustomers.map((customer) => (
+                      <TableRow key={customer.id}>
+                        <TableCell className="font-medium">{customer.id.substring(0, 8)}</TableCell>
+                        <TableCell>{customer.email}</TableCell>
+                        <TableCell>{formatDate(customer.created_at)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
   );
 };
 

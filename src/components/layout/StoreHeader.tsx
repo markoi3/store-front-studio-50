@@ -1,3 +1,4 @@
+
 import { Link } from "react-router-dom";
 import { ShoppingCart, Menu, X, ChevronDown } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -11,17 +12,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
-// Define MenuItem interface to include optional icon
-interface MenuItem {
-  id: string;
-  label: string;
-  url: string;
-  icon?: string;
-  type?: string;
-  children?: MenuItem[];
-  openInNewTab?: boolean;
-}
 
 export const StoreHeader = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -41,7 +31,7 @@ export const StoreHeader = () => {
   
   // Get custom pages from store settings and auto-add if enabled
   const customPages = store?.settings?.customPages || [];
-  const combinedMenuItems: MenuItem[] = [...menuItems];
+  const combinedMenuItems = [...menuItems];
   
   if (headerSettings.autoAddCustomPages) {
     customPages.forEach(page => {
@@ -107,7 +97,7 @@ export const StoreHeader = () => {
     return headerSettings.logo.position === 'center' ? "mx-auto" : "";
   };
 
-  const renderMenuItem = (item: MenuItem) => {
+  const renderMenuItem = (item: any) => {
     if (item.type === 'dropdown' && item.children && item.children.length > 0) {
       return (
         <DropdownMenu key={item.id}>
@@ -119,7 +109,7 @@ export const StoreHeader = () => {
             <ChevronDown className="ml-1 h-3 w-3" />
           </DropdownMenuTrigger>
           <DropdownMenuContent>
-            {item.children.map((child: MenuItem) => (
+            {item.children.map((child: any) => (
               <DropdownMenuItem key={child.id} asChild>
                 <Link 
                   to={getStoreUrl(child.url)}
