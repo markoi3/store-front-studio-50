@@ -2,13 +2,12 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { CartProvider } from "@/contexts/CartContext";
 import Home from "@/pages/Home";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
-import Products from "@/pages/admin/Products";
 import AdminProducts from "@/pages/admin/Products";
 import Cart from "@/pages/Cart";
 import Checkout from "@/pages/Checkout";
@@ -31,8 +30,13 @@ import Transakcije from "@/pages/admin/Transakcije";
 import BrziLink from "@/pages/admin/BrziLink";
 import PLReport from "@/pages/admin/PLReport";
 import BalanceSheet from "@/pages/admin/BalanceSheet";
+import Storefront from "@/pages/store/Storefront";
+import { withStoreLayout } from "@/components/layout/StorePageLayout";
 
 const queryClient = new QueryClient();
+
+// Wrap Storefront with store layout
+const StorefrontWithLayout = withStoreLayout(Storefront);
 
 function App() {
   return (
@@ -51,6 +55,7 @@ function App() {
 
                 {/* Admin Routes */}
                 <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/products" element={<Navigate to="/admin/products" replace />} />
                 <Route path="/admin/products" element={<AdminProducts />} />
                 <Route path="/products/new" element={<NewProduct />} />
                 <Route path="/products/:id/edit" element={<EditProduct />} />
@@ -63,12 +68,17 @@ function App() {
                 <Route path="/racunovodstvo" element={<Racunovodstvo />} />
                 <Route path="/racunovodstvo/pl-report" element={<PLReport />} />
                 <Route path="/racunovodstvo/balance-sheet" element={<BalanceSheet />} />
+                <Route path="/fakture" element={<Navigate to="/racunovodstvo/fakture" replace />} />
                 <Route path="/racunovodstvo/fakture" element={<Fakture />} />
                 <Route path="/racunovodstvo/nova-faktura" element={<NovaFaktura />} />
                 <Route path="/racunovodstvo/novi-predracun" element={<NoviPredracun />} />
                 <Route path="/racunovodstvo/novi-obracun" element={<NoviObracun />} />
                 <Route path="/racunovodstvo/transakcije" element={<Transakcije />} />
                 <Route path="/brzi-link" element={<BrziLink />} />
+
+                {/* Store Routes */}
+                <Route path="/store/:storeId" element={<StorefrontWithLayout />} />
+                <Route path="/store/:storeId/*" element={<StorefrontWithLayout />} />
 
                 <Route path="*" element={<NotFound />} />
               </Routes>
