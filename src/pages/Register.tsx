@@ -10,7 +10,7 @@ import { toast } from "sonner";
 
 const Register = () => {
   const navigate = useNavigate();
-  const { register } = useAuth();
+  const { register, user } = useAuth();
   
   const [formData, setFormData] = useState({
     name: "",
@@ -21,6 +21,12 @@ const Register = () => {
   
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+
+  // Redirect if already logged in
+  if (user) {
+    navigate("/dashboard", { replace: true });
+    return null;
+  }
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -40,11 +46,15 @@ const Register = () => {
     setIsLoading(true);
     
     try {
+      console.log("Starting registration process");
       await register(formData.email, formData.password, formData.name);
-      navigate("/dashboard");
+      console.log("Registration successful, navigating to dashboard");
+      navigate("/dashboard", { replace: true });
     } catch (err) {
       const error = err as Error;
+      console.error("Registration error in component:", error);
       setError(error.message || "Failed to create account. Please try again.");
+      toast.error("Registration failed: " + error.message);
     } finally {
       setIsLoading(false);
     }

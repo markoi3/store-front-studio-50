@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from "@supabase/supabase-js";
@@ -27,7 +28,7 @@ type AuthUser = {
 
 type AuthContextType = {
   user: AuthUser | null;
-  session: Session | null; // Add session to the context
+  session: Session | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, name: string) => Promise<void>;
@@ -60,7 +61,7 @@ const cleanupAuthState = () => {
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
-  const [session, setSession] = useState<Session | null>(null); // Track session state
+  const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   // Fetch user store data
@@ -107,7 +108,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       id: supabaseUser.id,
       email: supabaseUser.email || '',
       name: supabaseUser.user_metadata?.name || supabaseUser.email?.split('@')[0] || 'User',
-      role: "admin", // All registered users are admins of their own stores
+      role: "admin",
       store: storeData ? {
         id: storeData.id,
         name: storeData.name,
@@ -120,7 +121,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
-    // Check for existing session and setup auth listener
     const initAuth = async () => {
       setIsLoading(true);
       console.log("Initializing auth...");
@@ -128,10 +128,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Set up auth state listener FIRST
       const { data: { subscription } } = supabase.auth.onAuthStateChange(
         async (event, currentSession) => {
-          console.log("Auth state changed:", event);
+          console.log("Auth state changed:", event, currentSession?.user?.email);
           
           if (event === 'SIGNED_OUT') {
-            // Clear all user data from localStorage
             cleanupAuthState();
           }
           
@@ -141,11 +140,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           if (currentSession?.user) {
             try {
               console.log("User authenticated, transforming user data");
-              // Using setTimeout to avoid potential deadlocks
-              setTimeout(async () => {
-                const authUser = await transformUser(currentSession.user);
-                setUser(authUser);
-              }, 0);
+              const authUser = await transformUser(currentSession.user);
+              setUser(authUser);
             } catch (error) {
               console.error("Error transforming user:", error);
               setUser(null);
@@ -154,6 +150,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             console.log("No active session, clearing user");
             setUser(null);
           }
+          
+          setIsLoading(false);
         }
       );
       
@@ -182,19 +180,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const login = async (email: string, password: string) => {
-    setIsLoading(true);
     try {
       console.log("Attempting login for:", email);
-      
-      // Clean up existing auth state
-      cleanupAuthState();
-      
-      // Attempt to sign out any existing session
-      try {
-        await supabase.auth.signOut({ scope: 'global' });
-      } catch (err) {
-        console.log("Pre-login sign out failed, continuing anyway:", err);
-      }
       
       const { data, error } = await supabase.auth.signInWithPassword({ 
         email, 
@@ -203,48 +190,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       if (error) {
         console.error("Login error:", error.message);
-        toast.error("Login failed: " + error.message);
         throw error;
       }
       
       if (data.user) {
         console.log("Login successful for:", data.user.email);
-        // Set session first
-        setSession(data.session);
-        
-        // Then transform and set user data
-        const authUser = await transformUser(data.user);
-        setUser(authUser);
-        
         toast.success("Login successful!");
-        
-        // Force page reload to ensure clean state
-        setTimeout(() => {
-          window.location.href = '/dashboard';
-        }, 100);
       }
     } catch (error) {
       console.error("Login error:", error);
       throw error;
-    } finally {
-      setIsLoading(false);
     }
   };
 
   const register = async (email: string, password: string, name: string) => {
-    setIsLoading(true);
     try {
       console.log("Attempting registration for:", email);
-      
-      // Clean up existing auth state
-      cleanupAuthState();
-      
-      // Attempt to sign out any existing session
-      try {
-        await supabase.auth.signOut({ scope: 'global' });
-      } catch (err) {
-        console.log("Pre-registration sign out failed, continuing anyway:", err);
-      }
       
       const { data, error } = await supabase.auth.signUp({ 
         email, 
@@ -258,34 +219,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       if (error) {
         console.error("Registration error:", error.message);
-        toast.error("Registration failed: " + error.message);
         throw error;
       }
       
       if (data.user) {
         console.log("Registration successful for:", data.user.email);
-        
-        // Set session first
-        setSession(data.session);
-        
-        // Wait a moment for the trigger to create the store
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        const authUser = await transformUser(data.user);
-        setUser(authUser);
-        
         toast.success("Registration successful!");
-        
-        // Force page reload to ensure clean state
-        setTimeout(() => {
-          window.location.href = '/dashboard';
-        }, 100);
       }
     } catch (error) {
       console.error("Registration error:", error);
       throw error;
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -293,20 +236,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       console.log("Logging out user");
       
-      // Clean up auth state first
-      cleanupAuthState();
-      
-      // Then sign out
-      await supabase.auth.signOut({ scope: 'global' });
+      await supabase.auth.signOut();
       
       // Clear state
       setUser(null);
       setSession(null);
       
-      toast.success("Logged out successfully");
+      // Clean up auth state
+      cleanupAuthState();
       
-      // Force page reload to ensure clean state
-      window.location.href = '/';
+      toast.success("Logged out successfully");
     } catch (error) {
       console.error("Logout error:", error);
       toast.error("Logout failed. Please try again.");
