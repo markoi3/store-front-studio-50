@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { DragDropContext, Draggable, Droppable } from '@hello-pangea/dnd';
 import { Button } from "@/components/ui/button";
@@ -51,6 +50,13 @@ export const PageBuilderCanvas: React.FC<PageBuilderCanvasProps> = ({
     }
   };
 
+  const addElementToColumn = (columnElementId: string, columnIndex: number) => {
+    // For now, add a simple text element to the column
+    if (onAddElementToColumn) {
+      onAddElementToColumn(columnElementId, columnIndex, 'text');
+    }
+  };
+
   const renderElementPreview = (element: BuilderElement) => {
     const isSelected = selectedElement?.id === element.id;
     
@@ -59,7 +65,7 @@ export const PageBuilderCanvas: React.FC<PageBuilderCanvasProps> = ({
         return (
           <div className="relative h-40 overflow-hidden rounded-md mb-2">
             <img 
-              src={element.settings.backgroundImage || 'https://images.unsplash.com/photo-1588345921523-c2dcdb7f1dcd?w=800&auto=format&fit=crop'} 
+              src={element.settings.backgroundImage} 
               alt="Hero background" 
               className="absolute inset-0 w-full h-full object-cover" 
             />
@@ -70,8 +76,8 @@ export const PageBuilderCanvas: React.FC<PageBuilderCanvasProps> = ({
                 color: element.settings.textColor || '#ffffff',
               }}
             >
-              <h2 className="font-bold text-xl">{element.settings.title || 'Hero Title'}</h2>
-              <p className="text-sm mb-2">{element.settings.subtitle || 'Hero subtitle'}</p>
+              <h2 className="font-bold text-xl">{element.settings.title}</h2>
+              <p className="text-sm mb-2">{element.settings.subtitle}</p>
               <Button 
                 size="sm" 
                 variant="secondary"
@@ -80,7 +86,7 @@ export const PageBuilderCanvas: React.FC<PageBuilderCanvasProps> = ({
                   color: element.settings.buttonTextColor || '#ffffff'
                 }}
               >
-                {element.settings.buttonText || 'Call to Action'}
+                {element.settings.buttonText}
               </Button>
             </div>
           </div>
@@ -89,7 +95,7 @@ export const PageBuilderCanvas: React.FC<PageBuilderCanvasProps> = ({
       case 'products':
         return (
           <div>
-            <h3 className="font-medium mb-2">{element.settings.title || 'Products'}</h3>
+            <h3 className="font-medium mb-2">{element.settings.title}</h3>
             <div className="grid grid-cols-2 gap-2">
               {Array(Math.min(element.settings.count || 4, 4)).fill(0).map((_, i) => (
                 <div key={i} className="aspect-square bg-accent rounded-md"></div>
@@ -102,7 +108,7 @@ export const PageBuilderCanvas: React.FC<PageBuilderCanvasProps> = ({
         return (
           <div className={`text-${element.settings.alignment || 'left'}`}>
             <p style={{fontSize: getFontSize(element.settings.fontSize || 'medium')}}>
-              {element.settings.content || 'Text content goes here...'}
+              {element.settings.content}
             </p>
           </div>
         );
@@ -111,8 +117,8 @@ export const PageBuilderCanvas: React.FC<PageBuilderCanvasProps> = ({
         return (
           <div>
             <img 
-              src={element.settings.src || 'https://images.unsplash.com/photo-1588345921523-c2dcdb7f1dcd?w=800&auto=format&fit=crop'} 
-              alt={element.settings.alt || 'Image'} 
+              src={element.settings.src} 
+              alt={element.settings.alt || ''} 
               className="max-w-full" 
               style={{
                 borderRadius: element.settings.borderRadius || '4px',
@@ -184,7 +190,7 @@ export const PageBuilderCanvas: React.FC<PageBuilderCanvasProps> = ({
       case 'categories':
         return (
           <div>
-            <h3 className="font-medium mb-2">{element.settings.title || 'Categories'}</h3>
+            <h3 className="font-medium mb-2">{element.settings.title}</h3>
             <div className="grid grid-cols-3 gap-2">
               <div className="aspect-square bg-accent rounded-md"></div>
               <div className="aspect-square bg-accent rounded-md"></div>
@@ -196,7 +202,7 @@ export const PageBuilderCanvas: React.FC<PageBuilderCanvasProps> = ({
       case 'testimonials':
         return (
           <div>
-            <h3 className="font-medium mb-2">{element.settings.title || 'Testimonials'}</h3>
+            <h3 className="font-medium mb-2">{element.settings.title}</h3>
             <div className="grid grid-cols-2 gap-2">
               <div className="p-3 bg-accent/50 rounded-md">
                 <p className="text-sm italic">"Great products and service!"</p>
@@ -213,7 +219,7 @@ export const PageBuilderCanvas: React.FC<PageBuilderCanvasProps> = ({
       case 'cta':
         return (
           <div className="text-center py-2">
-            <h3 className="font-medium mb-2">{element.settings.title || 'Call to Action'}</h3>
+            <h3 className="font-medium mb-2">{element.settings.title}</h3>
             <Button 
               size="sm"
               style={{
@@ -221,7 +227,7 @@ export const PageBuilderCanvas: React.FC<PageBuilderCanvasProps> = ({
                 color: element.settings.buttonTextColor || '#ffffff'
               }}
             >
-              {element.settings.buttonText || 'Get Started'}
+              {element.settings.buttonText}
             </Button>
           </div>
         );
@@ -230,7 +236,7 @@ export const PageBuilderCanvas: React.FC<PageBuilderCanvasProps> = ({
         return (
           <div className="text-center py-2 bg-accent/20 border border-dashed rounded">
             <div className="text-xs text-muted-foreground mb-1">Custom HTML</div>
-            <div className="text-sm" dangerouslySetInnerHTML={{ __html: element.settings.content || '<p>Custom HTML content</p>' }} />
+            <div className="text-sm" dangerouslySetInnerHTML={{ __html: element.settings.content }} />
           </div>
         );
         
@@ -238,7 +244,7 @@ export const PageBuilderCanvas: React.FC<PageBuilderCanvasProps> = ({
         return (
           <div className="text-center py-2 bg-accent/20 border border-dashed rounded">
             <div className="text-xs text-muted-foreground mb-1">Custom CSS</div>
-            <div className="text-sm font-mono">{element.settings.content || '/* Custom CSS */'}</div>
+            <div className="text-sm font-mono">{element.settings.content}</div>
           </div>
         );
         
@@ -291,7 +297,7 @@ export const PageBuilderCanvas: React.FC<PageBuilderCanvasProps> = ({
                         ref={provided.innerRef}
                         {...provided.draggableProps}
                         className={`
-                          relative border rounded-lg p-4 bg-card cursor-pointer transition-all group
+                          relative border rounded-lg p-4 bg-card cursor-pointer transition-all
                           ${selectedElement?.id === element.id ? 'ring-2 ring-blue-500 border-blue-500' : 'border-border hover:border-blue-300'}
                           ${snapshot.isDragging ? 'shadow-lg rotate-2' : ''}
                           ${previewMode ? 'border-transparent' : ''}

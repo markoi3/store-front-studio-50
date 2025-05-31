@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { 
-  Star, 
+  Hero, 
   ShoppingBag, 
   Type, 
   Image as ImageIcon, 
@@ -32,7 +32,7 @@ export const ElementPopup: React.FC<ElementPopupProps> = ({
   if (!isOpen) return null;
 
   const elements = [
-    { type: 'hero' as ElementType, label: 'Hero Section', icon: Star, description: 'Large banner with title and CTA' },
+    { type: 'hero' as ElementType, label: 'Hero Section', icon: Hero, description: 'Large banner with title and CTA' },
     { type: 'products' as ElementType, label: 'Products', icon: ShoppingBag, description: 'Display featured products' },
     { type: 'text' as ElementType, label: 'Text Block', icon: Type, description: 'Rich text content' },
     { type: 'image' as ElementType, label: 'Image', icon: ImageIcon, description: 'Single image element' },

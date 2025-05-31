@@ -9,7 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
 const Login = () => {
-  const { login } = useAuth();
+  const { login, isLoading: authLoading } = useAuth();
   
   const [formData, setFormData] = useState({
     email: "",
@@ -38,8 +38,7 @@ const Login = () => {
     try {
       console.log("Starting login process");
       await login(formData.email, formData.password);
-      console.log("Login successful");
-      toast.success("Login successful!");
+      // No need for navigation here - AuthContext will handle the redirect with window.location
     } catch (err) {
       const error = err as Error;
       console.error("Login error in component:", error);
@@ -104,8 +103,8 @@ const Login = () => {
             </div>
             
             <div className="pt-2">
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Signing In..." : "Sign In"}
+              <Button type="submit" className="w-full" disabled={isLoading || authLoading}>
+                {isLoading || authLoading ? "Signing In..." : "Sign In"}
               </Button>
             </div>
           </form>

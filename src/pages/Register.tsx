@@ -4,11 +4,12 @@ import { ShopLayout } from "@/components/layout/ShopLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
 const Register = () => {
+  const navigate = useNavigate();
   const { register } = useAuth();
   
   const [formData, setFormData] = useState({
@@ -39,15 +40,11 @@ const Register = () => {
     setIsLoading(true);
     
     try {
-      console.log("Starting registration process");
       await register(formData.email, formData.password, formData.name);
-      console.log("Registration successful");
-      toast.success("Registration successful!");
+      navigate("/dashboard");
     } catch (err) {
       const error = err as Error;
-      console.error("Registration error in component:", error);
       setError(error.message || "Failed to create account. Please try again.");
-      toast.error("Registration failed: " + error.message);
     } finally {
       setIsLoading(false);
     }

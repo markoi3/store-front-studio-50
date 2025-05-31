@@ -528,16 +528,6 @@ export const StoreBuilder = () => {
     );
   }
 
-  // Add the missing handleShowElementPopup function
-  const handleShowElementPopup = (columnId: string, columnIndex: number, position: { x: number; y: number }) => {
-    setElementPopup({
-      isOpen: true,
-      columnId,
-      columnIndex,
-      position
-    });
-  };
-
   // Main page builder interface
   return (
     <div className="h-full flex flex-col">

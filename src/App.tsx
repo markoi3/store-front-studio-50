@@ -1,9 +1,8 @@
-
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "@/contexts/AuthContext";
 import { CartProvider } from "@/contexts/CartContext";
 import Home from "@/pages/Home";
 import Login from "@/pages/Login";
@@ -12,6 +11,7 @@ import Products from "@/pages/Products";
 import ProductDetails from "@/pages/ProductDetails";
 import Cart from "@/pages/Cart";
 import Checkout from "@/pages/Checkout";
+import OrderConfirmation from "@/pages/OrderConfirmation";
 import NotFound from "@/pages/NotFound";
 import Dashboard from "@/pages/admin/Dashboard";
 import NewProduct from "@/pages/admin/NewProduct";
@@ -30,29 +30,11 @@ import NoviObracun from "@/pages/admin/NoviObracun";
 import Transakcije from "@/pages/admin/Transakcije";
 import BrziLink from "@/pages/admin/BrziLink";
 import Storefront from "@/pages/Storefront";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import PLReport from "@/pages/admin/PLReport";
 import BalanceSheet from "@/pages/admin/BalanceSheet";
 
 const queryClient = new QueryClient();
-
-// Simple component to check auth and redirect to login if needed
-const AdminRouteWrapper = ({ children }: { children: React.ReactNode }) => {
-  const { user, isLoading } = useAuth();
-  
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-  
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
-  
-  return <>{children}</>;
-};
 
 function App() {
   return (
@@ -70,27 +52,29 @@ function App() {
                 <Route path="/products/:id" element={<ProductDetails />} />
                 <Route path="/cart" element={<Cart />} />
                 <Route path="/checkout" element={<Checkout />} />
+                <Route path="/order-confirmation" element={<OrderConfirmation />} />
                 <Route path="/store/:storeSlug" element={<Storefront />} />
 
-                {/* Admin Routes with auth wrapper */}
-                <Route path="/dashboard" element={<AdminRouteWrapper><Dashboard /></AdminRouteWrapper>} />
-                <Route path="/products/new" element={<AdminRouteWrapper><NewProduct /></AdminRouteWrapper>} />
-                <Route path="/products/:id/edit" element={<AdminRouteWrapper><EditProduct /></AdminRouteWrapper>} />
-                <Route path="/orders" element={<AdminRouteWrapper><Orders /></AdminRouteWrapper>} />
-                <Route path="/customers" element={<AdminRouteWrapper><Customers /></AdminRouteWrapper>} />
-                <Route path="/analytics" element={<AdminRouteWrapper><Analytics /></AdminRouteWrapper>} />
-                <Route path="/design" element={<AdminRouteWrapper><Design /></AdminRouteWrapper>} />
-                <Route path="/settings" element={<AdminRouteWrapper><Settings /></AdminRouteWrapper>} />
-                <Route path="/profile" element={<AdminRouteWrapper><Profile /></AdminRouteWrapper>} />
-                <Route path="/racunovodstvo" element={<AdminRouteWrapper><Racunovodstvo /></AdminRouteWrapper>} />
-                <Route path="/racunovodstvo/pl-report" element={<AdminRouteWrapper><PLReport /></AdminRouteWrapper>} />
-                <Route path="/racunovodstvo/balance-sheet" element={<AdminRouteWrapper><BalanceSheet /></AdminRouteWrapper>} />
-                <Route path="/racunovodstvo/fakture" element={<AdminRouteWrapper><Fakture /></AdminRouteWrapper>} />
-                <Route path="/racunovodstvo/nova-faktura" element={<AdminRouteWrapper><NovaFaktura /></AdminRouteWrapper>} />
-                <Route path="/racunovodstvo/novi-predracun" element={<AdminRouteWrapper><NoviPredracun /></AdminRouteWrapper>} />
-                <Route path="/racunovodstvo/novi-obracun" element={<AdminRouteWrapper><NoviObracun /></AdminRouteWrapper>} />
-                <Route path="/racunovodstvo/transakcije" element={<AdminRouteWrapper><Transakcije /></AdminRouteWrapper>} />
-                <Route path="/brzi-link" element={<AdminRouteWrapper><BrziLink /></AdminRouteWrapper>} />
+                {/* Admin Routes */}
+                <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                <Route path="/products" element={<ProtectedRoute><Products /></ProtectedRoute>} />
+                <Route path="/products/new" element={<ProtectedRoute><NewProduct /></ProtectedRoute>} />
+                <Route path="/products/:id/edit" element={<ProtectedRoute><EditProduct /></ProtectedRoute>} />
+                <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
+                <Route path="/customers" element={<ProtectedRoute><Customers /></ProtectedRoute>} />
+                <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
+                <Route path="/design" element={<ProtectedRoute><Design /></ProtectedRoute>} />
+                <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+                <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                <Route path="/racunovodstvo" element={<ProtectedRoute><Racunovodstvo /></ProtectedRoute>} />
+                <Route path="/racunovodstvo/pl-report" element={<ProtectedRoute><PLReport /></ProtectedRoute>} />
+                <Route path="/racunovodstvo/balance-sheet" element={<ProtectedRoute><BalanceSheet /></ProtectedRoute>} />
+                <Route path="/racunovodstvo/fakture" element={<ProtectedRoute><Fakture /></ProtectedRoute>} />
+                <Route path="/racunovodstvo/nova-faktura" element={<ProtectedRoute><NovaFaktura /></ProtectedRoute>} />
+                <Route path="/racunovodstvo/novi-predracun" element={<ProtectedRoute><NoviPredracun /></ProtectedRoute>} />
+                <Route path="/racunovodstvo/novi-obracun" element={<ProtectedRoute><NoviObracun /></ProtectedRoute>} />
+                <Route path="/racunovodstvo/transakcije" element={<ProtectedRoute><Transakcije /></ProtectedRoute>} />
+                <Route path="/brzi-link" element={<ProtectedRoute><BrziLink /></ProtectedRoute>} />
                 
                 <Route path="*" element={<NotFound />} />
               </Routes>
