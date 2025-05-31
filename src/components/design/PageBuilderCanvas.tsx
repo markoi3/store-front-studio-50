@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { DragDropContext, Draggable, Droppable } from '@hello-pangea/dnd';
 import { Button } from "@/components/ui/button";
@@ -47,13 +48,6 @@ export const PageBuilderCanvas: React.FC<PageBuilderCanvasProps> = ({
         x: rect.left,
         y: rect.bottom + 5
       });
-    }
-  };
-
-  const addElementToColumn = (columnElementId: string, columnIndex: number) => {
-    // For now, add a simple text element to the column
-    if (onAddElementToColumn) {
-      onAddElementToColumn(columnElementId, columnIndex, 'text');
     }
   };
 

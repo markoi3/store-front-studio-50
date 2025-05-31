@@ -63,6 +63,16 @@ export const StoreBuilder = () => {
     columnIndex: number;
     position: { x: number; y: number };
   } | null>(null);
+
+  // Define handleShowElementPopup function before it's used
+  const handleShowElementPopup = (columnId: string, columnIndex: number, position: { x: number; y: number }) => {
+    setElementPopup({
+      isOpen: true,
+      columnId: columnId,
+      columnIndex: columnIndex,
+      position: position
+    });
+  };
   
   // Get page type and ID from URL params
   useEffect(() => {

@@ -3,10 +3,70 @@ import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { FileText, Calculator, TrendingUp, Receipt, CreditCard, Building, BarChart3 } from "lucide-react";
+import { FileText, Calculator, TrendingUp, Receipt, Building, BarChart3, DollarSign, CheckCircle, XCircle, Percent } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const Racunovodstvo = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const storeId = user?.store?.id;
+
+  // Fetch documents and financial stats
+  const { data: documents, isLoading: documentsLoading } = useQuery({
+    queryKey: ['documents-stats', storeId],
+    queryFn: async () => {
+      if (!storeId) return [];
+      
+      const { data, error } = await supabase
+        .from('documents')
+        .select('*')
+        .eq('store_id', storeId);
+
+      if (error) {
+        console.error("Error fetching documents:", error);
+        throw error;
+      }
+
+      return data || [];
+    },
+    enabled: !!storeId,
+  });
+
+  // Calculate stats from documents
+  const calculateStats = () => {
+    if (!documents) return null;
+    
+    const fakture = documents.filter(doc => doc.type === 'faktura');
+    const predracuni = documents.filter(doc => doc.type === 'predracun');
+    
+    const paidFakture = fakture.filter(doc => (doc.data as any)?.status === 'paid').length;
+    const unpaidFakture = fakture.length - paidFakture;
+    
+    const totalRevenue = documents.reduce((sum, doc) => {
+      const amount = (doc.data as any)?.iznos || 0;
+      return sum + amount;
+    }, 0);
+    
+    const estimatedTax = totalRevenue * 0.20; // 20% PDV
+    
+    return {
+      totalRevenue,
+      estimatedTax,
+      paidFakture,
+      unpaidFakture,
+      totalFakture: fakture.length,
+      totalPredracuni: predracuni.length
+    };
+  };
+
+  const stats = calculateStats();
+
+  const formatCurrency = (amount: number) => {
+    return `${amount.toLocaleString('sr-RS')} RSD`;
+  };
 
   const sections = [
     {
@@ -60,18 +120,6 @@ const Racunovodstvo = () => {
           color: "bg-purple-500"
         }
       ]
-    },
-    {
-      title: "Finansije",
-      items: [
-        {
-          title: "Transakcije",
-          description: "Pregled svih finansijskih transakcija",
-          icon: <CreditCard className="h-6 w-6" />,
-          action: () => navigate("/racunovodstvo/transakcije"),
-          color: "bg-indigo-500"
-        }
-      ]
     }
   ];
 
@@ -83,6 +131,73 @@ const Racunovodstvo = () => {
           <p className="text-muted-foreground">
             Upravljajte finansijama, dokumentima i izveštajima vaše prodavnice
           </p>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Ukupni prihod</CardTitle>
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              {documentsLoading ? (
+                <Skeleton className="h-6 w-32" />
+              ) : (
+                <div className="text-2xl font-bold">
+                  {stats ? formatCurrency(stats.totalRevenue) : 'N/A'}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Procenjeni PDV</CardTitle>
+              <Percent className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              {documentsLoading ? (
+                <Skeleton className="h-6 w-32" />
+              ) : (
+                <div className="text-2xl font-bold">
+                  {stats ? formatCurrency(stats.estimatedTax) : 'N/A'}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Plaćene fakture</CardTitle>
+              <CheckCircle className="h-4 w-4 text-green-600" />
+            </CardHeader>
+            <CardContent>
+              {documentsLoading ? (
+                <Skeleton className="h-6 w-32" />
+              ) : (
+                <div className="text-2xl font-bold text-green-600">
+                  {stats ? `${stats.paidFakture}/${stats.totalFakture}` : 'N/A'}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Neplaćene fakture</CardTitle>
+              <XCircle className="h-4 w-4 text-red-600" />
+            </CardHeader>
+            <CardContent>
+              {documentsLoading ? (
+                <Skeleton className="h-6 w-32" />
+              ) : (
+                <div className="text-2xl font-bold text-red-600">
+                  {stats ? stats.unpaidFakture : 'N/A'}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
 
         {sections.map((section, sectionIndex) => (
