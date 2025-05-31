@@ -4,13 +4,12 @@ import { ShopLayout } from "@/components/layout/ShopLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
 const Login = () => {
-  const navigate = useNavigate();
-  const { login, isLoading: authLoading, user } = useAuth();
+  const { login } = useAuth();
   
   const [formData, setFormData] = useState({
     email: "",
@@ -19,12 +18,6 @@ const Login = () => {
   
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-
-  // Redirect if already logged in
-  if (user) {
-    navigate("/dashboard", { replace: true });
-    return null;
-  }
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -45,8 +38,8 @@ const Login = () => {
     try {
       console.log("Starting login process");
       await login(formData.email, formData.password);
-      console.log("Login successful, navigating to dashboard");
-      navigate("/dashboard", { replace: true });
+      console.log("Login successful");
+      toast.success("Login successful!");
     } catch (err) {
       const error = err as Error;
       console.error("Login error in component:", error);
@@ -111,8 +104,8 @@ const Login = () => {
             </div>
             
             <div className="pt-2">
-              <Button type="submit" className="w-full" disabled={isLoading || authLoading}>
-                {isLoading || authLoading ? "Signing In..." : "Sign In"}
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? "Signing In..." : "Sign In"}
               </Button>
             </div>
           </form>

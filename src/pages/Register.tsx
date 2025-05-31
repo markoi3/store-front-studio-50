@@ -4,13 +4,12 @@ import { ShopLayout } from "@/components/layout/ShopLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
 const Register = () => {
-  const navigate = useNavigate();
-  const { register, user } = useAuth();
+  const { register } = useAuth();
   
   const [formData, setFormData] = useState({
     name: "",
@@ -21,12 +20,6 @@ const Register = () => {
   
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-
-  // Redirect if already logged in
-  if (user) {
-    navigate("/dashboard", { replace: true });
-    return null;
-  }
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -48,8 +41,8 @@ const Register = () => {
     try {
       console.log("Starting registration process");
       await register(formData.email, formData.password, formData.name);
-      console.log("Registration successful, navigating to dashboard");
-      navigate("/dashboard", { replace: true });
+      console.log("Registration successful");
+      toast.success("Registration successful!");
     } catch (err) {
       const error = err as Error;
       console.error("Registration error in component:", error);

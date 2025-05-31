@@ -10,7 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -63,6 +63,22 @@ interface Customer {
 }
 
 const Dashboard = () => {
+  const { user, isLoading: authLoading } = useAuth();
+  
+  // Redirect to login if not authenticated
+  if (!authLoading && !user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // Show loading while auth is being checked
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
   const [date, setDate] = useState<DateRange | undefined>({
     from: addDays(new Date(), -30),
     to: new Date(),
@@ -70,7 +86,6 @@ const Dashboard = () => {
   const [filter, setFilter] = useState<string>('30d');
   const { toast } = useToast()
   const { clearCart } = useCart();
-  const { user } = useAuth();
 
   // Get store ID from user context for filtering
   const storeId = user?.store?.id;
