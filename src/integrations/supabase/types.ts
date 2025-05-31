@@ -9,6 +9,44 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      accounting_periods: {
+        Row: {
+          created_at: string | null
+          end_date: string
+          id: string
+          name: string
+          start_date: string
+          status: string | null
+          store_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          end_date: string
+          id?: string
+          name: string
+          start_date: string
+          status?: string | null
+          store_id: string
+        }
+        Update: {
+          created_at?: string | null
+          end_date?: string
+          id?: string
+          name?: string
+          start_date?: string
+          status?: string | null
+          store_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "accounting_periods_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customers: {
         Row: {
           address: Json | null
@@ -109,6 +147,126 @@ export type Database = {
           },
           {
             foreignKeyName: "documents_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expense_categories: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          store_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          store_id: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          store_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_categories_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      income_categories: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          store_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          store_id: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          store_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "income_categories_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      income_expense_records: {
+        Row: {
+          amount: number
+          auto_generated: boolean | null
+          category_id: string | null
+          created_at: string | null
+          date: string
+          description: string | null
+          document_reference: string | null
+          id: string
+          source_id: string | null
+          source_type: string | null
+          store_id: string
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          amount: number
+          auto_generated?: boolean | null
+          category_id?: string | null
+          created_at?: string | null
+          date: string
+          description?: string | null
+          document_reference?: string | null
+          id?: string
+          source_id?: string | null
+          source_type?: string | null
+          store_id: string
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          auto_generated?: boolean | null
+          category_id?: string | null
+          created_at?: string | null
+          date?: string
+          description?: string | null
+          document_reference?: string | null
+          id?: string
+          source_id?: string | null
+          source_type?: string | null
+          store_id?: string
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "income_expense_records_store_id_fkey"
             columns: ["store_id"]
             isOneToOne: false
             referencedRelation: "stores"
@@ -335,6 +493,44 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      tax_rates: {
+        Row: {
+          active: boolean | null
+          created_at: string | null
+          id: string
+          name: string
+          rate: number
+          store_id: string
+          type: string
+        }
+        Insert: {
+          active?: boolean | null
+          created_at?: string | null
+          id?: string
+          name: string
+          rate: number
+          store_id: string
+          type: string
+        }
+        Update: {
+          active?: boolean | null
+          created_at?: string | null
+          id?: string
+          name?: string
+          rate?: number
+          store_id?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tax_rates_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
